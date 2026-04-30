@@ -30,6 +30,7 @@ public enum ModuleOption {
     CATEGORY_IP(4000L, "Industrial Purchase", NOT_MODULE),
     IP_PRODUCTS(4001L, "IP Products", CATEGORY_IP),
     IP_QUOTE_REQUESTS(4002L, "IP Quote Requests", CATEGORY_IP),
+    IP_QUOTATIONS(4003L, "IP Quotations", CATEGORY_IP),
     /*----------------------------------*/
 
     ;

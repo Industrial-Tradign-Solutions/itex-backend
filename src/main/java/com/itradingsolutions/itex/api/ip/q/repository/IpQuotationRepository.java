@@ -1,0 +1,24 @@
+package com.itradingsolutions.itex.api.ip.q.repository;
+
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
+import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface IpQuotationRepository extends JpaRepository<IpQuotationEntity, UUID>, JpaSpecificationExecutor<IpQuotationEntity> {
+
+    @Query("SELECT q FROM IpQuotationEntity q WHERE q.openBy.user=?1")
+    List<IpQuotationEntity> fetchAllOpenByUsername(String username);
+
+    @Query("SELECT q FROM IpQuotationEntity q WHERE q.openBy IS NOT NULL")
+    List<IpQuotationEntity> fetchAllOpen();
+
+    @Query("SELECT COUNT(c.id) FROM IpQuotationEntity c WHERE c.openBy.id = ?1")
+    int countByOpenUserId(UUID userOpenById);
+}

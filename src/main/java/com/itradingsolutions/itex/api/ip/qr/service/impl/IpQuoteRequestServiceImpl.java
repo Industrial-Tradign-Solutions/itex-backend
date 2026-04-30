@@ -10,8 +10,11 @@ import com.itradingsolutions.itex.api.common.jasper.exceptions.NotGenerateReport
 import com.itradingsolutions.itex.api.common.jasper.model.enums.JasperReport;
 import com.itradingsolutions.itex.api.common.jasper.service.JasperService;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
+import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotExistIpQuoteRequestException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenIpQuoteRequestException;
@@ -48,6 +51,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -331,6 +335,23 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         return changeStatus(qrId, newStatus);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<IpQuoteRequestDTO> getListQuoteRequestByClientAvailableToQuotation(UUID clientId, boolean viewCompletedQR, Currency currency) {
+        List<IpQuoteRequestStatus> status = new java.util.ArrayList<>(List.of(IpQuoteRequestStatus.ANSWERED));
+        if (viewCompletedQR) status.add(IpQuoteRequestStatus.COMPLETE);
+        var resp = qrRepository.fetchAllByClientAndStatus(clientId, status, currency);
+        return resp.stream().map(qrMapper::entityToDTO).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IpQuoteRequestEntity findByIdAndClient(UUID id, UUID clientId) {
+        return qrRepository.fetchAllByIdAndClient(id, clientId).orElseThrow(() ->
+            new NotExistIpQuoteRequestException(simpleMessage("ip.qr.not-exist"))
+        );
+    }
+
     private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus) {
         var qr = findById(qrId);
         if (newStatus.equals(qr.getStatus()))
@@ -340,17 +361,46 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
             if (!qr.isValidAnswered() || qr.getSentAt() == null)
                 throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-answered"));
             qr.setAnsweredAt(ZonedDateTime.now());
+            qr.setCompleteAt(null);
+            qr.setRejectAt(null);
         } else if (newStatus.equals(IpQuoteRequestStatus.SENT)) {
+            validateQuotationChangeStatus(qr);
             qr.setSentAt(ZonedDateTime.now());
+            qr.setAnsweredAt(null);
+            qr.setCompleteAt(null);
+            qr.setRejectAt(null);
         }  else if (newStatus.equals(IpQuoteRequestStatus.COMPLETE)) {
             if (qr.getAnsweredAt() == null)
                 throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
             qr.setCompleteAt(ZonedDateTime.now());
+            qr.setRejectAt(null);
         } else if (newStatus.equals(IpQuoteRequestStatus.REJECTED)) {
+            if (qr.getQuotationsQuoteRequests().stream()
+                    .anyMatch(q ->
+                            !IpQuotationStatus.REJECTED.equals(
+                                    q.getQuotation().getStatus()
+                            )
+                    )) {
+                throw new NotChangeStatusException(
+                        simpleMessage("ip.qr.assigned-to-q-rejected")
+                );
+            }
             qr.setRejectAt(ZonedDateTime.now());
+            qr.setCompleteAt(null);
+        } else if (newStatus.equals(IpQuoteRequestStatus.CREATED)) {
+            validateQuotationChangeStatus(qr);
+            qr.setAnsweredAt(null);
+            qr.setCompleteAt(null);
+            qr.setRejectAt(null);
+            qr.setSentAt(null);
         }
         qr.setStatus(newStatus);
         return qrMapper.entityToDTO(qrRepository.save(qr));
+    }
+
+    private void validateQuotationChangeStatus(IpQuoteRequestEntity qr) {
+        if (qr.getQuotationsQuoteRequests() != null && !qr.getQuotationsQuoteRequests().isEmpty())
+            throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
     }
 
     private boolean isOpenStatus(IpQuoteRequestStatus status) {

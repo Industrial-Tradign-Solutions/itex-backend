@@ -1,0 +1,8 @@
+DELETE FROM flyway_schema_history WHERE version = '2.0.0';
+DELETE FROM t_actions WHERE menu_item_id = 4003;
+DELETE FROM t_menus WHERE id = 4003;
+DELETE FROM itex_consecutive WHERE module = 'Q' AND department = 'IP';
+DROP TABLE IF EXISTS t_ip_quotation_history;
+DROP TABLE IF EXISTS t_ip_quotation_products;
+DROP TABLE IF EXISTS t_ip_quotations_quote_request;
+DROP TABLE IF EXISTS t_ip_quotations;

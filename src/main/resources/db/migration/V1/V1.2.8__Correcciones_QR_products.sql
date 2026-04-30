@@ -1,0 +1,14 @@
+alter table t_ip_quote_request_products
+    add product_description varchar(1000);
+alter table t_ip_quote_request_products
+    add product_client_description varchar(1000);
+alter table t_ip_quote_request_products
+    add product_mfr_reference varchar(100);
+alter table t_ip_quote_request_products
+    add product_client_reference varchar(100);
+alter table t_ip_quote_request_products
+    add product_net_weight_lbs numeric(15,3);
+alter table t_ip_quote_request_products
+    add product_hts_schedule_b_number int;
+alter table t_ip_quote_request_products
+    add product_eccn varchar(100);

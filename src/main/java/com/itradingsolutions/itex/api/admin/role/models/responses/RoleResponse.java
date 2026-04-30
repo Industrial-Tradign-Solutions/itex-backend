@@ -1,0 +1,13 @@
+package com.itradingsolutions.itex.api.admin.role.models.responses;
+
+import com.itradingsolutions.itex.api.masters.common.models.responses.BaseMasterWithDescriptionResponse;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+
+@Getter
+@Setter
+@SuperBuilder
+public class RoleResponse extends BaseMasterWithDescriptionResponse {
+
+}

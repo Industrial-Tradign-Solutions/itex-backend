@@ -1,0 +1,1332 @@
+{
+	"info": {
+		"_postman_id": "db0a6098-32a6-40c7-b7e2-b55effa365db",
+		"name": "ITEX Software",
+		"description": "Software for the management of information and transactions of the company **Industrial Trading Solutions**.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39867190"
+	},
+	"item": [
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Roles",
+					"item": []
+				},
+				{
+					"name": "Users",
+					"item": []
+				}
+			]
+		},
+		{
+			"name": "Partners",
+			"item": [
+				{
+					"name": "Clients",
+					"item": []
+				},
+				{
+					"name": "Prospects",
+					"item": []
+				},
+				{
+					"name": "Suppliers",
+					"item": []
+				}
+			]
+		},
+		{
+			"name": "Masters",
+			"item": [
+				{
+					"name": "Locations",
+					"item": [
+						{
+							"name": "Countries",
+							"item": [
+								{
+									"name": "List All Countries",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/countries",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"countries"
+											]
+										},
+										"description": "The `GET` request to `/master/locations/countries` endpoint retrieves a list of countries. The response is in JSON format and has the following schema:\n\n``` json\n[\n  {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"nameShort\": \"\",\n    \"longitude\": 0,\n    \"latitude\": 0,\n    \"createdAt\": \"\"\n  }\n]\n\n ```\n\nThis JSON schema represents the structure of the response where each country object includes an `id`, `name`, `nameShort`, `longitude`, `latitude`, and `createdAt` field."
+									},
+									"response": []
+								},
+								{
+									"name": "Find Country By Id",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/countries/3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"countries",
+												"3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8"
+											]
+										},
+										"description": "This endpoint makes an HTTP GET request to retrieve the details of a specific country by its ID. The request should be made to the URL {{API_URL}}/master/locations/countries/{country_id}, where \"country_id\" is the unique identifier of the country.\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response Body\n\nUpon a successful request, the server will respond with a status code of 200 and a JSON object containing the details of the country. The response body includes the following fields:\n\n- `id` (string): The unique identifier of the country.\n    \n- `name` (string): The full name of the country.\n    \n- `nameShort` (string): The short name or abbreviation of the country.\n    \n- `longitude` (number): The longitude coordinate of the country's location.\n    \n- `latitude` (number): The latitude coordinate of the country's location.\n    \n- `createdAt` (string): The timestamp indicating when the country record was created.\n    \n\nNote: The actual values for the fields will be populated in the response based on the specific country being retrieved."
+									},
+									"response": []
+								},
+								{
+									"name": "List All Basic Countries",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/countries/lists",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"countries",
+												"lists"
+											]
+										},
+										"description": "### GET /master/locations/countries/lists\n\nThis endpoint retrieves a list of countries.\n\n#### Request\n\nNo request body is required for this endpoint.\n\n#### Response\n\nThe response will be a JSON array containing objects with the following properties:\n\n- `id` (string): The unique identifier of the country.\n    \n- `name` (string): The full name of the country.\n    \n- `nameShort` (string): The short name or abbreviation of the country.\n    \n\nExample response:\n\n``` json\n[\n  {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"nameShort\": \"\"\n  }\n]\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Create Country",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"TESTt\",\r\n  \"nameShort\": \"TEx\",\r\n  \"longitude\": 0.2132,\r\n  \"latitude\": 0.666\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{API_URL}}master/locations/countries/create",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"countries",
+												"create"
+											]
+										},
+										"description": "This HTTP POST request is used to create a new country in the master locations. The request should include the name, short name, longitude, and latitude of the country in the raw request body. Upon successful execution, the API returns a status code of 201 and a JSON response containing the newly created country's details, including its unique ID, name, short name, longitude, latitude, and the timestamp of its creation.\n\nExample request payload:\n\n``` json\n{\n  \"name\": \"Country Name\",\n  \"nameShort\": \"CN\",\n  \"longitude\": 0.1234,\n  \"latitude\": 0.5678\n}\n\n ```\n\nExample response:\n\n``` json\n{\n  \"title\": \"\",\n  \"message\": \"\",\n  \"data\": {\n    \"id\": \"generated_id\",\n    \"name\": \"Country Name\",\n    \"nameShort\": \"CN\",\n    \"longitude\": 0.1234,\n    \"latitude\": 0.5678,\n    \"createdAt\": \"timestamp\"\n  }\n}\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Country",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"TESTTS\",\r\n  \"nameShort\": \"TES\",\r\n  \"longitude\": 0.213,\r\n  \"latitude\": 0.666\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{API_URL}}master/locations/countries/update/7171635b-9a81-4747-b0c4-8b1db89aea58",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"countries",
+												"update",
+												"7171635b-9a81-4747-b0c4-8b1db89aea58"
+											]
+										},
+										"description": "### Update Country Location\n\nThis endpoint is used to update a specific country location by sending an HTTP PUT request to the specified URL.\n\n#### Request Body\n\n- `name` (string): The full name of the country location.\n    \n- `nameShort` (string): The short name or code of the country location.\n    \n- `longitude` (number): The longitude coordinate of the country location.\n    \n- `latitude` (number): The latitude coordinate of the country location.\n    \n\nThe request body should be in the raw format with the following payload:\n\n``` json\n{\n  \"name\": \"updated value\",\n  \"nameShort\": \"updated value\",\n  \"longitude\": updated_value,\n  \"latitude\": updated_value\n}\n\n ```\n\n#### Response\n\nUpon successful execution, the endpoint returns a status code of 200 and the following JSON response:\n\n- `title` (string): The title of the response message.\n    \n- `message` (string): The response message.\n    \n- `data`\n    \n    - `id` (string): The ID of the updated country location.\n        \n    - `name` (string): The full name of the updated country location.\n        \n    - `nameShort` (string): The short name or code of the updated country location.\n        \n    - `longitude` (number): The updated longitude coordinate of the country location.\n        \n    - `latitude` (number): The updated latitude coordinate of the country location.\n        \n    - `createdAt` (string): The timestamp of when the update was created."
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Cities",
+							"item": [
+								{
+									"name": "List All Cities",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/cities",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"cities"
+											]
+										},
+										"description": "The `GET` request retrieves a list of cities from the master locations endpoint.\n\n### Response\n\nThe response is a JSON array containing city objects with the following schema:\n\n``` json\n[\n  {\n    \"id\": \"string\",\n    \"state\": {\n      \"id\": \"string\",\n      \"country\": {\n        \"id\": \"string\",\n        \"name\": \"string\",\n        \"nameShort\": \"string\",\n        \"longitude\": 0,\n        \"latitude\": 0,\n        \"createdAt\": \"string\"\n      },\n      \"name\": \"string\",\n      \"nameShort\": \"string\",\n      \"longitude\": 0,\n      \"latitude\": 0,\n      \"createdAt\": \"string\"\n    },\n    \"name\": \"string\",\n    \"fullName\": \"string\",\n    \"longitude\": 0,\n    \"latitude\": 0,\n    \"createdAt\": \"string\"\n  }\n]\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Find City By Id",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/cities/275005fb-050c-413b-9b4b-52e651d2a637",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"cities",
+												"275005fb-050c-413b-9b4b-52e651d2a637"
+											]
+										},
+										"description": "### GET /master/locations/cities/{cityId}\n\nThis endpoint retrieves the details of a specific city.\n\n#### Request\n\nNo request body is required for this endpoint.\n\n- Path Parameters\n    \n    - `cityId` (string, required): The unique identifier of the city.\n        \n\n#### Response\n\nThe response will be a JSON object with the following schema:\n\n``` json\n{\n    \"id\": \"\",\n    \"state\": {\n        \"id\": \"\",\n        \"country\": {\n            \"id\": \"\",\n            \"name\": \"\",\n            \"nameShort\": \"\",\n            \"longitude\": 0,\n            \"latitude\": 0,\n            \"createdAt\": \"\"\n        },\n        \"name\": \"\",\n        \"nameShort\": \"\",\n        \"longitude\": 0,\n        \"latitude\": 0,\n        \"createdAt\": \"\"\n    },\n    \"name\": \"\",\n    \"fullName\": \"\",\n    \"longitude\": 0,\n    \"latitude\": 0,\n    \"createdAt\": \"\"\n}\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "List All Basic Cities",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/cities/lists",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"cities",
+												"lists"
+											]
+										},
+										"description": "The endpoint `{{API_URL}}master/locations/cities/lists` is a GET request that retrieves a list of cities with their corresponding IDs, states, countries, and full names.\n\n### Response\n\nThe response will be a JSON array with the following schema:\n\n``` json\n[\n  {\n    \"id\": \"string\",\n    \"state\": {\n      \"id\": \"string\",\n      \"country\": {\n        \"id\": \"string\",\n        \"name\": \"string\",\n        \"nameShort\": \"string\"\n      },\n      \"name\": \"string\",\n      \"nameShort\": \"string\"\n    },\n    \"name\": \"string\",\n    \"fullName\": \"string\"\n  }\n]\n\n ```\n\nThis schema represents the structure of the response data, with each city containing an ID, state details, name, and full name."
+									},
+									"response": []
+								},
+								{
+									"name": "Create City",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"TESTt\",\r\n  \"stateId\": \"e5943397-26a8-4ae9-8a9e-d5330f5ee567\",\r\n  \"longitude\": 0.2132,\r\n  \"latitude\": 0.666\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{API_URL}}master/locations/cities/create",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"cities",
+												"create"
+											]
+										},
+										"description": "### Create City\n\nThis endpoint is used to create a new city in the master locations.\n\n#### Request\n\n- Method: POST\n    \n- URL: {{API_URL}}master/locations/cities/create\n    \n- Body:\n    \n    - name (text, required): The name of the city.\n        \n    - stateId (text, required): The ID of the state to which the city belongs.\n        \n    - longitude (number, required): The longitude coordinate of the city.\n        \n    - latitude (number, required): The latitude coordinate of the city.\n        \n\n#### Response\n\nThe response is in JSON format and follows the schema below:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tittle\": {\n      \"type\": \"string\"\n    },\n    \"message\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"string\"\n        },\n        \"state\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"id\": {\n              \"type\": \"string\"\n            },\n            \"country\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"id\": {\n                  \"type\": \"string\"\n                },\n                \"name\": {\n                  \"type\": \"string\"\n                },\n                \"nameShort\": {\n                  \"type\": \"string\"\n                },\n                \"longitude\": {\n                  \"type\": \"number\"\n                },\n                \"latitude\": {\n                  \"type\": \"number\"\n                },\n                \"createdAt\": {\n                  \"type\": \"string\"\n                }\n              }\n            },\n            \"name\": {\n              \"type\": \"string\"\n            },\n            \"nameShort\": {\n              \"type\": \"string\"\n            },\n            \"longitude\": {\n              \"type\": \"number\"\n            },\n            \"latitude\": {\n              \"type\": \"number\"\n            },\n            \"createdAt\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"name\": {\n          \"type\": \"string\"\n        },\n        \"fullName\": {\n          \"type\": \"string\"\n        },\n        \"longitude\": {\n          \"type\": \"number\"\n        },\n        \"latitude\": {\n          \"type\": \"number\"\n        },\n        \"createdAt\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Update City",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"TEST\",\r\n  \"stateId\": \"e5943397-26a8-4ae9-8a9e-d5330f5ee567\",\r\n  \"longitude\": 0.213,\r\n  \"latitude\": 0.666\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{API_URL}}master/locations/cities/update/b6d8eb59-497f-4333-8797-706359289eaf",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"cities",
+												"update",
+												"b6d8eb59-497f-4333-8797-706359289eaf"
+											]
+										},
+										"description": "### Update City Location\n\nThis endpoint allows the user to update the details of a specific city location.\n\n#### Request Body\n\n- `name` (string): The name of the city.\n    \n- `stateId` (string): The ID of the state to which the city belongs.\n    \n- `longitude` (number): The longitude coordinate of the city.\n    \n- `latitude` (number): The latitude coordinate of the city.\n    \n\n#### Response\n\nThe response will be a JSON object with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\"type\": \"string\"},\n    \"message\": {\"type\": \"string\"},\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\"type\": \"string\"},\n        \"state\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"id\": {\"type\": \"string\"},\n            \"country\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"id\": {\"type\": \"string\"},\n                \"name\": {\"type\": \"string\"},\n                \"nameShort\": {\"type\": \"string\"},\n                \"longitude\": {\"type\": \"number\"},\n                \"latitude\": {\"type\": \"number\"},\n                \"createdAt\": {\"type\": \"string\"}\n              }\n            },\n            \"name\": {\"type\": \"string\"},\n            \"nameShort\": {\"type\": \"string\"},\n            \"longitude\": {\"type\": \"number\"},\n            \"latitude\": {\"type\": \"number\"},\n            \"createdAt\": {\"type\": \"string\"}\n          }\n        },\n        \"name\": {\"type\": \"string\"},\n        \"fullName\": {\"type\": \"string\"},\n        \"longitude\": {\"type\": \"number\"},\n        \"latitude\": {\"type\": \"number\"},\n        \"createdAt\": {\"type\": \"string\"}\n      }\n    }\n  }\n}\n\n ```"
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "States",
+							"item": [
+								{
+									"name": "List All States",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/states",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"states"
+											]
+										},
+										"description": "# Get States\n\nThis endpoint retrieves a list of states.\n\n## Request\n\n### Endpoint\n\n`GET /master/locations/states`\n\n## Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n\nExample response body:\n\n``` json\n[\n    {\n        \"id\": \"\",\n        \"country\": {\n            \"id\": \"\",\n            \"name\": \"\",\n            \"nameShort\": \"\",\n            \"longitude\": 0,\n            \"latitude\": 0,\n            \"createdAt\": \"\"\n        },\n        \"name\": \"\",\n        \"nameShort\": \"\",\n        \"longitude\": 0,\n        \"latitude\": 0,\n        \"createdAt\": \"\"\n    }\n]\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Find State By Id",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/states/e52aa5b7-d4af-4dc3-b097-daeb6b35e5e1",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"states",
+												"e52aa5b7-d4af-4dc3-b097-daeb6b35e5e1"
+											]
+										},
+										"description": "This endpoint makes an HTTP GET request to retrieve the details of a specific state by its ID. The request should be sent to {{API_URL}}/master/locations/states/e52aa5b7-d4af-4dc3-b097-daeb6b35e5e1.\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response Body\n\nUpon a successful request, the server will respond with a status code of 200 and a JSON object containing the details of the state. The response body includes the state's ID, name, short name, longitude, latitude, creation timestamp, and details about the country to which the state belongs.\n\nExample Response Body:\n\n``` json\n{\n  \"id\": \"\",\n  \"country\": {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"nameShort\": \"\",\n    \"longitude\": 0,\n    \"latitude\": 0,\n    \"createdAt\": \"\"\n  },\n  \"name\": \"\",\n  \"nameShort\": \"\",\n  \"longitude\": 0,\n  \"latitude\": 0,\n  \"createdAt\": \"\"\n}\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "List All Basic States",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{API_URL}}master/locations/states/lists",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"states",
+												"lists"
+											]
+										},
+										"description": "The `GET` request retrieves a list of states from the master locations. The response is a JSON array with each object containing the following properties:\n\n- `id` (string): The unique identifier for the state.\n    \n- `country` (object): An object with the following properties:\n    \n    - `id` (string): The unique identifier for the country to which the state belongs.\n        \n    - `name` (string): The name of the country.\n        \n    - `nameShort` (string): The abbreviated name of the country.\n        \n- `name` (string): The name of the state.\n    \n- `nameShort` (string): The abbreviated name of the state.\n    \n\n``` json\n[\n  {\n    \"id\": \"\",\n    \"country\": {\n      \"id\": \"\",\n      \"name\": \"\",\n      \"nameShort\": \"\"\n    },\n    \"name\": \"\",\n    \"nameShort\": \"\"\n  }\n]\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Create State",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"TESTx\",\r\n  \"nameShort\": \"TEx\",\r\n  \"countryId\": \"da4d0292-617e-4205-8bce-a9c808c4e3b9\",\r\n  \"longitude\": 0.213,\r\n  \"latitude\": 0.6662\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{API_URL}}master/locations/states/create",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"states",
+												"create"
+											]
+										},
+										"description": "### Create State\n\nThis endpoint allows the creation of a new state within a country.\n\n#### Request Body\n\n- name (string, required): The full name of the state.\n    \n- nameShort (string, required): The abbreviated name of the state.\n    \n- countryId (string, required): The unique identifier of the country to which the state belongs.\n    \n- longitude (number, required): The longitude coordinate of the state.\n    \n- latitude (number, required): The latitude coordinate of the state.\n    \n\n#### Response (JSON Schema)\n\n``` json\n{\n    \"type\": \"object\",\n    \"properties\": {\n        \"title\": { \"type\": \"string\" },\n        \"message\": { \"type\": \"string\" },\n        \"data\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"id\": { \"type\": \"string\" },\n                \"country\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"id\": { \"type\": \"string\" },\n                        \"name\": { \"type\": \"string\" },\n                        \"nameShort\": { \"type\": \"string\" },\n                        \"longitude\": { \"type\": \"number\" },\n                        \"latitude\": { \"type\": \"number\" },\n                        \"createdAt\": { \"type\": \"string\" }\n                    }\n                },\n                \"name\": { \"type\": \"string\" },\n                \"nameShort\": { \"type\": \"string\" },\n                \"longitude\": { \"type\": \"number\" },\n                \"latitude\": { \"type\": \"number\" },\n                \"createdAt\": { \"type\": \"string\" }\n            }\n        }\n    }\n}\n\n ```"
+									},
+									"response": []
+								},
+								{
+									"name": "Update States",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"TEST\",\r\n  \"nameShort\": \"TES\",\r\n  \"countryId\": \"da4d0292-617e-4205-8bce-a9c808c4e3b9\",\r\n  \"longitude\": 0.213,\r\n  \"latitude\": 0.666\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{API_URL}}master/locations/states/update/6a473a93-3883-4bcb-8083-feb6af48ffc8",
+											"host": [
+												"{{API_URL}}master"
+											],
+											"path": [
+												"locations",
+												"states",
+												"update",
+												"6a473a93-3883-4bcb-8083-feb6af48ffc8"
+											]
+										},
+										"description": "### Update State Location\n\nThis endpoint is used to update the details of a specific state location.\n\n#### Request\n\n- Method: PUT\n    \n- URL: `{{API_URL}}master/locations/states/update/6a473a93-3883-4bcb-8083-feb6af48ffc8`\n    \n- Body:\n    \n    - name (text, required): The full name of the state.\n        \n    - nameShort (text, required): The short name or abbreviation of the state.\n        \n    - countryId (text, required): The unique identifier of the country to which the state belongs.\n        \n    - longitude (number, required): The longitude coordinate of the state location.\n        \n    - latitude (number, required): The latitude coordinate of the state location.\n        \n\n#### Response\n\nThe response is in JSON format and follows the schema below:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tittle\": { \"type\": \"string\" },\n    \"message\": { \"type\": \"string\" },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": { \"type\": \"string\" },\n        \"country\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"id\": { \"type\": \"string\" },\n            \"name\": { \"type\": \"string\" },\n            \"nameShort\": { \"type\": \"string\" },\n            \"longitude\": { \"type\": \"number\" },\n            \"latitude\": { \"type\": \"number\" },\n            \"createdAt\": { \"type\": \"string\" }\n          }\n        },\n        \"name\": { \"type\": \"string\" },\n        \"nameShort\": { \"type\": \"string\" },\n        \"longitude\": { \"type\": \"number\" },\n        \"latitude\": { \"type\": \"number\" },\n        \"createdAt\": { \"type\": \"string\" }\n      }\n    }\n  }\n}\n\n ```"
+									},
+									"response": []
+								}
+							]
+						}
+					],
+					"description": "Location master"
+				},
+				{
+					"name": "Departments",
+					"item": [
+						{
+							"name": "List All Departments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/departments",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments"
+									]
+								},
+								"description": "### GET /master/departments\n\nThe `GET` request is used to retrieve a list of departments from the server.\n\n#### Request\n\nNo request body is required for this request.\n\n#### Response\n\nThe response is in JSON format and has the following schema:\n\n``` json\n[\n  {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"description\": \"\",\n    \"active\": true,\n    \"createdAt\": \"\",\n    \"clientInfo\": true\n  }\n]\n\n ```\n\nThis JSON schema represents the structure of the response where each department object includes an `id`, `name`, `description`, `active`, `createdAt`, and `clientInfo` field."
+							},
+							"response": []
+						},
+						{
+							"name": "Find Department By Id",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/departments/72214552-2ddc-417f-b58e-05f28eabc80f",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"72214552-2ddc-417f-b58e-05f28eabc80f"
+									]
+								},
+								"description": "This endpoint makes an HTTP GET request to retrieve the details of a specific department by its ID. The request should be made to the URL `{{API_URL}}/master/departments/{department_id}`, where \"department_id\" is the unique identifier of the department.\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response Body\n\nUpon a successful request, the server will respond with a status code of 200 and a JSON object containing the details of the department. The response body includes the following fields:\n\n- `id` (string): The unique identifier of the department.\n    \n- `name` (string): The name of the department.\n    \n- `description` (string): The description of the department.\n    \n- `active` (boolean): Indicates whether the department is active.\n    \n- `createdAt` (string): The timestamp indicating when the department record was created.\n    \n- `clientInfo` (boolean): Indicates whether client information is available for the department.\n    \n\nNote: The actual values for the fields will be populated in the response based on the specific department being retrieved."
+							},
+							"response": []
+						},
+						{
+							"name": "List All Basic Departments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/departments/lists",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"lists"
+									]
+								},
+								"description": "### GET /master/departments/lists\n\nThis endpoint retrieves a list of departments.\n\n#### Request\n\nNo request body is required for this endpoint.\n\n#### Response\n\nThe response will be a JSON schema with the following structure:\n\n``` json\n{\n  \"enableDepartments\": [\n    {\n      \"id\": \"\",\n      \"name\": \"\",\n      \"active\": true\n    }\n  ],\n  \"disableDepartments\": []\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "List All Basic Departments ClientInfo",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/departments/list-client-info",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"list-client-info"
+									]
+								},
+								"description": "### GET /master/departments/list-client-info\n\nThis endpoint retrieves a list of client information for departments.\n\n#### Request\n\nNo request body is required for this endpoint.\n\n#### Response\n\nThe response will be a JSON schema with the following structure:\n\n``` json\n[\n  {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"active\": true\n  }\n]\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Department",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"test\",\r\n  \"description\": \"Test Department\",\r\n  \"clientInfo\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}master/departments/create",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"create"
+									]
+								},
+								"description": "This HTTP POST request is used to create a new department in the master locations. The request should include the name, description, and clientInfo in the raw request body.\n\nExample request payload:\n\n``` json\n{\n  \"name\": \"test\",\n  \"description\": \"Test Department\",\n  \"clientInfo\": true\n}\n\n ```\n\nUpon successful execution, the API returns a status code of 201 and a JSON response containing the details of the newly created department, including its unique ID, name, description, activity status, creation timestamp, and clientInfo.\n\nExample response:\n\n``` json\n{\n  \"title\": \"\",\n  \"message\": \"\",\n  \"data\": {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"description\": \"\",\n    \"active\": true,\n    \"createdAt\": \"\",\n    \"clientInfo\": true\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Department",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"test\",\r\n  \"description\": \"Test Department\",\r\n  \"clientInfo\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}master/departments/update/42508448-f3cc-4e64-80c2-21e8f632f011",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"update",
+										"42508448-f3cc-4e64-80c2-21e8f632f011"
+									]
+								},
+								"description": "### Update Department\n\nThis endpoint is used to update a specific department by sending an HTTP PUT request to the specified URL.\n\n#### Request Body\n\n- `name` (string): The full name of the department.\n    \n- `description` (string): The description of the department.\n    \n- `clientInfo` (boolean): Indicates whether client information is included.\n    \n\nThe request body should be in the raw format with the following payload:\n\n``` json\n{\n  \"name\": \"updated value\",\n  \"description\": \"updated value\",\n  \"clientInfo\": true\n}\n\n ```\n\n#### Response\n\nThe response of this request can be documented as a JSON schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\n      \"type\": \"string\"\n    },\n    \"message\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"string\"\n        },\n        \"name\": {\n          \"type\": \"string\"\n        },\n        \"description\": {\n          \"type\": \"string\"\n        },\n        \"active\": {\n          \"type\": \"boolean\"\n        },\n        \"createdAt\": {\n          \"type\": \"string\"\n        },\n        \"clientInfo\": {\n          \"type\": \"boolean\"\n        }\n      }\n    }\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Disable Department",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/departments/disable/42508448-f3cc-4e64-80c2-21e8f632f011",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"disable",
+										"42508448-f3cc-4e64-80c2-21e8f632f011"
+									]
+								},
+								"description": "This endpoint sends an HTTP DELETE request to disable a specific department with the ID \"42508448-f3cc-4e64-80c2-21e8f632f011\".\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response Body\n\nThe response to this request will be in JSON format with the following structure:\n\n- `title`: (string) A title or message related to the response.\n    \n- `message`: (string) A message related to the response.\n    \n- `data`: (string) Additional data related to the response."
+							},
+							"response": []
+						},
+						{
+							"name": "Enable Department",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/departments/enable/42508448-f3cc-4e64-80c2-21e8f632f011",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"departments",
+										"enable",
+										"42508448-f3cc-4e64-80c2-21e8f632f011"
+									]
+								},
+								"description": "The endpoint sends an HTTP PATCH request to enable a specific department with the ID \"42508448-f3cc-4e64-80c2-21e8f632f011\".\n\n### Response Body\n\nThe response to this request will be in JSON format with the following structure:\n\n- `title`: (string) A title or message related to the response.\n    \n- `message`: (string) A message related to the response.\n    \n- `data`: (string) Additional data related to the response."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Industries",
+					"item": [
+						{
+							"name": "List All Industries",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/industries",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries"
+									]
+								},
+								"description": "### GET /master/industries\n\nThe `GET` request is used to retrieve a list of industries from the server.\n\n#### Request\n\nNo request body is required for this request.\n\n#### Response\n\nThe response is in JSON format and has the following schema:\n\n``` json\n[\n  {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"description\": \"\",\n    \"active\": true,\n    \"createdAt\": \"\"\n  }\n]\n\n ```\n\nThis JSON schema represents the structure of the response where each industry object includes an `id`, `name`, `description`, `active`, and `createdAt` field."
+							},
+							"response": []
+						},
+						{
+							"name": "Find Industry By Id",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/industries/db1b60a6-7889-4252-b299-6504d1486d81",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries",
+										"db1b60a6-7889-4252-b299-6504d1486d81"
+									]
+								},
+								"description": "This endpoint makes an HTTP GET request to retrieve the details of a specific department by its ID. The request should be made to the URL `{{API_URL}}/master/industries/{industry_id}`, where \"industry_id\" is the unique identifier of the department.\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response Body\n\nUpon a successful request, the server will respond with a status code of 200 and a JSON object containing the details of the department. The response body includes the following fields:\n\n- `id` (string): The unique identifier of the industry.\n    \n- `name` (string): The name of the industry.\n    \n- `description` (string): The description of the industry.\n    \n- `active` (boolean): Indicates whether the industry is active.\n    \n- `createdAt` (string): The timestamp indicating when the industry record was created.\n    \n- `clientInfo` (boolean): Indicates whether client information is available for the industry.\n    \n\nNote: The actual values for the fields will be populated in the response based on the specific industry being retrieved."
+							},
+							"response": []
+						},
+						{
+							"name": "List All Basic Industries",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/industries/lists",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries",
+										"lists"
+									]
+								},
+								"description": "### GET /master/industries/lists\n\nThis endpoint retrieves a list of industries.\n\n#### Request\n\nNo request body is required for this endpoint.\n\n#### Response\n\nThe response will be a JSON schema with the following structure:\n\n``` json\n{\n  \"enableIndustries\": [\n    {\n      \"id\": \"\",\n      \"name\": \"\",\n      \"active\": true\n    }\n  ],\n  \"disableIndustries\": []\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Industry",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"test\",\r\n  \"description\": \"Test Industry\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}master/industries/create",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries",
+										"create"
+									]
+								},
+								"description": "### Create New Industry\n\nThis API endpoint is used to create a new industry in the master locations.\n\n#### Request Body\n\n- The request should include the following parameters in the raw request body:\n    \n    - `name` (string): The name of the industry.\n        \n    - `description` (string): The description of the industry.\n        \n    - `clientInfo` (boolean): Indicates whether client information is included.\n        \n\nExample request payload:\n\n``` json\n{\n  \"name\": \"test\",\n  \"description\": \"Test Industry\",\n  \"clientInfo\": true\n}\n\n ```\n\n#### Response\n\nUpon successful execution, the API returns a status code of 201 and a JSON response containing the details of the newly created industry, including:\n\n- `id` (string): The unique ID of the industry.\n    \n- `name` (string): The name of the industry.\n    \n- `description` (string): The description of the industry.\n    \n- `active` (boolean): Indicates the activity status of the industry.\n    \n- `createdAt` (string): Timestamp of the industry creation.\n    \n- `clientInfo` (boolean): Indicates whether client information is included.\n    \n\nExample response:\n\n``` json\n{\n  \"title\": \"\",\n  \"message\": \"\",\n  \"data\": {\n    \"id\": \"\",\n    \"name\": \"\",\n    \"description\": \"\",\n    \"active\": true,\n    \"createdAt\": \"\",\n    \"clientInfo\": true\n  }\n}\n\n ```\n\n#### JSON Schema for Response\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\"type\": \"string\"},\n    \"message\": {\"type\": \"string\"},\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\"type\": \"string\"},\n        \"name\": {\"type\": \"string\"},\n        \"description\": {\"type\": \"string\"},\n        \"active\": {\"type\": \"boolean\"},\n        \"createdAt\": {\"type\": \"string\"},\n        \"clientInfo\": {\"type\": \"boolean\"}\n      }\n    }\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Industry",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"test\",\r\n  \"description\": \"Test Industry\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}master/industries/update/83221114-a7f4-4b75-8096-4e8e2cb919cf",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries",
+										"update",
+										"83221114-a7f4-4b75-8096-4e8e2cb919cf"
+									]
+								},
+								"description": "### Update Industry\n\nThis endpoint is used to update a specific Industryby sending an HTTP PUT request to the specified URL.\n\n#### Request Body\n\n- `name` (string): The full name of the industry.\n    \n- `description` (string): The description of the industry.\n    \n\nThe request body should be in the raw format with the following payload:\n\n``` json\n{\n  \"name\": \"updated value\",\n  \"description\": \"updated value\"\n}\n\n ```\n\n#### Response\n\nThe response of this request can be documented as a JSON schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\n      \"type\": \"string\"\n    },\n    \"message\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"string\"\n        },\n        \"name\": {\n          \"type\": \"string\"\n        },\n        \"description\": {\n          \"type\": \"string\"\n        },\n        \"active\": {\n          \"type\": \"boolean\"\n        },\n        \"createdAt\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Disable Industry",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/industries/disable/83221114-a7f4-4b75-8096-4e8e2cb919cf",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries",
+										"disable",
+										"83221114-a7f4-4b75-8096-4e8e2cb919cf"
+									]
+								},
+								"description": "### Response Body\n\nThe response to this request will be in JSON format with the following schema:\n\n``` json\n{\n    \"title\": \"string\",\n    \"message\": \"string\",\n    \"data\": \"string\"\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "Enable Industry",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}master/industries/enable/83221114-a7f4-4b75-8096-4e8e2cb919cf",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"industries",
+										"enable",
+										"83221114-a7f4-4b75-8096-4e8e2cb919cf"
+									]
+								},
+								"description": "### Response Body\n\nThe response to this request will be in JSON format with the following schema:\n\n``` json\n{\n    \"title\": \"string\",\n    \"message\": \"string\",\n    \"data\": \"string\"\n}\n\n ```"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Brands",
+					"item": [
+						{
+							"name": "Validate Import Excel Brands",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "/D:/Data/Desktop/Brands ITS 2 (1).xlsx"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{API_URL}}master/brands/validate-import",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"brands",
+										"validate-import"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Import Brands",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"AR ARMATUREN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ANGSTPFISTER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"APPLIEDMOTIONSYSTEMS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ARNOLDHOUBEN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ATL 400\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"AUTZHERRMANN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"AGASTAT/TE CONNECTIVITY\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ANCHORFAST 221\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BL INDUSTRIAL MEASUREMENTS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BAUSCH LOMB\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BEHAAMPROBE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BEILER LANG\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BELLINGHAM STANLEY\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BLACKDECKER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BLUEBIRD\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BOSCHREXROTH\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BSROLLEN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BUSAKLUYKEN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BUSAKSHAMBAN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BLACK DECKER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"BRANLEUBBE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"C.KTOOLS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"CHLOR RID INTERNACIONAL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"CONTROLTECHNIQUES\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"COMSACO\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"COOPER CROUSE-HINDS/CAMLOCK\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"CORDAGE MANILA, NYLON & SYNTHETIC\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"CRETE REPAIR 224\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"DELTADESIGN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"DRS PIVITOL POWER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"DRS TECHNOLOGIES/CUTLER HAMMER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"DENORDBAUER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"DORN EQUIPMENT\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"DURASHIELD 7\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"EE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"EE ELEKRONIK\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"EE ELEKTRONIK\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"EE ELECTONIK\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"E.DOLD&SOHNE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ELESAGANTER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ERWINHALDER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ENDRESS HAUSSER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"FENNERDRIVES\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"FABRICATION DYNAMICS /LSI\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"FIL-EZE 424\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"FITTINGS MARINE & LOGGING HARDWARE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"GECKODRIVEMOTORCONTROLS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"GEIGERHAAG\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"GREENWICHINSTRUMENTS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"GIELEN NOTHNAGEL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"HAAG ZEISSLER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"HAVELLSSYLVANIA\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"HUBCIN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"IFMELECTRONIC\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"JJ\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"JAY MOULDING\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"JO-KELL CUSTOM\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KEYSIGHTTECHNOLOGIES\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KIMTECH PREP KIMTEX\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KIMTECH PURE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KIMTECH SCIENCE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KLEENGUARD\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KOLBENSCHMIDTPIERBURG\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KONICAMINOLTA\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KTRKUPPLUNGSTECHNIK\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KUEHNE NAGEL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KELOWNA FLIGHTCRAFT I D\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KIMO\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"KLEIN HUMMEL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"LC DOANE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"LOVATOELECTRIC\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"LV DETAILER 9\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"LEEDS NORTHRUP\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"LEWIS BINS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"MANN HUMMEL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"MANNHUMMEL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"MUNZERDIEHL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"NABEYABI-TECHKAISHA\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"OP\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"OEM ONLY UP TO 5 OFF\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ONSEMICONDUCTOR\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ORIGINSTORAGE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"OVERLANDSTORAGE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PACKARDBELL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PASS&SEYMOUR\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PENTAIRSCHROFF\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PHOENIXMECANO\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PNEUMATSYSTEM\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PEPPERLFUCHS PROCESS AUTOMATION\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"POTTER & BRUMFIELD/TE CONNECTIVITY\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"PRO SEAL 905\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RE AUTOMATION\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RL HYDRAULICS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RW AMERICA\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RK ROSEKRIEGER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RK ROSEKRIEGER GMBH\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RKROSEKRIEGER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ROSE KRIEGER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RSPRO\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RAYCHEM/TE CONNECTIVITY\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RESEARCH TOOL AND DIE (RT&D)\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SR MASCHINENBAU\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"S-5 ATTACHMENT SOLUTIONS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SPD TECHNOLOGIES/L3\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SUPERMICROCOMPUTER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SCHAFFNER-MTC\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SEAL TITE 66\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SENSUS ROCKWELL-EQUIMETER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SI 26\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SIGMAFORM/TE CONNECTIVITY\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"SLINGS WIRE ROPE,NYLON & CHAIN\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"STRIPING PRO 909\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"TE CONNECTIVITY / AMP\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"TECONNECTIVITY\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"TITUS 11-14 MANGANESE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"TRIPPLITE-SERVERRACKS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"TABET\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"TESTOMAT AUTOMATIC HARDNESS CONTROLLER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UNITEDAUTOMATION\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UP TO 10 OFF LIST\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UP TO 20 OFF LIST\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UP TO 25 OFF LIST\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UP TO 30 OFF LIST\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UP TO 40 OFF LIST\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"VEXIQ\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"VIBRO-ACOUSTICS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"WS MEASURING SYSTEMS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"WINKLERDUNNEBIER\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"YOUR 1 SOURCE FOR PARTS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ZODIAC AEROSPACE/ENTRACO/SEAFROST\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"ARGO-HYTOS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"AZ-PNEUMATICS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"CDC-PNEUMATICS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"GEDORE-RED\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"J-J\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"JP-FLUID-CONTROL\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"POWER-TEAM\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RAIN-BIRD\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"RAUFOSS-COUPLINGS\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"UNI-T\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"VAN-DE-LANDE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"VOSS-AUTOMOTIVE\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    },\r\n    {\r\n        \"brand\": {\r\n            \"id\": null,\r\n            \"name\": \"WD-40\",\r\n            \"active\": null,\r\n            \"createdAt\": null\r\n        },\r\n        \"listResp\": []\r\n    }\r\n]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}master/brands/import",
+									"host": [
+										"{{API_URL}}master"
+									],
+									"path": [
+										"brands",
+										"import"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "List of master modules"
+		},
+		{
+			"name": "Commons",
+			"item": [
+				{
+					"name": "List Enums",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}common/static_lists",
+							"host": [
+								"{{API_URL}}common"
+							],
+							"path": [
+								"static_lists"
+							]
+						},
+						"description": "### Request Description\n\nThis endpoint makes an HTTP GET request to fetch common static lists from the specified API URL.\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response\n\nThe response for this request is a JSON array with the following schema:\n\n``` json\n[\n    {\n        \"name\": \"string\",\n        \"items\": [\n            {\n                \"key\": \"string\",\n                \"value\": \"string\"\n            }\n        ]\n    }\n]\n\n ```\n\nThe response contains a status code of 200 and the content type is 'application/json'. The JSON schema for the response includes an array of objects, each containing a 'name' field of type string and an 'items' array. The 'items' array consists of objects with 'key' and 'value' fields, both of type string."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "IP",
+			"item": [
+				{
+					"name": "Products",
+					"item": [
+						{
+							"name": "Get History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}ip/products/history/81b6a159-0036-424c-b814-92344a071ec6",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"history",
+										"81b6a159-0036-424c-b814-92344a071ec6"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}ip/products?page=0&size=10",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "brandId",
+											"value": "834a215c-2b21-4abb-8d37-adf0b71eed3c",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"brandId\": null,\r\n  \"description\": \"Producto Prueba\",\r\n  \"mfrReference\": 52,\r\n  \"netWeightLbs\": 322.32,\r\n  \"nmfc\": 42,\r\n  \"freightClass\": \"F50\",\r\n  \"notes\": \"Prueba %#$!@#!@# notas\",\r\n  \"keywords\": \"prueba $^$%^&!@# keywords\",\r\n  \"htsScheduleBNumber\": 231,\r\n  \"eccn\": \"Test\",\r\n  \"cooId\": \"3426dcbe-8f7e-4195-ba0a-c5604545ea99\",\r\n  \"battery\": false,\r\n  \"hazmat\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/products",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"brandId\": \"0cc7ac91-19c3-4c3a-93e4-0cf4fed92aa4\",\r\n  \"description\": \"Producto Prueba Update\",\r\n  \"mfrReference\": 522,\r\n  \"netWeightLbs\": 433.213,\r\n  \"nmfc\": 423,\r\n  \"freightClass\": \"F55\",\r\n  \"notes\": \"Prueba %#$!@#!@# notas das\",\r\n  \"keywords\": \"prueba $^$%^&!@# keywords das\",\r\n  \"htsScheduleBNumber\": 231,\r\n  \"eccn\": \"Test das\",\r\n  \"cooId\": \"3426dcbe-8f7e-4195-ba0a-c5604545ea99\",\r\n  \"battery\": true,\r\n  \"hazmat\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/products/cace828e-f3d5-4a87-9b2e-d9da79137e64",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"cace828e-f3d5-4a87-9b2e-d9da79137e64"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Open & Lock",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}ip/products/open-lock/cace828e-f3d5-4a87-9b2e-d9da79137e64?type=EDIT",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"open-lock",
+										"cace828e-f3d5-4a87-9b2e-d9da79137e64"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "EDIT"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Disable",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}ip/products/cace828e-f3d5-4a87-9b2e-d9da79137e64",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"cace828e-f3d5-4a87-9b2e-d9da79137e64"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Replace",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"productId\": \"81b6a159-0036-424c-b814-92344a071ec6\",\r\n  \"newProductId\": \"71605548-2e58-409c-bff1-8e29bd363765\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/products/replace",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"replace"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ADD Surplus",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"quantity\": 22,\r\n  \"price\": 22.32,\r\n  \"whNumber\": \"AD1\",\r\n  \"location\": \"22L\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/products/surplus/add/1431176c-5abe-4571-9029-4ba216c360c4",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"surplus",
+										"add",
+										"1431176c-5abe-4571-9029-4ba216c360c4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "OUT Surplus Copy",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"quantity\": 212\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/products/surplus/out/1431176c-5abe-4571-9029-4ba216c360c4",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"products",
+										"surplus",
+										"out",
+										"1431176c-5abe-4571-9029-4ba216c360c4"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "QR",
+					"item": [
+						{
+							"name": "Get History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}ip/qr/history/e03a7c6f-2c01-49d8-bda9-6568bdcb239e",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"qr",
+										"history",
+										"e03a7c6f-2c01-49d8-bda9-6568bdcb239e"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"currency\": \"USD\",\r\n  \"clientId\": \"2b112e27-4ae8-4101-8417-5b5d617c2aa2\",\r\n  \"clientAddress\": \"123 Main Street, New York, NY\",\r\n  \"clientContactId\": \"dacce3e6-fc7a-4b04-8eea-5b97a6d7533f\",\r\n  \"clientQrNumber\": \"QR123456\",\r\n  \"clientCall\": \"+1-555-123456\",\r\n  \"salesRepId\": \"770e8400-e29b-41d4-a716-666655440222\",\r\n  \"supplierId\": \"fc658f2f-9fd0-4eac-93f4-edd42fb8335f\",\r\n  \"supplierAddress\": \"456 Industrial Park, Los Angeles, CA\",\r\n  \"supplierContactId\": null,\r\n  \"supplierQrNumber\": \"QR654321\",\r\n  \"supplierCall\": \"+1-555-654321\",\r\n  \"remarks\": \"Entrega en 15 días hábiles\",\r\n  \"grossWeightLbs\": 1250.50,\r\n  \"shippingPointZipCode\": \"90001\",\r\n  \"freightClass\": \"F50\",\r\n  \"fobShippingPoint\": \"Los Angeles Port\",\r\n  \"paymentTerms\": \"NET_30\",\r\n  \"freightCharges\": 250.75,\r\n  \"otherCharges\": 50.00\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/qr",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"qr"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"currency\": \"EUR\",\r\n  \"clientId\": \"2b112e27-4ae8-4101-8417-5b5d617c2aa2\",\r\n  \"clientAddress\": \"123 Main Street, New York, NY\",\r\n  \"clientContactId\": \"dacce3e6-fc7a-4b04-8eea-5b97a6d7533f\",\r\n  \"clientQrNumber\": \"QR123456\",\r\n  \"clientCall\": \"+1-555-123456\",\r\n  \"salesRepId\": \"ad52c247-48f2-4efd-967f-dacb7025fca9\",\r\n  \"supplierId\": \"fc658f2f-9fd0-4eac-93f4-edd42fb8335f\",\r\n  \"supplierAddress\": \"456 Industrial Park, Los Angeles, CA ds\",\r\n  \"supplierContactId\": null,\r\n  \"supplierQrNumber\": \"QR654321\",\r\n  \"supplierCall\": \"+1-555-654321\",\r\n  \"remarks\": \"Entrega en 15 días hábiles\",\r\n  \"grossWeightLbs\": 12520.50,\r\n  \"shippingPointZipCode\": \"90001\",\r\n  \"freightClass\": \"F50\",\r\n  \"fobShippingPoint\": \"Los Angeles Port\",\r\n  \"paymentTerms\": \"NET_30\",\r\n  \"freightCharges\": 250.75,\r\n  \"otherCharges\": 50.01\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}ip/qr/e03a7c6f-2c01-49d8-bda9-6568bdcb239e",
+									"host": [
+										"{{API_URL}}ip"
+									],
+									"path": [
+										"qr",
+										"e03a7c6f-2c01-49d8-bda9-6568bdcb239e"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {\r",
+							"    var json = JSON.parse(pm.response.text());\r",
+							"\r",
+							"pm.collectionVariables.set(\"JWT\", `${json.token}`);\r",
+							"pm.collectionVariables.set(\"USER_ID\", `${json.id}`);\r",
+							"pm.collectionVariables.set(\"USER_EMAIL\", `${json.email}`);\r",
+							"pm.collectionVariables.set(\"USER_FULL_NAME\", `${json.fullName}`);\r",
+							"pm.collectionVariables.set(\"EXPIRATION_TOKEN\", `${json.expirationToken}`);\r",
+							"pm.collectionVariables.set(\"USER_ROLE_ID\", `${json.roleId}`);\r",
+							"pm.collectionVariables.set(\"USER_ROLE_NAME\", `${json.role}`);\r",
+							"pm.collectionVariables.set(\"USER_PASS_CHANGED\", `${json.passChanged}`);\r",
+							"pm.collectionVariables.set(\"USER_DEPARTMENT_ID\", `${json.departmentId}`);\r",
+							"\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"jdb\",\r\n    \"password\": \"Bayer43522365\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{API_URL}}login",
+					"host": [
+						"{{API_URL}}login"
+					]
+				},
+				"description": "### Login Endpoint\n\nThis endpoint is used to authenticate and log in a user.\n\n#### Request Body\n\n- **username** (string, required): The username of the user.\n    \n- **password** (string, required): The password of the user.\n    \n\n``` json\n{\n    \"username\": \"string\",\n    \"password\": \"string\"\n}\n\n ```\n\n#### Response\n\nThe response will be a JSON object with the following properties:\n\n- **id** (string): The unique identifier of the user.\n    \n- **email** (string): The email address of the user.\n    \n- **user** (string): The username of the user.\n    \n- **token** (string): The authentication token for the user session.\n    \n- **fullName** (string): The full name of the user.\n    \n- **expirationToken** (string): The expiration token for the user session.\n    \n- **roleId** (string): The role ID of the user.\n    \n- **role** (string): The role of the user.\n    \n- **passChanged** (boolean): Indicates whether the user has changed their password.\n    \n- **departmentId** (string): The department ID of the user.\n    \n\n#### Example Response\n\n``` json\n{\n  \"id\": \"uuid\",\n  \"email\": \"string\",\n  \"user\": \"string\",\n  \"token\": \"string\",\n  \"fullName\": \"string\",\n  \"expirationToken\": \"date\",\n  \"roleId\": \"uuid\",\n  \"role\": \"string\",\n  \"passChanged\": \"boolean\",\n  \"departmentId\": \"uuid\"\n}\n\n ```\n\n#### Error Response\n\nThe error response will be a JSON object with the following properties:\n\n- **errorMessage** (string): The generated error message is displayed.\n    \n- **statusCode** (number): Error status code.\n    \n- **formErrors** (string\\[\\]): List of errors in the form.\n    \n\n#### Example Error Response\n\n``` json\n{\n    \"errorMessage\": \"string\",\n    \"statusCode\": \"number\",\n    \"formErrors\": \"string[] | null\"\n}\n\n ```\n\n#### JSON Schema for Response\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"id\": {\"type\": \"string\"},\n    \"email\": {\"type\": \"string\"},\n    \"user\": {\"type\": \"string\"},\n    \"token\": {\"type\": \"string\"},\n    \"fullName\": {\"type\": \"string\"},\n    \"expirationToken\": {\"type\": \"string\"},\n    \"roleId\": {\"type\": \"string\"},\n    \"role\": {\"type\": \"string\"},\n    \"passChanged\": {\"type\": \"boolean\"},\n    \"departmentId\": {\"type\": \"string\"}\n  }\n}\n\n ```"
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if(pm.response.code === 204) {\r",
+							"    pm.collectionVariables.set(\"JWT\", null);\r",
+							"    pm.collectionVariables.set(\"USER_ID\", null);\r",
+							"    pm.collectionVariables.set(\"USER_EMAIL\", null);\r",
+							"    pm.collectionVariables.set(\"USER_FULL_NAME\", null);\r",
+							"    pm.collectionVariables.set(\"EXPIRATION_TOKEN\", null);\r",
+							"    pm.collectionVariables.set(\"USER_ROLE_ID\", null);\r",
+							"    pm.collectionVariables.set(\"USER_ROLE_NAME\", null);\r",
+							"    pm.collectionVariables.set(\"USER_PASS_CHANGED\", null);\r",
+							"    pm.collectionVariables.set(\"USER_DEPARTMENT_ID\", null);\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{API_URL}}action/logout",
+					"host": [
+						"{{API_URL}}action"
+					],
+					"path": [
+						"logout"
+					]
+				},
+				"description": "### Logout\n\nThis API endpoint is used to log out the user from the system.\n\n#### Request\n\n- Method: DELETE\n    \n- Endpoint: `{{API_URL}}/logout`\n    \n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\nThe response for this request is a JSON object with the following properties:\n\n- `message` (string, required): A message indicating the result of the logout operation.\n    \n\nExample:\n\n``` json\n{\n    \"message\": \"User logged out successfully\"\n}\n\n ```"
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{JWT}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "JWT",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "USER_ID",
+			"value": ""
+		},
+		{
+			"key": "USER_EMAIL",
+			"value": ""
+		},
+		{
+			"key": "USER_FULL_NAME",
+			"value": ""
+		},
+		{
+			"key": "EXPIRATION_TOKEN",
+			"value": ""
+		},
+		{
+			"key": "USER_ROLE_ID",
+			"value": ""
+		},
+		{
+			"key": "USER_ROLE_NAME",
+			"value": ""
+		},
+		{
+			"key": "USER_PASS_CHANGED",
+			"value": ""
+		},
+		{
+			"key": "USER_DEPARTMENT_ID",
+			"value": ""
+		}
+	]
+}

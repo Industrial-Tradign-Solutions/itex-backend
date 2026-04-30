@@ -1,0 +1,78 @@
+#Configuracion de Spring
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:itexdb}
+    username: ${DB_USER:itex}
+    password: ${DB_PASS:123456789}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: true
+    show-sql: ${DEVELOP_MODE:false}
+    properties:
+      hibernate:
+        format_sql: ${DEVELOP_MODE:false}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 20MB
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+    time-zone: America/New_York
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  freemarker:
+    template-loader-path: classpath:/emailTemplates
+
+# Variables de configuracion ITEX
+itex:
+  jwt:
+    secret-key: ${TOKEN_SECRET_KEY:ITS TOKEN SECRET KEY AUTHENTICATION PARA QUE SEA SEGURO EL SISTEMA}
+    expiration-token-hours: ${TOKEN_EXPIRATION_HOURS:10}
+    application-name: ${TOKEN_APPLICATION_NAME:ITEX SOFTWARE}
+  security:
+    encrypt:
+      key: ${ENCRYPTION_KEY:CLAVE PARA ENCRIPTAR}
+  url:
+    web: ${WEB_URL:http://localhost:4200/login}
+  files:
+    folder:
+      data: ${FOLDER_ROUTE_DATA:../data/}
+      temp: ${FOLDER_ROUTE_TEMP:../temp/}
+      jasper: ${FOLDER_ROUTE_JASPER:../reports/src/}
+  tabs:
+    max-tabs-open: ${MAX_TABS_OPEN:30}
+
+# Configuracion del Servidor
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /itex/api
+
+# Logs
+logging:
+  file:
+    path: logs
+  level:
+    net:
+      sf:
+        jasperreports:
+          engine:
+            design:
+              JRJdk13Compiler: WARN
+    org:
+      springframework:
+        web:
+          servlet:
+            handler:
+              HandlerMappingIntrospector: ERROR

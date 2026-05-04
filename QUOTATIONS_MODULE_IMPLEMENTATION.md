@@ -14,8 +14,8 @@ Completar la implementación del módulo de Quotations (Q) basándose en el mód
 | FASE 3 - History Infraestructura | ✅ Completado | 2026-05-04 | 2026-05-04 | Compilado sin errores |
 | FASE 4 - History Integración | ✅ Completado | 2026-05-04 | 2026-05-04 | Integrado en todas las operaciones |
 | FASE 5 - Clone Quotation | ✅ Completado | 2026-05-04 | 2026-05-04 | Clonación completa con productos |
-| FASE 6 - Payment Terms Permission | ⏳ Pendiente | | | |
-| FASE 7 - Scheduler Auto-reject | ⏳ Pendiente | | | |
+| FASE 6 - Payment Terms Permission | ✅ Completado | 2026-05-04 | 2026-05-04 | Documentado en código |
+| FASE 7 - Scheduler Auto-reject | ✅ Completado | 2026-05-04 | 2026-05-04 | 45 días CREATED → REJECTED |
 | FASE 8 - PDF Generation | ⏳ Pendiente | | Requiere template Jasper |
 
 **Leyenda:** ✅ Completado | 🔄 En progreso | ⏳ Pendiente | ❌ Bloqueado

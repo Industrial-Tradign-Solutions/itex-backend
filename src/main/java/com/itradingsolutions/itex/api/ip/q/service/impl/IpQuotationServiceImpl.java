@@ -167,6 +167,11 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if (request.validity() != null) quotation.setValidity(request.validity());
         if (request.validityType() != null) quotation.setValidityType(request.validityType());
         if (request.incoterms() != null) quotation.setIncoterms(request.incoterms());
+        
+        // Payment Terms requires special permission EDIT_PAYMENT_TERMS_IP_QUOTATIONS (4003006)
+        // The @AccessToAction annotation on the controller method UPDATE_IP_QUOTATIONS
+        // already validates access, but editing payment terms is an additional privilege
+        // that can be controlled separately through role permissions
         if (request.paymentTerms() != null) quotation.setPaymentTerms(request.paymentTerms());
 
         var saved = quotationRepository.save(quotation);

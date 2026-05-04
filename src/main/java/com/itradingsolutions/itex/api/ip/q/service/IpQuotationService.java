@@ -31,4 +31,8 @@ public interface IpQuotationService {
     IpQuotationDTO getQuotationForHistory(UUID id);
     IpQuotationEntity getEntityById(UUID id);
     void validateQuotationInCreatedStatus(IpQuotationEntity entity, UserEntity user);
+    
+    // Scheduler methods
+    void unlockAllOpenQuotations();
+    void autoRejectOldCreatedQuotations();
 }

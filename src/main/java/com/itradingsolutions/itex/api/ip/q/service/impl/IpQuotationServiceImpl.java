@@ -404,4 +404,41 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
             throw new NotOpenQuoteRequestException(simpleMessage("ip.q.not-created-status"));
         }
     }
+
+    /**
+     * Unlocks all currently open Quotations by clearing openBy and openAt fields.
+     * Called by scheduler to prevent Quotations from being locked indefinitely.
+     */
+    @Override
+    @Transactional
+    public void unlockAllOpenQuotations() {
+        var openQuotations = quotationRepository.fetchAllOpen();
+        
+        openQuotations.forEach(quotation -> {
+            quotation.setOpenBy(null);
+            quotation.setOpenAt(null);
+            quotationRepository.save(quotation);
+        });
+    }
+
+    /**
+     * Auto-rejects CREATED Quotations older than 45 days.
+     * Called by scheduler to maintain data hygiene.
+     */
+    @Override
+    @Transactional
+    public void autoRejectOldCreatedQuotations() {
+        var cutoffDate = ZonedDateTime.now().minusDays(45);
+        
+        var oldQuotations = quotationRepository.findAll().stream()
+                .filter(q -> q.getStatus() == IpQuotationStatus.CREATED)
+                .filter(q -> q.getCreatedAt().isBefore(cutoffDate))
+                .toList();
+        
+        oldQuotations.forEach(quotation -> {
+            quotation.setStatus(IpQuotationStatus.REJECTED);
+            quotation.setRejectAt(ZonedDateTime.now());
+            quotationRepository.save(quotation);
+        });
+    }
 }

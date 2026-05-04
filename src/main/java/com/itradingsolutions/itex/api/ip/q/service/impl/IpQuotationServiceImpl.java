@@ -12,6 +12,7 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchE
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
@@ -267,6 +268,59 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         
         // Register ADD_QR history
         historyService.addHistory(IpQuotationHistoryAction.ADD_QR, null, dto);
+        
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public IpQuotationDTO cloneQuotation(UUID id) {
+        var original = findById(id);
+        
+        // Clone the quotation entity
+        var cloned = quotationMapper.clone(original);
+        cloned.setStatus(IpQuotationStatus.CREATED);
+        cloned.setCreatedAt(ZonedDateTime.now(zoneId));
+        cloned.setApplicationAt(ZonedDateTime.now(zoneId));
+        cloned.setNumber(consecutiveService.generateConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, original.getClient().getCode()));
+        
+        // Clone QRs and products
+        cloned.setQuoteRequestsQuotations(new ArrayList<>());
+        if (original.getQuoteRequestsQuotations() != null) {
+            original.getQuoteRequestsQuotations().forEach(originalQqr -> {
+                var clonedQqr = new IpQuotationsQuoteRequestEntity();
+                clonedQqr.setQuotation(cloned);
+                clonedQqr.setQuoteRequest(originalQqr.getQuoteRequest());
+                clonedQqr.setQuotationProducts(new ArrayList<>());
+                
+                // Clone products
+                if (originalQqr.getQuotationProducts() != null) {
+                    originalQqr.getQuotationProducts().forEach(originalProduct -> {
+                        var clonedProduct = new IpQuotationProductEntity();
+                        clonedProduct.setQuotationsQuoteRequest(clonedQqr);
+                        clonedProduct.setQuoteRequestProduct(originalProduct.getQuoteRequestProduct());
+                        clonedProduct.setNumber(originalProduct.getNumber());
+                        clonedProduct.setProfitMargin(originalProduct.getProfitMargin());
+                        clonedProduct.setCondition(originalProduct.getCondition());
+                        clonedProduct.setCreatedAt(ZonedDateTime.now(zoneId));
+                        clonedQqr.getQuotationProducts().add(clonedProduct);
+                    });
+                }
+                
+                cloned.getQuoteRequestsQuotations().add(clonedQqr);
+            });
+        }
+        
+        var saved = quotationRepository.save(cloned);
+        consecutiveService.saveConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, saved.getNumber());
+        var dto = quotationMapper.entityToDTO(saved);
+        
+        // Register CLONE history in original quotation
+        var originalDto = quotationMapper.entityToDTO(original);
+        historyService.addHistory(IpQuotationHistoryAction.CLONE, null, originalDto);
+        
+        // Register CREATE history in cloned quotation
+        historyService.addHistory(IpQuotationHistoryAction.CREATE, null, dto);
         
         return dto;
     }

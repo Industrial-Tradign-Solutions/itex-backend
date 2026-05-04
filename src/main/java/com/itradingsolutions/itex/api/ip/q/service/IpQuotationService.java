@@ -25,4 +25,5 @@ public interface IpQuotationService {
     IpQuotationDTO rejectQuotation(UUID id);
     void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId);
     IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds);
+    IpQuotationDTO cloneQuotation(UUID id);
 }

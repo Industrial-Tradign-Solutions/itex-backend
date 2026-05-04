@@ -239,4 +239,18 @@ public class IpQuotationController extends CommonController {
                         .toList()
         );
     }
+
+    @PatchMapping("/clone/{id_quotation}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.CLONE_IP_QUOTATIONS)
+    public ResponseEntity<MessageResponse<IpQuotationResponse>> cloneQuotation(
+            @PathVariable(name = "id_quotation") UUID idQuotation
+    ) {
+        var cloned = quotationService.cloneQuotation(idQuotation);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.q.cloned"),
+                quotationMapper.dtoToResponse(cloned)
+        ));
+    }
 }

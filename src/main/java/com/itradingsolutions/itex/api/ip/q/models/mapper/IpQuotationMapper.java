@@ -26,6 +26,20 @@ public interface IpQuotationMapper {
     IpQuotationDTO entityToDTO(IpQuotationEntity entity);
 
     IpQuotationResponse dtoToResponse(IpQuotationDTO dto);
+    
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "number", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "quoteRequestsQuotations", ignore = true)
+    @Mapping(target = "pdfUrl", ignore = true)
+    @Mapping(target = "openBy", ignore = true)
+    @Mapping(target = "openAt", ignore = true)
+    @Mapping(target = "sentAt", ignore = true)
+    @Mapping(target = "answeredAt", ignore = true)
+    @Mapping(target = "completeAt", ignore = true)
+    @Mapping(target = "rejectAt", ignore = true)
+    IpQuotationEntity clone(IpQuotationEntity source);
 
     default IpQuotationsQuoteRequestSummaryDTO map(IpQuotationsQuoteRequestEntity entity) {
         return new IpQuotationsQuoteRequestSummaryDTO(

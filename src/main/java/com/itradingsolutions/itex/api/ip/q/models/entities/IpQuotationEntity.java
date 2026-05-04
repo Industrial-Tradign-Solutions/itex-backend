@@ -127,4 +127,14 @@ public class IpQuotationEntity extends BaseEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "quotation", cascade = CascadeType.ALL)
     private List<IpQuotationsQuoteRequestEntity> quoteRequestsQuotations;
+
+    /**
+     * Additional charges associated with this quotation (e.g., freight, handling, customs).
+     * <p>
+     * These charges are included in the total quotation amount and are automatically
+     * deleted when the quotation is deleted (orphanRemoval = true).
+     * </p>
+     */
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "ipQuotation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IpQuotationOtherChargeEntity> otherCharges;
 }

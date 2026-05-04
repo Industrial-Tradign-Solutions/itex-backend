@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -49,10 +50,25 @@ public class IpQuotationDTO extends BaseDTO {
     private ZonedDateTime rejectAt;
     private List<IpQuotationsQuoteRequestSummaryDTO> listQuoteRequests;
     private List<IpQuotationProductDTO> products;
+    private List<IpQuotationOtherChargeDTO> otherCharges;
 
     // products are derived in the service from all quoteRequestsQuotations entries
 
     public String getName() {
         return this.number;
+    }
+
+    /**
+     * Calculates the total sum of all other charges.
+     *
+     * @return the sum of all other charge values, or BigDecimal.ZERO if no charges exist
+     */
+    public BigDecimal getTotalOtherCharges() {
+        if (otherCharges == null || otherCharges.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return otherCharges.stream()
+                .map(IpQuotationOtherChargeDTO::getValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

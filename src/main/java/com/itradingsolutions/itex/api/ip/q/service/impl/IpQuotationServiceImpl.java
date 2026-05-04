@@ -12,14 +12,17 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchE
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationOtherChargeEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
+import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
+import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationOtherChargeRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
@@ -55,6 +58,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IClientContactRepository clientContactRepository;
     private final IIpQuotationHistoryService historyService;
+    private final IpQuotationOtherChargeMapper otherChargeMapper;
+    private final IIpQuotationOtherChargeRepository otherChargeRepository;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
@@ -306,6 +311,17 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 }
                 
                 cloned.getQuoteRequestsQuotations().add(clonedQqr);
+            });
+        }
+        
+        // Clone other charges
+        cloned.setOtherCharges(new ArrayList<>());
+        if (original.getOtherCharges() != null && !original.getOtherCharges().isEmpty()) {
+            original.getOtherCharges().forEach(originalOtherCharge -> {
+                var clonedOtherCharge = otherChargeMapper.clone(originalOtherCharge);
+                clonedOtherCharge.setIpQuotation(cloned);
+                clonedOtherCharge.setCreatedAt(ZonedDateTime.now(zoneId));
+                cloned.getOtherCharges().add(clonedOtherCharge);
             });
         }
         

@@ -168,7 +168,7 @@ public class IpQuotationController extends CommonController {
 
     @PatchMapping("/change-status/{id_quotation}")
     @ResponseStatus(HttpStatus.OK)
-    @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
+    @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
     public ResponseEntity<MessageResponse<IpQuotationResponse>> changeStatusQuotation(
             @PathVariable(name = "id_quotation") UUID idQuotation,
             @RequestParam IpQuotationStatus status

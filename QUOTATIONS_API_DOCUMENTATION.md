@@ -536,6 +536,8 @@ Closes/unlocks all quotations currently open by the authenticated user.
 
 **Base URL:** `/itex/api/ip/q/{id_quotation}/product`
 
+**Important:** All product operations automatically register history. You only need to call CRUD endpoints - history is handled by the system.
+
 ### 1. Add Product to Quotation
 
 **POST** `/ip/q/{id_quotation}/product`
@@ -694,6 +696,8 @@ Removes a product from a quotation.
 ---
 
 ## 🔗 Quote Request Management
+
+**Important:** All QR add/remove operations automatically register history (ADD_QR, REMOVE_QR). You only need to call the endpoints - history is handled by the system.
 
 ### 1. Add Quote Requests to Quotation
 
@@ -869,6 +873,28 @@ Retrieves complete history of all changes made to a quotation.
 - `ADD_PRODUCT` - Product added
 - `UPDATE_PRODUCT` - Product updated
 - `REMOVE_PRODUCT` - Product removed
+
+### 📌 Important: History Registration Pattern
+
+**History is automatically registered by the system** - frontend does NOT need to call history endpoints directly.
+
+| Action | Registered In | When |
+|--------|---------------|------|
+| **CREATE, UPDATE, CLONE, REJECTED, STATUS_CHANGE** | Service layer | After main quotation operation |
+| **ADD_PRODUCT, UPDATE_PRODUCT, REMOVE_PRODUCT** | Controller layer | After product operation |
+| **ADD_QR, REMOVE_QR** | Controller layer | After QR operation |
+
+**Why this pattern?**
+- Main entity operations → Service (business logic location)
+- Sub-entity operations (products, QRs) → Controller (consistent with QR module pattern)
+- History is captured with `oldValue` before changes and `newValue` after changes
+- Only actual changes are recorded (empty diffs are not saved)
+
+**Frontend Responsibility:**
+- ✅ Call CRUD endpoints normally (POST, PUT, DELETE)
+- ✅ Call GET /history to display changes
+- ❌ DO NOT call history service directly
+- ❌ DO NOT manually create history records
 
 ---
 

@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.ip.q.service;
 
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationHistoryDTO;
+import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 
@@ -31,6 +32,16 @@ public interface IIpQuotationHistoryService {
      * @param quotationId the ID of the parent Quotation
      */
     void addHistoryProduct(IpQuotationHistoryAction action, IpQuotationProductDTO oldDto, IpQuotationProductDTO newDto, UUID quotationId);
+
+    /**
+     * Records a history entry for an other charge action (ADD_OTHER_CHARGE, UPDATE_OTHER_CHARGE, REMOVE_OTHER_CHARGE).
+     *
+     * @param action the action performed
+     * @param oldDto the other charge state before the action (null for ADD)
+     * @param newDto the other charge state after the action (null for REMOVE)
+     * @param quotationId the ID of the parent Quotation
+     */
+    void addHistoryOtherCharge(IpQuotationHistoryAction action, IpQuotationOtherChargeDTO oldDto, IpQuotationOtherChargeDTO newDto, UUID quotationId);
 
     /**
      * Retrieves all history entries for a Quotation, ordered by most recent first.

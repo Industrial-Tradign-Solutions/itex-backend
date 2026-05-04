@@ -375,4 +375,17 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var entity = findById(id);
         return quotationMapper.entityToDTO(entity);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IpQuotationEntity getEntityById(UUID id) {
+        return findById(id);
+    }
+
+    @Override
+    public void validateQuotationInCreatedStatus(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
+        if (entity.getStatus() != IpQuotationStatus.CREATED) {
+            throw new NotOpenQuoteRequestException(simpleMessage("ip.q.not-created-status"));
+        }
+    }
 }

@@ -7,6 +7,7 @@ import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationHistoryDTO;
+import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationHistoryEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
@@ -57,6 +58,16 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
     }
 
     @Override
+    @Transactional
+    public void addHistoryOtherCharge(IpQuotationHistoryAction action, IpQuotationOtherChargeDTO oldDto, IpQuotationOtherChargeDTO newDto, UUID quotationId) {
+        validateNotNull(newDto != null || oldDto != null ? (newDto != null ? newDto : oldDto) : null, "Data is not null");
+        var entity = new IpQuotationHistoryEntity();
+        entity.setIpQuotation(quotationId);
+        entity.setData(resolveHistoryOtherChargeData(action, oldDto, newDto));
+        addHistoryCommon(action, entity);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<IpQuotationHistoryDTO> getHistoryById(UUID quotationId) {
         var list = repository.fetchByIpQuotationId(quotationId);
@@ -67,7 +78,7 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
         entity.setAction(action);
         entity.setUser(getUserAuthUser());
         // For UPDATE actions, only save if there are actual changes
-        if (action == IpQuotationHistoryAction.UPDATE || action == IpQuotationHistoryAction.UPDATE_PRODUCT) {
+        if (action == IpQuotationHistoryAction.UPDATE || action == IpQuotationHistoryAction.UPDATE_PRODUCT || action == IpQuotationHistoryAction.UPDATE_OTHER_CHARGE) {
             if (entity.getData() != null && !entity.getData().isEmpty()) {
                 repository.save(entity);
             }
@@ -95,6 +106,15 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
             case UPDATE_PRODUCT -> updateProductData(oldDto, newDto);
             case REMOVE_PRODUCT -> removeProductData(oldDto);
             default -> throw new BadRequestException("Action not supported for products: " + action);
+        };
+    }
+
+    private Map<String, Object> resolveHistoryOtherChargeData(IpQuotationHistoryAction action, IpQuotationOtherChargeDTO oldDto, IpQuotationOtherChargeDTO newDto) {
+        return switch (action) {
+            case ADD_OTHER_CHARGE -> addOtherChargeData(newDto);
+            case UPDATE_OTHER_CHARGE -> updateOtherChargeData(oldDto, newDto);
+            case REMOVE_OTHER_CHARGE -> removeOtherChargeData(newDto);
+            default -> throw new BadRequestException("Action not supported for other charges: " + action);
         };
     }
 
@@ -211,5 +231,35 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
             change.put("new", newValue != null ? newValue.name() : null);
             data.put(field, change);
         }
+    }
+
+    /**
+     * Creates history data for adding an other charge.
+     */
+    private Map<String, Object> addOtherChargeData(IpQuotationOtherChargeDTO dto) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("description", dto.getDescription());
+        putIfChangedBigDecimal(data, "value", null, dto.getValue());
+        return data;
+    }
+
+    /**
+     * Creates history data for updating an other charge.
+     */
+    private Map<String, Object> updateOtherChargeData(IpQuotationOtherChargeDTO oldDto, IpQuotationOtherChargeDTO newDto) {
+        Map<String, Object> data = new HashMap<>();
+        putIfChanged(data, "description", oldDto.getDescription(), newDto.getDescription());
+        putIfChangedBigDecimal(data, "value", oldDto.getValue(), newDto.getValue());
+        return data;
+    }
+
+    /**
+     * Creates history data for removing an other charge.
+     */
+    private Map<String, Object> removeOtherChargeData(IpQuotationOtherChargeDTO dto) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("description", dto.getDescription());
+        data.put("value", dto.getValue());
+        return data;
     }
 }

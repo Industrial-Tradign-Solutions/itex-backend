@@ -13,5 +13,8 @@ public enum IpQuotationHistoryAction {
     REMOVE_PRODUCT,
     UPDATE_PRODUCT,
     ADD_QR,
-    REMOVE_QR
+    REMOVE_QR,
+    ADD_OTHER_CHARGE,
+    REMOVE_OTHER_CHARGE,
+    UPDATE_OTHER_CHARGE
 }

@@ -1,7 +1,9 @@
 package com.itradingsolutions.itex.api.ip.q.service;
 
+import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
@@ -27,4 +29,6 @@ public interface IpQuotationService {
     IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds);
     IpQuotationDTO cloneQuotation(UUID id);
     IpQuotationDTO getQuotationForHistory(UUID id);
+    IpQuotationEntity getEntityById(UUID id);
+    void validateQuotationInCreatedStatus(IpQuotationEntity entity, UserEntity user);
 }

@@ -70,6 +70,22 @@ create table t_ip_quotation_products (
     created_at timestamp not null
 );
 
+alter table t_ip_quotation_products
+    add constraint t_ip_quotation_products_unique_product
+        unique (quote_request_product_id, quotations_quote_request_id);
+
+create table t_ip_quotation_other_charges (
+    id uuid not null primary key,
+    ip_q_id uuid not null references t_ip_quotations,
+    description varchar(150) not null,
+    value numeric(15,2) not null default 0,
+    created_at timestamp not null
+);
+
+alter table t_ip_quotation_other_charges
+    add constraint t_ip_quotation_other_charges_unique_description
+        unique (ip_q_id, description);
+
 create table t_ip_quotation_history (
     id uuid not null primary key,
     ip_q_id uuid not null references t_ip_quotations,

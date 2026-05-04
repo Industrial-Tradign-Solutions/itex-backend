@@ -16,7 +16,67 @@ Completar la implementación del módulo de Quotations (Q) basándose en el mód
 | FASE 5 - Clone Quotation | ✅ Completado | 2026-05-04 | 2026-05-04 | Clonación completa con productos |
 | FASE 6 - Payment Terms Permission | ✅ Completado | 2026-05-04 | 2026-05-04 | Documentado en código |
 | FASE 7 - Scheduler Auto-reject | ✅ Completado | 2026-05-04 | 2026-05-04 | 45 días CREATED → REJECTED |
-| FASE 8 - PDF Generation | ⏳ Pendiente | | Requiere template Jasper |
+| FASE 8 - PDF Generation | ⏳ Pendiente | | | Requiere template Jasper |
+
+**Leyenda:** ✅ Completado | 🔄 En progreso | ⏳ Pendiente | ❌ Bloqueado
+
+---
+
+## Resumen de Implementación Completada
+
+### ✅ Fases Completadas (1-7)
+
+Todas las fases core del módulo Q han sido implementadas exitosamente:
+
+1. **Validaciones** - Cliente y moneda consistentes entre Q y QRs
+2. **Agregar QR a Q** - Endpoint para añadir QRs a quotation existente  
+3. **Infraestructura de Historial** - Todas las entidades, DTOs, mappers, repos, services
+4. **Integración de Historial** - Tracking en todas las operaciones CRUD
+5. **Clone Quotation** - Clonación completa con productos y QRs
+6. **Payment Terms** - Documentación de permiso especial en código
+7. **Scheduler** - Auto-reject de quotations antiguas (45 días)
+
+### 📊 Estadísticas
+
+- **Commits realizados:** 7
+- **Archivos creados:** ~18
+- **Archivos modificados:** ~10
+- **Líneas de código:** ~1500+
+- **Endpoints nuevos:** 4
+  - `POST /ip/q/{id}/quote-request`
+  - `GET /ip/q/history/{id}`
+  - `PATCH /ip/q/clone/{id}`
+  
+### 🔄 Endpoints Implementados vs Planificados
+
+| Endpoint | Método | Estado | Acción |
+|----------|--------|--------|--------|
+| `/ip/q` | POST | ✅ | Crear Q |
+| `/ip/q` | GET | ✅ | Listar Q |
+| `/ip/q/{id}` | PUT | ✅ | Actualizar Q |
+| `/ip/q/open-lock/{id}` | PATCH | ✅ | Abrir/Bloquear |
+| `/ip/q/close/{id}` | PATCH | ✅ | Cerrar |
+| `/ip/q/close-list` | PATCH | ✅ | Cerrar todas |
+| `/ip/q/load-open` | GET | ✅ | Cargar abiertas |
+| `/ip/q/change-status/{id}` | PATCH | ✅ | Cambiar estado |
+| `/ip/q/reject/{id}` | PATCH | ✅ | Rechazar |
+| `/ip/q/{id}/quote-request/{qqr_id}` | DELETE | ✅ | Remover QR |
+| `/ip/q/{id}/product` | POST | ✅ | Agregar producto |
+| `/ip/q/{id}/product/{pid}` | PUT | ✅ | Editar producto |
+| `/ip/q/{id}/product/{pid}` | GET | ✅ | Obtener producto |
+| `/ip/q/{id}/product/{pid}` | DELETE | ✅ | Eliminar producto |
+| **`/ip/q/{id}/quote-request`** | **POST** | **✅ NUEVO** | **Agregar QRs** |
+| **`/ip/q/history/{id}`** | **GET** | **✅ NUEVO** | **Ver historial** |
+| **`/ip/q/clone/{id}`** | **PATCH** | **✅ NUEVO** | **Clonar Q** |
+| `/ip/q/print/{id}` | GET | ⏳ | Generar PDF (Fase 8) |
+
+### ⏳ Fase 8 Pendiente
+
+La generación de PDF requiere:
+- Template Jasper (.jrxml) diseñado
+- Definición de campos a incluir en el PDF
+- DTOs de reporte creados (IpQuotationReportDTO, IpQuotationProductReportDTO)
+- Implementación de lógica de generación
 
 **Leyenda:** ✅ Completado | 🔄 En progreso | ⏳ Pendiente | ❌ Bloqueado
 

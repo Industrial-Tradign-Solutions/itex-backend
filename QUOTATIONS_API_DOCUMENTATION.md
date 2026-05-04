@@ -2,8 +2,8 @@
 
 **Base URL:** `/itex/api/ip/q`
 
-**Version:** 1.0  
-**Date:** May 4, 2026
+**Version:** 2.0  👈 UPDATED
+**Date:** May 4, 2026 (Updated)
 
 ---
 
@@ -15,8 +15,9 @@
 4. [Main Quotation Endpoints](#main-quotation-endpoints)
 5. [Product Management Endpoints](#product-management-endpoints)
 6. [Quote Request Management](#quote-request-management)
-7. [History & Tracking](#history--tracking)
-8. [Error Handling](#error-handling)
+7. [Other Charges Management](#other-charges-management) 👈 NEW
+8. [History & Tracking](#history--tracking)
+9. [Error Handling](#error-handling)
 
 ---
 
@@ -70,6 +71,17 @@ Handles Quote Request linking:
 - ✅ Add QRs to quotation
 - ✅ Remove QR from quotation
 
+### 4. **IpQuotationOtherChargeController** 👈 NEW
+**Base URL:** `/itex/api/ip/q/{id_quotation}/other_charges`
+
+Handles Other Charges (freight, handling, insurance, etc.):
+- ✅ Add other charge to quotation
+- ✅ Update other charge
+- ✅ Get other charge details
+- ✅ Remove other charge from quotation
+
+**Important:** Other Charges can only be modified when Quotation is in `CREATED` status.
+
 **Pattern:** Each controller handles one responsibility, following RESTful and domain-driven design principles.
 
 ---
@@ -80,12 +92,19 @@ Handles Quote Request linking:
 
 ```json
 {
-  "CREATED": "Quotation created, not sent yet",
+  "CREATED": "Quotation created, can be edited",
   "SENT": "Quotation sent to client",
-  "ANSWERED": "Client responded to quotation",
-  "COMPLETE": "Quotation completed successfully",
+  "ACCEPTED": "Quotation accepted by client",
+  "CLOSED": "Quotation closed (completed)",
   "REJECTED": "Quotation rejected"
 }
+```
+
+**Status Flow:**
+```
+CREATED → SENT → ACCEPTED → CLOSED
+    ↓        ↓         ↓
+       REJECTED
 ```
 
 ### IpQuotationProductCondition
@@ -93,7 +112,8 @@ Handles Quote Request linking:
 ```json
 {
   "NEW": "New product condition",
-  "USED": "Used product condition"
+  "USED": "Used product condition",
+  "REFURBISHED": "Refurbished product condition"
 }
 ```
 
@@ -138,42 +158,52 @@ Creates a new quotation with optional initial Quote Requests.
 {
   "clientId": "uuid",
   "currency": "USD",
-  "listQrId": ["qr-uuid-1", "qr-uuid-2"]  // Optional
+  "paymentTerms": "NET_30",
+  "incoterms": "FOB",
+  "observations": "Quotation for industrial equipment"  // Optional
 }
 ```
 
 **Validation:**
-- `clientId`: Required
-- `currency`: Required
-- `listQrId`: Optional list of existing Quote Request IDs
-- All QRs must belong to the same client
-- All QRs must use the same currency
+- `clientId` (UUID): Required - Client identifier
+- `currency` (Enum): Required - USD, EUR, GBP, CAD, MXN
+- `paymentTerms` (Enum): Required - NET_30, NET_45, NET_60, NET_90, IMMEDIATE
+- `incoterms` (Enum): Required - FOB, CIF, EXW, DDP, CFR, CIP
+- `observations` (String): Optional - Additional notes
 
 **Response:** `200 OK`
 ```json
 {
   "title": "Success",
-  "message": "Quotation created successfully",
+  "message": "The Q has been successfully created",
   "data": {
-    "quotation": {
+    "id": "uuid",
+    "number": "Q-IP-000001",
+    "name": "Q-IP-000001",
+    "status": "CREATED",
+    "currency": "USD",
+    "paymentTerms": "NET_30",
+    "incoterms": "FOB",
+    "observations": "Quotation for industrial equipment",
+    "client": {
       "id": "uuid",
-      "number": "Q-IP-000001",
-      "name": "Quote Request #Q-IP-000001",
-      "status": "CREATED",
-      "currency": "USD",
-      "client": { "id": "uuid", "name": "Client Name" },
-      "createdAt": "2026-05-04T10:30:00Z",
-      "listQuoteRequests": [
-        {
-          "id": "uuid",
-          "number": "QR-IP-000001"
-        }
-      ],
-      "products": []
+      "name": "Client Name"
     },
-    "openAndLockType": "EDIT",
-    "isLocked": true
-  }
+    "openBy": null,
+    "openAt": null,
+    "sentAt": null,
+    "acceptedAt": null,
+    "closedAt": null,
+    "rejectAt": null,
+    "createdAt": "2026-05-04T10:30:00Z",
+    "updatedAt": "2026-05-04T10:30:00Z",
+    "quoteRequests": [],
+    "products": [],
+    "otherCharges": [],  // 👈 NEW - starts empty
+    "totalOtherCharges": 0.00  // 👈 NEW - calculated from otherCharges
+  },
+  "openAndLockType": "EDIT",
+  "isNew": true
 }
 ```
 
@@ -384,14 +414,14 @@ Changes the status of a quotation.
 - `id_quotation` (UUID): Quotation ID
 
 **Query Parameters:**
-- `status` (IpQuotationStatus): New status (CREATED, SENT, ANSWERED, COMPLETE)
+- `status` (IpQuotationStatus): New status (CREATED, SENT, ACCEPTED, CLOSED)
 
 **Allowed transitions:**
 - `CREATED` → `SENT`, `REJECTED`
-- `SENT` → `ANSWERED`, `REJECTED`
-- `ANSWERED` → `COMPLETE`, `REJECTED`
-- `COMPLETE` → (no transitions)
-- `REJECTED` → (no transitions)
+- `SENT` → `ACCEPTED`, `CLOSED`, `REJECTED`
+- `ACCEPTED` → `CLOSED`, `REJECTED`
+- `CLOSED` → (no transitions - final state)
+- `REJECTED` → (no transitions - final state)
 
 **Response:** `200 OK`
 ```json
@@ -474,6 +504,7 @@ Creates a copy of an existing quotation with all products and QRs.
 - New consecutive number assigned automatically
 - All products are duplicated with same profit margins and conditions
 - All QRs are linked to the new quotation
+- **All Other Charges are cloned** (freight, handling, insurance, etc.)
 - Original quotation remains unchanged
 - History records CLONE action in original and CREATE in new quotation
 
@@ -850,6 +881,190 @@ Unlinks a Quote Request from a quotation.
 
 ---
 
+## 💰 Other Charges Management 👈 NEW
+
+**Base URL:** `/itex/api/ip/q/{id_quotation}/other_charges`
+
+**Important:** All Other Charges operations automatically register history (ADD_OTHER_CHARGE, UPDATE_OTHER_CHARGE, REMOVE_OTHER_CHARGE). You only need to call CRUD endpoints - history is handled by the system.
+
+**⚠️ Constraint:** Other Charges can only be modified when Quotation is in `CREATED` status.
+
+### 1. Add Other Charge to Quotation
+
+**POST** `/ip/q/{id_quotation}/other_charges`
+
+Adds a new other charge to a quotation (freight, handling, insurance, etc.).
+
+**Permission:** `UPDATE_IP_QUOTATIONS` (4003002)
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID
+
+**Request Body:**
+```json
+{
+  "description": "Freight Charges",
+  "value": 250.00
+}
+```
+
+**Validation:**
+- `description` (String, required): Description of the charge (unique per quotation)
+- `value` (BigDecimal, required): Amount (must be >= 0)
+- Quotation must be in `CREATED` status
+- Description must be unique within the quotation
+
+**Response:** `201 Created`
+```json
+{
+  "title": "Success",
+  "message": "The Other Charge has been successfully added to the Quotation",
+  "data": {
+    "id": "uuid",
+    "description": "FREIGHT CHARGES",  // Auto-capitalized
+    "value": 250.00,
+    "createdAt": "2026-05-04T10:30:00Z"
+  }
+}
+```
+
+**Errors:**
+- `400` - Quotation not in CREATED status: `"Quotation must be in CREATED status to perform this operation"`
+- `400` - Duplicate description: `"The Other Charge description already exists in this Quotation"`
+- `404` - Quotation not found
+
+---
+
+### 2. Update Other Charge
+
+**PUT** `/ip/q/{id_quotation}/other_charges/{id_other_charge}`
+
+Updates an existing other charge in a quotation.
+
+**Permission:** `UPDATE_IP_QUOTATIONS` (4003002)
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID
+- `id_other_charge` (UUID): Other Charge ID
+
+**Request Body:**
+```json
+{
+  "description": "International Freight",
+  "value": 350.00
+}
+```
+
+**Validation:**
+- Quotation must be in `CREATED` status
+- Description must be unique (excluding current charge)
+
+**Response:** `200 OK`
+```json
+{
+  "title": "Success",
+  "message": "The Other Charge has been successfully updated",
+  "data": {
+    "id": "uuid",
+    "description": "INTERNATIONAL FREIGHT",
+    "value": 350.00,
+    "createdAt": "2026-05-04T10:30:00Z"
+  }
+}
+```
+
+**Errors:**
+- `400` - Quotation not in CREATED status
+- `400` - Duplicate description
+
+---
+
+### 3. Get Other Charge Details
+
+**GET** `/ip/q/{id_quotation}/other_charges/{id_other_charge}`
+
+Retrieves details of a specific other charge.
+
+**Permission:** `UPDATE_IP_QUOTATIONS` (4003002)
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID
+- `id_other_charge` (UUID): Other Charge ID
+
+**Response:** `200 OK`
+```json
+{
+  "id": "uuid",
+  "description": "FREIGHT CHARGES",
+  "value": 250.00,
+  "createdAt": "2026-05-04T10:30:00Z"
+}
+```
+
+---
+
+### 4. Remove Other Charge
+
+**DELETE** `/ip/q/{id_quotation}/other_charges/{id_other_charge}`
+
+Removes an other charge from a quotation.
+
+**Permission:** `UPDATE_IP_QUOTATIONS` (4003002)
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID
+- `id_other_charge` (UUID): Other Charge ID
+
+**Validation:**
+- Quotation must be in `CREATED` status
+
+**Response:** `200 OK`
+```json
+{
+  "title": "Success",
+  "message": "The Other Charge has been successfully removed from the Quotation",
+  "data": "uuid"  // Deleted other charge ID
+}
+```
+
+**Errors:**
+- `400` - Quotation not in CREATED status
+
+---
+
+### 📊 Other Charges in Quotation Response
+
+When retrieving a quotation, the `otherCharges` array is included:
+
+```json
+{
+  "id": "uuid",
+  "number": "Q-IP-000001",
+  "status": "CREATED",
+  "currency": "USD",
+  // ... other fields ...
+  "otherCharges": [
+    {
+      "id": "uuid",
+      "description": "FREIGHT CHARGES",
+      "value": 250.00,
+      "createdAt": "2026-05-04T10:30:00Z"
+    },
+    {
+      "id": "uuid",
+      "description": "HANDLING FEE",
+      "value": 50.00,
+      "createdAt": "2026-05-04T11:00:00Z"
+    }
+  ],
+  "totalOtherCharges": 300.00  // Sum of all other charges
+}
+```
+
+**Calculation:** `totalOtherCharges` is calculated by summing all `value` fields in `otherCharges` array. Returns `0.00` if array is empty or null.
+
+---
+
 ## 📜 History & Tracking
 
 ### Get Quotation History
@@ -952,6 +1167,9 @@ Retrieves complete history of all changes made to a quotation.
 - `ADD_PRODUCT` - Product added
 - `UPDATE_PRODUCT` - Product updated
 - `REMOVE_PRODUCT` - Product removed
+- `ADD_OTHER_CHARGE` - Other Charge added 👈 NEW
+- `UPDATE_OTHER_CHARGE` - Other Charge updated 👈 NEW
+- `REMOVE_OTHER_CHARGE` - Other Charge removed 👈 NEW
 
 ### 📌 Important: History Registration Pattern
 
@@ -962,10 +1180,11 @@ Retrieves complete history of all changes made to a quotation.
 | **CREATE, UPDATE, CLONE, REJECTED, STATUS_CHANGE** | Service layer | After main quotation operation |
 | **ADD_PRODUCT, UPDATE_PRODUCT, REMOVE_PRODUCT** | Controller layer | After product operation |
 | **ADD_QR, REMOVE_QR** | Controller layer | After QR operation |
+| **ADD_OTHER_CHARGE, UPDATE_OTHER_CHARGE, REMOVE_OTHER_CHARGE** | Controller layer | After other charge operation |
 
 **Why this pattern?**
 - Main entity operations → Service (business logic location)
-- Sub-entity operations (products, QRs) → Controller (consistent with QR module pattern)
+- Sub-entity operations (products, QRs, Other Charges) → Controller (consistent with QR module pattern)
 - History is captured with `oldValue` before changes and `newValue` after changes
 - Only actual changes are recorded (empty diffs are not saved)
 
@@ -1051,6 +1270,22 @@ Retrieves complete history of all changes made to a quotation.
 }
 ```
 
+#### IpQuotationOtherChargeExistException (NEW)
+```json
+{
+  "title": "Error",
+  "message": "The Other Charge description already exists in this Quotation"
+}
+```
+
+#### IpQuotationNotInCreatedStatusException (NEW)
+```json
+{
+  "title": "Error",
+  "message": "Quotation must be in CREATED status to perform this operation"
+}
+```
+
 ---
 
 ## 🔄 Automatic Processes
@@ -1099,7 +1334,14 @@ CREATED → SENT → ANSWERED → COMPLETE
 - QR and product operations validate client/currency match
 - Status transitions are validated server-side
 
-### 5. Permissions
+### 5. Other Charges Validation 👈 NEW
+- **Status Restriction:** Other Charges can only be added/updated/removed when Quotation is in `CREATED` status
+- **Description Uniqueness:** Each Other Charge description must be unique within a quotation
+- **Value:** Must be >= 0 (can be 0)
+- **Auto-capitalization:** Description is automatically capitalized on save (e.g., "freight charges" → "FREIGHT CHARGES")
+- **Total Calculation:** Use `totalOtherCharges` field or calculate manually from `otherCharges[]` array
+
+### 6. Permissions
 - Check user permissions before showing action buttons
 - Hide "Edit Payment Terms" field if user lacks permission 4003006
 - Disable actions based on quotation status and user permissions

@@ -64,7 +64,6 @@ public class IpQuotationController extends CommonController {
             @RequestBody CreateIpQuotationRequest request
     ) {
         var resp = quotationService.createQuotation(request);
-        //TODO: Configuracion del history
         return ResponseEntity.status(HttpStatus.OK).body(
             new MessageResponse<>(
                 SUCCESS_TITLE,
@@ -184,7 +183,7 @@ public class IpQuotationController extends CommonController {
 
     @PatchMapping("/reject/{id_quotation}")
     @ResponseStatus(HttpStatus.OK)
-    @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
+    @AccessToAction(action = ModuleAction.REJECT_IP_QUOTATIONS)
     public ResponseEntity<MessageResponse<IpQuotationResponse>> rejectQuotation(
             @PathVariable(name = "id_quotation") UUID idQuotation
     ) {

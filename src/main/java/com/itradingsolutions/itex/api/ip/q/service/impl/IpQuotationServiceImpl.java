@@ -207,6 +207,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO rejectQuotation(UUID id) {
         var quotation = findById(id);
+        var oldDto = quotationMapper.entityToDTO(quotation);
+        
         quotation.setStatus(IpQuotationStatus.REJECTED);
         quotation.setRejectAt(ZonedDateTime.now(zoneId));
         
@@ -214,7 +216,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var dto = quotationMapper.entityToDTO(saved);
         
         // Register REJECTED history
-        historyService.addHistory(IpQuotationHistoryAction.REJECTED, null, dto);
+        historyService.addHistory(IpQuotationHistoryAction.REJECTED, oldDto, dto);
         
         return dto;
     }

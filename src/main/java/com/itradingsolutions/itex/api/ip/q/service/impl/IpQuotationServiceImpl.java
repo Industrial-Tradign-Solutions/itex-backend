@@ -9,6 +9,7 @@ import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchException;
+import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
@@ -188,6 +189,45 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var qqr = qqrRepository.findByIdAndQuotation_Id(qqrId, quotationId)
                 .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
         qqrRepository.delete(qqr);
+    }
+
+    @Override
+    @Transactional
+    public IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds) {
+        var quotation = findById(quotationId);
+        validateEditable(quotation);
+
+        // Initialize the list if it's null
+        if (quotation.getQuoteRequestsQuotations() == null) {
+            quotation.setQuoteRequestsQuotations(new ArrayList<>());
+        }
+
+        // Get existing QR IDs to check for duplicates
+        var existingQrIds = quotation.getQuoteRequestsQuotations().stream()
+                .map(qqr -> qqr.getQuoteRequest().getId())
+                .toList();
+
+        quoteRequestIds.forEach(qrId -> {
+            // Check if QR is already linked
+            if (existingQrIds.contains(qrId)) {
+                throw new QuoteRequestAlreadyLinkedException(
+                    compositeMessage("ip.q.qr.duplicate", new String[]{qrId.toString()})
+                );
+            }
+
+            // Validate client and currency
+            var qrEntity = qrService.findByIdAndClient(qrId, quotation.getClient().getId());
+            validateQuoteRequestCurrency(qrEntity, quotation);
+
+            // Create junction entity
+            var item = new IpQuotationsQuoteRequestEntity();
+            item.setQuotation(quotation);
+            item.setQuoteRequest(qrEntity);
+            quotation.getQuoteRequestsQuotations().add(item);
+        });
+
+        var saved = quotationRepository.save(quotation);
+        return quotationMapper.entityToDTO(saved);
     }
 
     private void validateEditable(IpQuotationEntity quotation) {

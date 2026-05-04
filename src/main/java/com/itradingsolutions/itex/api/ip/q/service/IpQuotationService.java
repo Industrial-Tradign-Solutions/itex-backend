@@ -24,4 +24,5 @@ public interface IpQuotationService {
     IpQuotationDTO changeStatusQuotation(UUID id, IpQuotationStatus status);
     IpQuotationDTO rejectQuotation(UUID id);
     void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId);
+    IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds);
 }

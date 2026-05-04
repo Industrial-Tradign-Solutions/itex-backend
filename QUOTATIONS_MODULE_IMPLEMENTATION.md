@@ -10,7 +10,7 @@ Completar la implementación del módulo de Quotations (Q) basándose en el mód
 | Fase | Estado | Fecha Inicio | Fecha Fin | Notas |
 |------|--------|--------------|-----------|-------|
 | FASE 1 - Validaciones | ✅ Completado | 2026-05-04 | 2026-05-04 | Listo para testing |
-| FASE 2 - Add QR a Q | ⏳ Pendiente | | | |
+| FASE 2 - Add QR a Q | ✅ Completado | 2026-05-04 | 2026-05-04 | Listo para testing |
 | FASE 3 - History Infraestructura | ⏳ Pendiente | | | |
 | FASE 4 - History Integración | ⏳ Pendiente | | | |
 | FASE 5 - Clone Quotation | ⏳ Pendiente | | | |
@@ -59,22 +59,23 @@ Asegurar que todas las QRs vinculadas a una Quotation pertenezcan al mismo clien
 Permitir agregar Quote Requests adicionales a una Quotation ya creada.
 
 ### Archivos a crear
-Ninguno
+- [x] `models/requests/AddQuoteRequestsToQuotationRequest.java` ✅
+- [x] `exceptions/QuoteRequestAlreadyLinkedException.java` ✅
 
 ### Archivos a modificar
-- [ ] `controller/IpQuotationController.java`
-  - [ ] Endpoint `POST /ip/q/{id_quotation}/quote-request`
-- [ ] `service/IpQuotationService.java`
-  - [ ] Método `addQuoteRequestsToQuotation(UUID quotationId, List<UUID> qrIds)`
-- [ ] `service/impl/IpQuotationServiceImpl.java`
-  - [ ] Implementar método con validaciones (cliente, moneda, duplicados, estado editable)
+- [x] `controller/IpQuotationController.java` ✅
+  - [x] Endpoint `POST /ip/q/{id_quotation}/quote-request`
+- [x] `service/IpQuotationService.java` ✅
+  - [x] Método `addQuoteRequestsToQuotation(UUID quotationId, List<UUID> qrIds)`
+- [x] `service/impl/IpQuotationServiceImpl.java` ✅
+  - [x] Implementar método con validaciones (cliente, moneda, duplicados, estado editable)
 
 ### Tests
-- [ ] Test Manual: Agregar QR válida a Q existente → debe vincularse
-- [ ] Test Manual: Intentar agregar QR de cliente diferente → error 400
-- [ ] Test Manual: Intentar agregar QR de moneda diferente → error 400
-- [ ] Test Manual: Intentar agregar QR ya vinculada → error 400 (duplicado)
-- [ ] Test Manual: Intentar agregar QR a Q COMPLETE/REJECTED → error (no editable)
+- [ ] ⏳ Test Manual: Agregar QR válida a Q existente → debe vincularse
+- [ ] ⏳ Test Manual: Intentar agregar QR de cliente diferente → error 400
+- [ ] ⏳ Test Manual: Intentar agregar QR de moneda diferente → error 400
+- [ ] ⏳ Test Manual: Intentar agregar QR ya vinculada → error 400 (duplicado)
+- [ ] ⏳ Test Manual: Intentar agregar QR a Q COMPLETE/REJECTED → error (no editable)
 
 ### Request DTO
 ```json
@@ -82,6 +83,12 @@ Ninguno
   "quoteRequestIds": ["uuid1", "uuid2"]
 }
 ```
+
+### Notas de implementación
+- ✅ Validaciones reutilizan métodos de Fase 1 (`validateQuoteRequestCurrency`, `findByIdAndClient`)
+- ✅ Valida que la Q sea editable (no COMPLETE ni REJECTED)
+- ✅ Valida duplicados antes de agregar
+- ✅ Compilación exitosa sin errores
 
 ---
 

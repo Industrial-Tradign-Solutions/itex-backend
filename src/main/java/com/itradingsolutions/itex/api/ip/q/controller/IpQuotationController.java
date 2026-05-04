@@ -9,6 +9,7 @@ import com.itradingsolutions.itex.api.common.util.models.responses.MessageRespon
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
+import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.OpenLockIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
@@ -202,6 +203,21 @@ public class IpQuotationController extends CommonController {
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.qr.removed"),
                 idQqr
+        ));
+    }
+
+    @PostMapping("/{id_quotation}/quote-request")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
+    public ResponseEntity<MessageResponse<IpQuotationResponse>> addQuoteRequestsToQuotation(
+            @PathVariable(name = "id_quotation") UUID idQuotation,
+            @RequestBody @Valid AddQuoteRequestsToQuotationRequest request
+    ) {
+        var resp = quotationService.addQuoteRequestsToQuotation(idQuotation, request.quoteRequestIds());
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.q.qr.added"),
+                quotationMapper.dtoToResponse(resp)
         ));
     }
 }

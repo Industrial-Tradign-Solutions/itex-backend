@@ -9,6 +9,7 @@ import com.itradingsolutions.itex.api.common.util.models.responses.MessageRespon
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationHistoryMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
@@ -202,7 +203,9 @@ public class IpQuotationController extends CommonController {
             @PathVariable(name = "id_quotation") UUID idQuotation,
             @PathVariable(name = "id_qqr") UUID idQqr
     ) {
+        var oldDto = quotationService.getQuotationForHistory(idQuotation);
         quotationService.removeQuoteRequestFromQuotation(idQuotation, idQqr);
+        historyService.addHistory(IpQuotationHistoryAction.REMOVE_QR, null, oldDto);
         return ResponseEntity.ok(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.qr.removed"),
@@ -218,6 +221,7 @@ public class IpQuotationController extends CommonController {
             @RequestBody @Valid AddQuoteRequestsToQuotationRequest request
     ) {
         var resp = quotationService.addQuoteRequestsToQuotation(idQuotation, request.quoteRequestIds());
+        historyService.addHistory(IpQuotationHistoryAction.ADD_QR, null, resp);
         return ResponseEntity.ok(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.qr.added"),

@@ -4,9 +4,11 @@ import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMapper;
 import com.itradingsolutions.itex.api.ip.q.models.requests.IpQuotationProductRequest;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationProductResponse;
+import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationProductService;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
@@ -33,6 +35,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class IpQuotationProductController extends CommonController {
 
+    private final IIpQuotationHistoryService qHistoryService;
     private final IIpQuotationProductService qProductService;
     private final IpQuotationProductMapper qProductMapper;
 
@@ -45,6 +48,7 @@ public class IpQuotationProductController extends CommonController {
     ) {
         var dto = buildDTO(request);
         var resp = qProductService.createIpQuotationProduct(dto, idQuotation);
+        qHistoryService.addHistoryProduct(IpQuotationHistoryAction.ADD_PRODUCT, null, resp, idQuotation);
         return ResponseEntity.status(HttpStatus.CREATED).body(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.product.created"),
@@ -60,8 +64,10 @@ public class IpQuotationProductController extends CommonController {
             @PathVariable(name = "id_q_product") UUID idQProduct,
             @RequestBody @Valid IpQuotationProductRequest request
     ) {
+        var oldProduct = qProductService.getIpQuotationProduct(idQProduct, idQuotation);
         var dto = buildDTO(request);
         var resp = qProductService.updateIpQuotationProduct(dto, idQProduct, idQuotation);
+        qHistoryService.addHistoryProduct(IpQuotationHistoryAction.UPDATE_PRODUCT, oldProduct, resp, idQuotation);
         return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.product.updated"),
@@ -87,7 +93,9 @@ public class IpQuotationProductController extends CommonController {
             @PathVariable(name = "id_quotation") UUID idQuotation,
             @PathVariable(name = "id_q_product") UUID idQProduct
     ) {
+        var qProduct = qProductService.getIpQuotationProduct(idQProduct, idQuotation);
         qProductService.removeIpQuotationProduct(idQProduct, idQuotation);
+        qHistoryService.addHistoryProduct(IpQuotationHistoryAction.REMOVE_PRODUCT, qProduct, null, idQuotation);
         return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.product.removed"),

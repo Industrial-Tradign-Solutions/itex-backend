@@ -229,10 +229,6 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var qqr = qqrRepository.findByIdAndQuotation_Id(qqrId, quotationId)
                 .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
         qqrRepository.delete(qqr);
-        
-        // Register REMOVE_QR history
-        var dto = quotationMapper.entityToDTO(quotation);
-        historyService.addHistory(IpQuotationHistoryAction.REMOVE_QR, null, dto);
     }
 
     @Override
@@ -271,12 +267,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         });
 
         var saved = quotationRepository.save(quotation);
-        var dto = quotationMapper.entityToDTO(saved);
-        
-        // Register ADD_QR history
-        historyService.addHistory(IpQuotationHistoryAction.ADD_QR, null, dto);
-        
-        return dto;
+        return quotationMapper.entityToDTO(saved);
     }
 
     @Override
@@ -376,5 +367,12 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return quotationRepository.findById(id).orElseThrow(() ->
                 new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"))
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IpQuotationDTO getQuotationForHistory(UUID id) {
+        var entity = findById(id);
+        return quotationMapper.entityToDTO(entity);
     }
 }

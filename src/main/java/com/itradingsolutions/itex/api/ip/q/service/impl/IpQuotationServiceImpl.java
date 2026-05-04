@@ -13,6 +13,7 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedE
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
@@ -20,6 +21,7 @@ import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequ
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
+import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenQuoteRequestException;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
@@ -51,6 +53,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuoteRequestService qrService;
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IClientContactRepository clientContactRepository;
+    private final IIpQuotationHistoryService historyService;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
@@ -110,7 +113,12 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
 
         var resp = quotationRepository.save(entity);
         consecutiveService.saveConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, resp.getNumber());
-        return quotationMapper.entityToDTO(resp);
+        var dto = quotationMapper.entityToDTO(resp);
+        
+        // Register CREATE history
+        historyService.addHistory(IpQuotationHistoryAction.CREATE, null, dto);
+        
+        return dto;
     }
 
     @Override
@@ -135,6 +143,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     public IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request) {
         var quotation = findById(id);
         validateEditable(quotation);
+        
+        var oldDto = quotationMapper.entityToDTO(quotation);
 
         if (request.salesRepId() != null)
             quotation.setSalesRep(userService.findEntityById(request.salesRepId(), true));
@@ -158,18 +168,33 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if (request.incoterms() != null) quotation.setIncoterms(request.incoterms());
         if (request.paymentTerms() != null) quotation.setPaymentTerms(request.paymentTerms());
 
-        return quotationMapper.entityToDTO(quotationRepository.save(quotation));
+        var saved = quotationRepository.save(quotation);
+        var newDto = quotationMapper.entityToDTO(saved);
+        
+        // Register UPDATE history
+        historyService.addHistory(IpQuotationHistoryAction.UPDATE, oldDto, newDto);
+        
+        return newDto;
     }
 
     @Override
     @Transactional
     public IpQuotationDTO changeStatusQuotation(UUID id, IpQuotationStatus status) {
         var quotation = findById(id);
+        var oldDto = quotationMapper.entityToDTO(quotation);
+        
         quotation.setStatus(status);
         if (status == IpQuotationStatus.SENT) quotation.setSentAt(ZonedDateTime.now(zoneId));
         else if (status == IpQuotationStatus.ANSWERED) quotation.setAnsweredAt(ZonedDateTime.now(zoneId));
         else if (status == IpQuotationStatus.COMPLETE) quotation.setCompleteAt(ZonedDateTime.now(zoneId));
-        return quotationMapper.entityToDTO(quotationRepository.save(quotation));
+        
+        var saved = quotationRepository.save(quotation);
+        var newDto = quotationMapper.entityToDTO(saved);
+        
+        // Register STATUS_CHANGE history
+        historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldDto, newDto);
+        
+        return newDto;
     }
 
     @Override
@@ -178,7 +203,14 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var quotation = findById(id);
         quotation.setStatus(IpQuotationStatus.REJECTED);
         quotation.setRejectAt(ZonedDateTime.now(zoneId));
-        return quotationMapper.entityToDTO(quotationRepository.save(quotation));
+        
+        var saved = quotationRepository.save(quotation);
+        var dto = quotationMapper.entityToDTO(saved);
+        
+        // Register REJECTED history
+        historyService.addHistory(IpQuotationHistoryAction.REJECTED, null, dto);
+        
+        return dto;
     }
 
     @Override
@@ -189,6 +221,10 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var qqr = qqrRepository.findByIdAndQuotation_Id(qqrId, quotationId)
                 .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
         qqrRepository.delete(qqr);
+        
+        // Register REMOVE_QR history
+        var dto = quotationMapper.entityToDTO(quotation);
+        historyService.addHistory(IpQuotationHistoryAction.REMOVE_QR, null, dto);
     }
 
     @Override
@@ -227,7 +263,12 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         });
 
         var saved = quotationRepository.save(quotation);
-        return quotationMapper.entityToDTO(saved);
+        var dto = quotationMapper.entityToDTO(saved);
+        
+        // Register ADD_QR history
+        historyService.addHistory(IpQuotationHistoryAction.ADD_QR, null, dto);
+        
+        return dto;
     }
 
     private void validateEditable(IpQuotationEntity quotation) {

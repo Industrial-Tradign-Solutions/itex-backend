@@ -5,9 +5,11 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationExcepti
 import com.itradingsolutions.itex.api.ip.q.exceptions.QProductExistException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMapper;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationProductRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
+import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationProductService;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     private final IIpQuotationProductRepository qProductRepository;
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IIpQuoteRequestProductRepository qrProductRepository;
+    private final IIpQuotationHistoryService historyService;
 
     @Override
     @Transactional
@@ -40,13 +43,19 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         var entity = new IpQuotationProductEntity();
         entity.setQuotationsQuoteRequest(qqr);
         entity.setNumber(qqr.getMaxNumberOfProducts());
-        return saveQProduct(productRequest, entity);
+        var dto = saveQProduct(productRequest, entity);
+        
+        // Register ADD_PRODUCT history
+        historyService.addHistoryProduct(IpQuotationHistoryAction.ADD_PRODUCT, null, dto, quotationId);
+        
+        return dto;
     }
 
     @Override
     @Transactional
     public IpQuotationProductDTO updateIpQuotationProduct(IpQuotationProductDTO productRequest, UUID qProductId, UUID quotationId) {
         var entity = findById(qProductId, quotationId);
+        var oldDto = qProductMapper.entityToDto(entity);
 
         if (productRequest.getQuoteRequestProduct() != null && productRequest.getQuoteRequestProduct().getId() != null) {
             if (qProductRepository.existsByQuoteRequestProduct_IdAndQuotationsQuoteRequest_IdAndIdNot(
@@ -54,7 +63,12 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
                 throw new QProductExistException(simpleMessage("ip.q.product.exist"));
         }
 
-        return saveQProduct(productRequest, entity);
+        var newDto = saveQProduct(productRequest, entity);
+        
+        // Register UPDATE_PRODUCT history
+        historyService.addHistoryProduct(IpQuotationHistoryAction.UPDATE_PRODUCT, oldDto, newDto, quotationId);
+        
+        return newDto;
     }
 
     @Override
@@ -66,7 +80,13 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     @Override
     @Transactional
     public void removeIpQuotationProduct(UUID qProductId, UUID quotationId) {
+        var entity = findById(qProductId, quotationId);
+        var dto = qProductMapper.entityToDto(entity);
+        
         qProductRepository.deleteByIdAndQuotationsQuoteRequest_Quotation_Id(qProductId, quotationId);
+        
+        // Register REMOVE_PRODUCT history
+        historyService.addHistoryProduct(IpQuotationHistoryAction.REMOVE_PRODUCT, dto, null, quotationId);
     }
 
     private IpQuotationProductDTO saveQProduct(IpQuotationProductDTO productRequest, IpQuotationProductEntity entity) {

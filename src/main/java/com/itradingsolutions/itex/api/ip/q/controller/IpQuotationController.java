@@ -7,6 +7,7 @@ import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
+import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationHistoryMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuotationRequest;
@@ -14,8 +15,10 @@ import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequ
 import com.itradingsolutions.itex.api.ip.q.models.requests.OpenLockIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.response.CreateQuotationResponse;
+import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationHistoryResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
+import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
@@ -50,6 +53,8 @@ public class IpQuotationController extends CommonController {
 
     private final IpQuotationMapper quotationMapper;
     private final IpQuotationService quotationService;
+    private final IIpQuotationHistoryService historyService;
+    private final IpQuotationHistoryMapper historyMapper;
 
 
     @PostMapping
@@ -219,5 +224,19 @@ public class IpQuotationController extends CommonController {
                 simpleMessage("ip.q.qr.added"),
                 quotationMapper.dtoToResponse(resp)
         ));
+    }
+
+    @GetMapping("/history/{id_quotation}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.VIEW_HISTORY_IP_QUOTATIONS)
+    public ResponseEntity<List<IpQuotationHistoryResponse>> getHistory(
+            @PathVariable(name = "id_quotation") UUID idQuotation
+    ) {
+        var history = historyService.getHistoryById(idQuotation);
+        return ResponseEntity.ok(
+                history.stream()
+                        .map(historyMapper::dtoToResponse)
+                        .toList()
+        );
     }
 }

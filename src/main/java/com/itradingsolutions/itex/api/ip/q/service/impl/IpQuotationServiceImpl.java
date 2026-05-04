@@ -8,6 +8,7 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
+import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
@@ -204,11 +205,29 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         entity.setQuoteRequestsQuotations(new ArrayList<>());
 
         listQrId.forEach(qrId -> {
+            var qrEntity = qrService.findByIdAndClient(qrId, client.getId());
+            validateQuoteRequestCurrency(qrEntity, entity);
+            
             var item = new IpQuotationsQuoteRequestEntity();
             item.setQuotation(entity);
-            item.setQuoteRequest(qrService.findByIdAndClient(qrId, client.getId()));
+            item.setQuoteRequest(qrEntity);
             entity.getQuoteRequestsQuotations().add(item);
         });
+    }
+
+    /**
+     * Validates that a Quote Request has the same currency as the Quotation.
+     * 
+     * @param qr the Quote Request entity to validate
+     * @param quotation the Quotation entity
+     * @throws QuotationCurrencyMismatchException if currencies don't match
+     */
+    private void validateQuoteRequestCurrency(com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity qr, IpQuotationEntity quotation) {
+        if (!qr.getCurrency().equals(quotation.getCurrency())) {
+            throw new QuotationCurrencyMismatchException(
+                compositeMessage("ip.q.currency-mismatch", new String[]{qr.getNumber(), qr.getCurrency().name(), quotation.getCurrency().name()})
+            );
+        }
     }
 
     private IpQuotationEntity findById(UUID id) {

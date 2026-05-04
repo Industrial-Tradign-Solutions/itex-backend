@@ -10,12 +10,13 @@
 ## 📋 Table of Contents
 
 1. [Authentication & Permissions](#authentication--permissions)
-2. [Enums & Constants](#enums--constants)
-3. [Main Quotation Endpoints](#main-quotation-endpoints)
-4. [Product Management Endpoints](#product-management-endpoints)
-5. [Quote Request Management](#quote-request-management)
-6. [History & Tracking](#history--tracking)
-7. [Error Handling](#error-handling)
+2. [Controller Structure](#controller-structure)
+3. [Enums & Constants](#enums--constants)
+4. [Main Quotation Endpoints](#main-quotation-endpoints)
+5. [Product Management Endpoints](#product-management-endpoints)
+6. [Quote Request Management](#quote-request-management)
+7. [History & Tracking](#history--tracking)
+8. [Error Handling](#error-handling)
 
 ---
 
@@ -34,6 +35,42 @@ All endpoints require JWT authentication via `Authorization: Bearer <token>` hea
 | `4003005` | `REJECT_IP_QUOTATIONS` | Reject quotations |
 | `4003006` | `EDIT_PAYMENT_TERMS_IP_QUOTATIONS` | Edit payment terms (checked within UPDATE) |
 | `IP_QUOTATIONS` | Module access | List, view, open/close, change status |
+
+---
+
+## 🏗️ Controller Structure
+
+The Quotations module is organized into **three controllers** for better separation of concerns:
+
+### 1. **IpQuotationController** 
+**Base URL:** `/itex/api/ip/q`
+
+Handles main quotation operations:
+- ✅ Create quotation
+- ✅ Update quotation (fields, status, reject)
+- ✅ Clone quotation
+- ✅ List/paginate quotations
+- ✅ Open/close/lock operations
+- ✅ View history
+
+### 2. **IpQuotationProductController**
+**Base URL:** `/itex/api/ip/q/{id_quotation}/product`
+
+Handles product management:
+- ✅ Add product to quotation
+- ✅ Update product (profit margin, condition)
+- ✅ Get product details
+- ✅ Remove product from quotation
+
+### 3. **IpQuotationQuoteRequestController**
+**Base URL:** `/itex/api/ip/q/{id_quotation}/quote-request`
+
+Handles Quote Request linking:
+- ✅ List available QRs for client
+- ✅ Add QRs to quotation
+- ✅ Remove QR from quotation
+
+**Pattern:** Each controller handles one responsibility, following RESTful and domain-driven design principles.
 
 ---
 
@@ -697,9 +734,51 @@ Removes a product from a quotation.
 
 ## 🔗 Quote Request Management
 
+**Base URL:** `/itex/api/ip/q/{id_quotation}/quote-request`
+
 **Important:** All QR add/remove operations automatically register history (ADD_QR, REMOVE_QR). You only need to call the endpoints - history is handled by the system.
 
-### 1. Add Quote Requests to Quotation
+### 1. List Available Quote Requests
+
+**GET** `/ip/q/{id_quotation}/quote-request/available/{id_client}`
+
+Returns a list of Quote Requests available to be linked to a quotation for a specific client.
+
+**Permission:** `CREATE_IP_QUOTATIONS` (4003001)
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID (used for routing)
+- `id_client` (UUID): Client ID to filter Quote Requests
+
+**Query Parameters:**
+- `view-completed-qr` (boolean): Include completed QRs, default: `false`
+- `currency` (Currency): Filter by currency, default: `USD`
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "number": "QR-IP-000001",
+    "status": "CREATED",
+    "client": { "id": "uuid", "name": "Client Name" },
+    "currency": "USD",
+    "createdAt": "2026-05-01T10:00:00Z"
+  },
+  {
+    "id": "uuid",
+    "number": "QR-IP-000002",
+    "status": "SENT",
+    "client": { "id": "uuid", "name": "Client Name" },
+    "currency": "USD",
+    "createdAt": "2026-05-02T11:00:00Z"
+  }
+]
+```
+
+---
+
+### 2. Add Quote Requests to Quotation
 
 **POST** `/ip/q/{id_quotation}/quote-request`
 
@@ -746,7 +825,7 @@ Links existing Quote Requests to a quotation.
 
 ---
 
-### 2. Remove Quote Request from Quotation
+### 3. Remove Quote Request from Quotation
 
 **DELETE** `/ip/q/{id_quotation}/quote-request/{id_qqr}`
 

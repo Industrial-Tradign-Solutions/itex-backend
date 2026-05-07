@@ -2,8 +2,8 @@
 
 **Base URL:** `/itex/api/ip/q`
 
-**Version:** 2.0  👈 UPDATED
-**Date:** May 4, 2026 (Updated)
+**Version:** 2.1  👈 UPDATED
+**Date:** May 6, 2026 (Updated)
 
 ---
 
@@ -15,8 +15,10 @@
 4. [Main Quotation Endpoints](#main-quotation-endpoints)
 5. [Product Management Endpoints](#product-management-endpoints)
 6. [Quote Request Management](#quote-request-management)
-7. [Other Charges Management](#other-charges-management) 👈 NEW
-8. [History & Tracking](#history--tracking)
+7. [Other Charges Management](#other-charges-management)
+8. [QR Other Charges from Quotation](#qr-other-charges-from-quotation) 👈 NEW
+9. [Integrity Validation](#integrity-validation) 👈 NEW
+10. [History & Tracking](#history--tracking)
 9. [Error Handling](#error-handling)
 
 ---
@@ -396,7 +398,8 @@ Retrieve full details of a specific quotation.
         }
       }
     }
-  ]
+  ],
+  "clonedByQuotation": null  // 👈 NEW - shows original quotation if this is a clone
 }
 ```
 
@@ -507,6 +510,8 @@ Creates a copy of an existing quotation with all products and QRs.
 - **All Other Charges are cloned** (freight, handling, insurance, etc.)
 - Original quotation remains unchanged
 - History records CLONE action in original and CREATE in new quotation
+- **Cloned relationship is registered** in `t_ip_quotations_cloned` table 👈 NEW
+- The cloned quotation will show `clonedByQuotation` field when retrieved 👈 NEW
 
 ---
 
@@ -1065,6 +1070,91 @@ When retrieving a quotation, the `otherCharges` array is included:
 
 ---
 
+## 📊 QR Other Charges from Quotation 👈 NEW
+
+**Base URL:** `/itex/api/ip/q/{id_quotation}/quote-request`
+
+### Get Other Charges from Quote Requests
+
+**GET** `/ip/q/{id_quotation}/quote-request/other-charges`
+
+Retrieves all Other Charges from all Quote Requests associated with a quotation. Returns a flat list (not grouped by QR).
+
+**Permission:** Module access `IP_QUOTATIONS`
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID
+
+**Response:** `200 OK`
+```json
+[
+  { "description": "Freight", "value": 150.00, "qrNumber": "QR-2026-001" },
+  { "description": "Handling", "value": 25.00, "qrNumber": "QR-2026-001" },
+  { "description": "Insurance", "value": 50.00, "qrNumber": "QR-2026-002" }
+]
+```
+
+**Response Fields:**
+- `description` (String): Charge description
+- `value` (BigDecimal): Charge amount
+- `qrNumber` (String): Quote Request number (origin of the charge)
+
+**Note:** Returns empty array if quotation has no Quote Requests or QR has no Other Charges.
+
+---
+
+## 🔒 Integrity Validation 👈 NEW
+
+**Base URL:** `/itex/api/ip/q`
+
+### Validate Quotation Integrity
+
+**GET** `/ip/q/validate-integrity/{id_quotation}`
+
+Validates that all Quote Requests associated with a quotation have the same client and currency as the quotation.
+
+**Permission:** Module access `IP_QUOTATIONS`
+
+**URL Parameters:**
+- `id_quotation` (UUID): Quotation ID
+
+**Validation Rules:**
+- All QRs associated with the quotation must have the same client
+- All QRs associated with the quotation must have the same currency
+
+**Response (Valid):** `200 OK`
+```json
+{
+  "title": "Valid",
+  "message": "ip.q.integrity.valid",
+  "data": []
+}
+```
+
+**Response (Invalid):** `200 OK`
+```json
+{
+  "title": "Invalid",
+  "message": "ip.q.integrity.invalid",
+  "data": [
+    "QR QR-001 tiene problemas de integridad, pertenece a otro cliente (ClientX), por favor elimínela",
+    "QR QR-002 tiene problemas de integridad, tiene una moneda diferente (EUR), por favor elimínela"
+  ]
+}
+```
+
+**Automatic Validation:**
+This validation is also performed automatically in the following scenarios:
+- **PUT /ip/q/{id_quotation}** (Update Quotation): Validates before saving
+- **PATCH /ip/q/change-status/{id_quotation}** (Change Status): Validates before changing status
+  - Exception: Changing to REJECTED status does NOT validate integrity
+- **Future:** PDF Generation will validate before generating
+
+**Errors (when automatic validation fails):**
+- `400` - QuotationIntegrityException with list of validation errors
+
+---
+
 ## 📜 History & Tracking
 
 ### Get Quotation History
@@ -1283,6 +1373,14 @@ Retrieves complete history of all changes made to a quotation.
 {
   "title": "Error",
   "message": "Quotation must be in CREATED status to perform this operation"
+}
+```
+
+#### QuotationIntegrityException (NEW)
+```json
+{
+  "title": "Error",
+  "message": "QR QR-001 tiene problemas de integridad, pertenece a otro cliente (ClientX), por favor elimínela; QR QR-002 tiene problemas de integridad, tiene una moneda diferente (EUR), por favor elimínela"
 }
 ```
 

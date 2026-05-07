@@ -51,6 +51,7 @@ public class IpQuotationDTO extends BaseDTO {
     private List<IpQuotationsQuoteRequestSummaryDTO> listQuoteRequests;
     private List<IpQuotationProductDTO> products;
     private List<IpQuotationOtherChargeDTO> otherCharges;
+    private IpQuotationDTO clonedByQuotation;
 
     // products are derived in the service from all quoteRequestsQuotations entries
 

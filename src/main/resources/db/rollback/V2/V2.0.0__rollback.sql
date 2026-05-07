@@ -6,4 +6,5 @@ DROP TABLE IF EXISTS t_ip_quotation_history;
 DROP TABLE IF EXISTS t_ip_quotation_other_charges;
 DROP TABLE IF EXISTS t_ip_quotation_products;
 DROP TABLE IF EXISTS t_ip_quotations_quote_request;
+DROP TABLE IF EXISTS t_ip_quotations_cloned;
 DROP TABLE IF EXISTS t_ip_quotations;

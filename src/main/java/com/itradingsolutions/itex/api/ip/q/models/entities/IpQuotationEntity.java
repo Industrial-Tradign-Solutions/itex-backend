@@ -29,6 +29,7 @@ import lombok.Setter;
 import java.io.Serial;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(
@@ -137,4 +138,15 @@ public class IpQuotationEntity extends BaseEntity {
      */
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "ipQuotation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IpQuotationOtherChargeEntity> otherCharges;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "mainQuotation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IpQuotationsClonedEntity> clonedQuotations;
+
+    public List<IpQuotationEntity> getClonedQuotations() {
+        return Optional.ofNullable(clonedQuotations)
+                .orElseGet(List::of)
+                .stream()
+                .map(IpQuotationsClonedEntity::getClonedQuotation)
+                .toList();
+    }
 }

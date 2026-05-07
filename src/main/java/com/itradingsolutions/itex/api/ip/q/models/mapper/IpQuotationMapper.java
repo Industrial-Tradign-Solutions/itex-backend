@@ -39,6 +39,7 @@ public interface IpQuotationMapper {
     @Mapping(target = "answeredAt", ignore = true)
     @Mapping(target = "completeAt", ignore = true)
     @Mapping(target = "rejectAt", ignore = true)
+    @Mapping(target = "clonedQuotations", ignore = true)
     IpQuotationEntity clone(IpQuotationEntity source);
 
     default IpQuotationsQuoteRequestSummaryDTO map(IpQuotationsQuoteRequestEntity entity) {

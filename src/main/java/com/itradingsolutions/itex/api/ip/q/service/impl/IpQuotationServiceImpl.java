@@ -6,14 +6,17 @@ import com.itradingsolutions.itex.api.common.consecutive.models.enums.Consecutiv
 import com.itradingsolutions.itex.api.common.consecutive.services.IConsecutiveService;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
+import com.itradingsolutions.itex.api.common.util.IntegrityValidator;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchException;
+import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationIntegrityException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationOtherChargeEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsClonedEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
@@ -22,6 +25,8 @@ import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
+import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
+import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationClonedRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationOtherChargeRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
@@ -60,6 +65,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationHistoryService historyService;
     private final IpQuotationOtherChargeMapper otherChargeMapper;
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
+    private final IIpQuotationClonedRepository clonedRepository;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
@@ -141,7 +147,9 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 quotation = quotationRepository.save(quotation);
             }
         }
-        return quotationMapper.entityToDTO(quotation);
+        var dto = quotationMapper.entityToDTO(quotation);
+        loadClonedByQuotation(quotation, dto);
+        return dto;
     }
 
     @Override
@@ -179,6 +187,11 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         // that can be controlled separately through role permissions
         if (request.paymentTerms() != null) quotation.setPaymentTerms(request.paymentTerms());
 
+        var integrityErrors = IntegrityValidator.validateQuotationIntegrity(quotation);
+        if (!integrityErrors.isEmpty()) {
+            throw new QuotationIntegrityException(integrityErrors);
+        }
+
         var saved = quotationRepository.save(quotation);
         var newDto = quotationMapper.entityToDTO(saved);
         
@@ -193,7 +206,14 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     public IpQuotationDTO changeStatusQuotation(UUID id, IpQuotationStatus status) {
         var quotation = findById(id);
         var oldDto = quotationMapper.entityToDTO(quotation);
-        
+
+        if (status != IpQuotationStatus.REJECTED) {
+            var integrityErrors = IntegrityValidator.validateQuotationIntegrity(quotation);
+            if (!integrityErrors.isEmpty()) {
+                throw new QuotationIntegrityException(integrityErrors);
+            }
+        }
+
         quotation.setStatus(status);
         if (status == IpQuotationStatus.SENT) quotation.setSentAt(ZonedDateTime.now(zoneId));
         else if (status == IpQuotationStatus.ANSWERED) quotation.setAnsweredAt(ZonedDateTime.now(zoneId));
@@ -327,8 +347,15 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         
         var saved = quotationRepository.save(cloned);
         consecutiveService.saveConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, saved.getNumber());
+
+        var clonedRelation = new IpQuotationsClonedEntity();
+        clonedRelation.setId(original.getId(), saved.getId());
+        clonedRelation.setMainQuotation(original);
+        clonedRelation.setClonedQuotation(saved);
+        clonedRepository.save(clonedRelation);
+
         var dto = quotationMapper.entityToDTO(saved);
-        
+
         // Register CLONE history in original quotation
         var originalDto = quotationMapper.entityToDTO(original);
         historyService.addHistory(IpQuotationHistoryAction.CLONE, null, originalDto);
@@ -440,5 +467,46 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
             quotation.setRejectAt(ZonedDateTime.now());
             quotationRepository.save(quotation);
         });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<QuotationQuoteRequestOtherChargeResponse> getOtherChargesFromQuoteRequests(UUID quotationId) {
+        var quotation = findById(quotationId);
+
+        if (quotation.getQuoteRequestsQuotations() == null) {
+            return List.of();
+        }
+
+        List<QuotationQuoteRequestOtherChargeResponse> result = new ArrayList<>();
+
+        quotation.getQuoteRequestsQuotations().forEach(qqr -> {
+            var qr = qqr.getQuoteRequest();
+            if (qr != null && qr.getOtherCharges() != null) {
+                qr.getOtherCharges().forEach(charge -> {
+                    result.add(new QuotationQuoteRequestOtherChargeResponse(
+                            charge.getDescription(),
+                            charge.getValue(),
+                            qr.getNumber()
+                    ));
+                });
+            }
+        });
+
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> validateIntegrity(UUID quotationId) {
+        var quotation = findById(quotationId);
+        return IntegrityValidator.validateQuotationIntegrity(quotation);
+    }
+
+    private void loadClonedByQuotation(IpQuotationEntity entity, IpQuotationDTO dto) {
+        clonedRepository.fetchByClonedId(entity.getId())
+                .ifPresent(cloned -> dto.setClonedByQuotation(
+                        quotationMapper.entityToDTO(cloned.getMainQuotation())
+                ));
     }
 }

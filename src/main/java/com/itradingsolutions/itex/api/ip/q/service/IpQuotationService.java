@@ -8,6 +8,7 @@ import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
+import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -35,4 +36,10 @@ public interface IpQuotationService {
     // Scheduler methods
     void unlockAllOpenQuotations();
     void autoRejectOldCreatedQuotations();
+
+    // Other Charges
+    List<QuotationQuoteRequestOtherChargeResponse> getOtherChargesFromQuoteRequests(UUID quotationId);
+
+    // Integrity Validation
+    List<String> validateIntegrity(UUID quotationId);
 }

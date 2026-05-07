@@ -17,6 +17,8 @@ Completar la implementación del módulo de Quotations (Q) basándose en el mód
 | FASE 6 - Payment Terms Permission | ✅ Completado | 2026-05-04 | 2026-05-04 | Documentado en código |
 | FASE 7 - Scheduler Auto-reject | ✅ Completado | 2026-05-04 | 2026-05-04 | 45 días CREATED → REJECTED |
 | FASE 8 - PDF Generation | ⏳ Pendiente | | | Requiere template Jasper |
+| FASE 9 - QR OtherCharges API | ✅ Completado | 2026-05-06 | 2026-05-06 | GET /other-charges endpoint |
+| FASE 10 - Integrity Validation | ✅ Completado | 2026-05-06 | 2026-05-06 | Validación en save, status change |
 
 **Leyenda:** ✅ Completado | 🔄 En progreso | ⏳ Pendiente | ❌ Bloqueado
 
@@ -68,6 +70,7 @@ Todas las fases core del módulo Q han sido implementadas exitosamente:
 | **`/ip/q/{id}/quote-request`** | **POST** | **✅ NUEVO** | **Agregar QRs** |
 | **`/ip/q/history/{id}`** | **GET** | **✅ NUEVO** | **Ver historial** |
 | **`/ip/q/clone/{id}`** | **PATCH** | **✅ NUEVO** | **Clonar Q** |
+| **`/ip/q/{id}/quote-request/other-charges`** | **GET** | **✅ NUEVO** | **Ver othercharges de QRs** |
 | `/ip/q/print/{id}` | GET | ⏳ | Generar PDF (Fase 8) |
 
 ### ⏳ Fase 8 Pendiente
@@ -365,6 +368,121 @@ Generar PDF de la Quotation usando JasperReports.
 
 ---
 
+## FASE 9: API OtherCharges de QuoteRequests asociados a Quotation
+
+### Objetivo
+Consultar todos los otros costos (OtherCharges) de los QuoteRequests asociados a una Quotation en una respuesta plana.
+
+### Endpoint
+```
+GET /ip/q/{id_quotation}/quote-request/other-charges
+```
+
+### Archivos creados
+- [x] `models/response/QuotationQuoteRequestOtherChargeResponse.java` ✅
+  - Record con: description, value, qrNumber
+
+### Archivos modificados
+- [x] `service/IpQuotationService.java` ✅
+  - Añadido método `getOtherChargesFromQuoteRequests(UUID)`
+- [x] `service/impl/IpQuotationServiceImpl.java` ✅
+  - Implementación que itera sobre QRs vinculados y sus OtherCharges
+- [x] `controller/IpQuotationQuteRequestController.java` ✅
+  - Endpoint GET `/other-charges` con `@AccessToModule(IP_QUOTATIONS)`
+
+### Response DTO
+```json
+[
+  { "description": "Freight", "value": 150.00, "qrNumber": "QR-2026-001" },
+  { "description": "Handling", "value": 25.00, "qrNumber": "QR-2026-001" },
+  { "description": "Insurance", "value": 50.00, "qrNumber": "QR-2026-002" }
+]
+```
+
+### Tests
+- [ ] ⏳ Test Manual: GET con Q sin QRs → retorna lista vacía
+- [ ] ⏳ Test Manual: GET con Q con QRs sin OtherCharges → retorna lista vacía
+- [ ] ⏳ Test Manual: GET con Q con QRs y OtherCharges → retorna lista plana
+
+### Notas de implementación
+- ✅ Retorna lista plana (no agrupada por QR)
+- ✅ Incluye qrNumber para identificar el origen del otherCharge
+- ✅ Validación de permisos via ModuleOption.IP_QUOTATIONS
+
+---
+
+## FASE 10: Validación de Integridad de Quotation
+
+### Objetivo
+Validar que todas las QR asociadas a una Quotation tengan el mismo cliente y moneda que la Quotation. La validación debe fallar si:
+- Una QR asociada tiene un cliente diferente al de la Quotation
+- Una QR asociada tiene una moneda diferente a la de la Quotation
+
+### Casos de Validación
+1. **Al guardar (updateQuotation)**: Si la integridad no es correcta, lanzar error
+2. **Al cambiar estado (changeStatusQuotation)**: Si la integridad no es correcta, lanzar error
+   - **Excepción**: Cuando se cambia a REJECTED NO se valida integridad
+3. **Al generar PDF ( Fase 8)**: Validar antes de generar, lanzar error si no es válida
+4. **Consulta manual**: Endpoint para consultar integridad sin guardar
+
+### Endpoint
+```
+GET /ip/q/{id_quotation}/validate-integrity
+```
+
+### Archivos creados
+- [x] `api/common/util/IntegrityValidator.java` ✅
+  - Clase utility reusable con método estático `validateQuotationIntegrity(IpQuotationEntity)`
+  - Valida cliente y moneda de cada QR asociada
+- [x] `api/ip/q/exceptions/QuotationIntegrityException.java` ✅
+  - Exception personalizada que extiende BadRequestException
+  - Contiene lista de errores para mensajes detallados
+
+### Archivos modificados
+- [x] `service/IpQuotationService.java` ✅
+  - Añadido método `validateIntegrity(UUID quotationId)`
+- [x] `service/impl/IpQuotationServiceImpl.java` ✅
+  - Implementación del método de validación
+  - Integración en `updateQuotation()` antes de guardar
+  - Integración en `changeStatusQuotation()` antes de cambiar (excepto REJECTED)
+- [x] `controller/IpQuotationController.java` ✅
+  - Endpoint GET `/validate-integrity/{id_quotation}` con `@AccessToModule(IP_QUOTATIONS)`
+
+### Response (cuando hay errores)
+```json
+{
+  "title": "Invalid",
+  "message": "ip.q.integrity.invalid",
+  "data": [
+    "QR QR-001 tiene problemas de integridad, pertenece a otro cliente (ClientX), por favor elimínela",
+    "QR QR-002 tiene problemas de integridad, tiene una moneda diferente (EUR), por favor elimínela"
+  ]
+}
+```
+
+### Response (cuando todo está OK)
+```json
+{
+  "title": "Valid",
+  "message": "ip.q.integrity.valid",
+  "data": []
+}
+```
+
+### Tests
+- [ ] ⏳ Test Manual: QR con cliente diferente → debe lanzar error
+- [ ] ⏳ Test Manual: QR con moneda diferente → debe lanzar error
+- [ ] ⏳ Test Manual: Todas las QR correctas → debe guardar correctamente
+- [ ] ⏳ Test Manual: Cambiar a REJECTED con integridad fallida → debe permitir (sin validación)
+- [ ] ⏳ Test Manual: Consultar validate-integrity → debe retornar lista de errores
+
+### Notas de implementación
+- ✅ Clase `IntegrityValidator` es reusable para otros servicios
+- ✅ Validación solo sobre QRs asociadas a la Quotation (no todas las QRs del sistema)
+- ✅ El mensaje indica claramente qué QR tiene problemas y cuál es el issue
+
+---
+
 ## Funcionalidades Post-Implementación (Futuras)
 
 ### Mejoras Opcionales
@@ -394,9 +512,11 @@ Generar PDF de la Quotation usando JasperReports.
 | PUT | `/ip/q/{id}/product/{pid}` | Editar producto | ✅ Existente |
 | GET | `/ip/q/{id}/product/{pid}` | Obtener producto | ✅ Existente |
 | DELETE | `/ip/q/{id}/product/{pid}` | Eliminar producto | ✅ Existente |
-| **POST** | **`/ip/q/{id}/quote-request`** | **Agregar QR a Q** | **⏳ Fase 2** |
-| **GET** | **`/ip/q/history/{id}`** | **Ver historial** | **⏳ Fase 4** |
-| **PATCH** | **`/ip/q/clone/{id}`** | **Clonar Q** | **⏳ Fase 5** |
+| **POST** | **`/ip/q/{id}/quote-request`** | **Agregar QR a Q** | **✅ Fase 2** |
+| **GET** | **`/ip/q/history/{id}`** | **Ver historial** | **✅ Fase 4** |
+| **PATCH** | **`/ip/q/clone/{id}`** | **Clonar Q** | **✅ Fase 5** |
+| **GET** | **`/ip/q/{id}/quote-request/other-charges`** | **OtherCharges de QRs** | **✅ Fase 9** |
+| **GET** | **`/ip/q/validate-integrity/{id}`** | **Validar integridad** | **✅ Fase 10** |
 | **GET** | **`/ip/q/print/{id}`** | **Generar PDF** | **⏳ Fase 8** |
 
 ---
@@ -428,9 +548,11 @@ Generar PDF de la Quotation usando JasperReports.
 | Fecha | Fase | Cambios |
 |-------|------|---------|
 | 2026-05-04 | Inicial | Documento de seguimiento creado |
+| 2026-05-06 | FASE 9 | Añadido endpoint GET /other-charges para consultar OtherCharges de QRs |
+| 2026-05-06 | FASE 10 | Añadido sistema de validación de integridad de Quotation |
 
 ---
 
-**Última actualización:** 2026-05-04
+**Última actualización:** 2026-05-06
 **Autor:** OpenCode AI Assistant
 **Revisor:** JDB

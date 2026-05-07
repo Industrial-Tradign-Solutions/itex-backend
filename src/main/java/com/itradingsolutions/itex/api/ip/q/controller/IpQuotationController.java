@@ -221,4 +221,18 @@ public class IpQuotationController extends CommonController {
                 quotationMapper.dtoToResponse(cloned)
         ));
     }
+
+    @GetMapping("/validate-integrity/{id_quotation}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
+    public ResponseEntity<MessageResponse<List<String>>> validateIntegrity(
+            @PathVariable(name = "id_quotation") UUID idQuotation
+    ) {
+        var errors = quotationService.validateIntegrity(idQuotation);
+        return ResponseEntity.ok(new MessageResponse<>(
+                errors.isEmpty() ? "Valid" : "Invalid",
+                errors.isEmpty() ? simpleMessage("ip.q.integrity.valid") : simpleMessage("ip.q.integrity.invalid"),
+                errors
+        ));
+    }
 }

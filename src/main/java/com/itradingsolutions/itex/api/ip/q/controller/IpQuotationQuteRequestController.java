@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.controller;
 
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
+import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleOption;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
@@ -8,12 +9,14 @@ import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
 import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
+import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.api.ip.qr.models.mappers.IpQuoteRequestMapper;
 import com.itradingsolutions.itex.api.ip.qr.models.responses.ListIpQuoteRequestResponse;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
+import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -89,5 +92,15 @@ public class IpQuotationQuteRequestController extends CommonController {
         return ResponseEntity.status(HttpStatus.OK).body(
             listQR.stream().map(quoteRequestMapper::dtoToListResponse).toList()
         );
+    }
+
+    @GetMapping("/other-charges")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
+    public ResponseEntity<List<QuotationQuoteRequestOtherChargeResponse>> getOtherChargesFromQuoteRequests(
+            @PathVariable(name = "id_quotation") UUID idQuotation
+    ) {
+        var list = quotationService.getOtherChargesFromQuoteRequests(idQuotation);
+        return ResponseEntity.ok(list);
     }
 }

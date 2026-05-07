@@ -236,6 +236,20 @@
                 "description": "Retrieves the history/audit trail of a quotation.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Response\nReturns list of history entries with action, timestamp, user, and details."
               },
               "response": []
+            },
+            {
+              "name": "Validate Quotation Integrity",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_URL}}/itex/api/ip/q/validate-integrity/{id_quotation}",
+                  "host": ["{{API_URL}}"],
+                  "path": ["itex", "api", "ip", "q", "validate-integrity", "{id_quotation}"]
+                },
+                "description": "Validates the integrity of a quotation by checking that all associated Quote Requests have the same client and currency as the quotation.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Validation Rules\n- All QRs associated with the quotation must have the same client\n- All QRs associated with the quotation must have the same currency\n\n### Response (Valid)\n```json\n{\n  \"title\": \"Valid\",\n  \"message\": \"ip.q.integrity.valid\",\n  \"data\": []\n}\n```\n\n### Response (Invalid)\n```json\n{\n  \"title\": \"Invalid\",\n  \"message\": \"ip.q.integrity.invalid\",\n  \"data\": [\n    \"QR QR-001 tiene problemas de integridad, pertenece a otro cliente (ClientX), por favor elimínela\",\n    \"QR QR-002 tiene problemas de integridad, tiene una moneda diferente (EUR), por favor elimínela\"\n  ]\n}\n```\n\n### Notes\n- This endpoint does not modify data, only validates\n- This validation is also performed automatically when:\n  - Saving (PUT) a quotation\n  - Changing status (PATCH /change-status) - except for REJECTED status"
+              },
+              "response": []
             }
           ]
         },
@@ -388,6 +402,20 @@
                   ]
                 },
                 "description": "Retrieves available Quote Requests for a client that can be added to a quotation.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id_client** (UUID, required): Client ID\n\n### Query Parameters\n- **view-completed-qr** (boolean, default=false): Include completed QR\n- **currency** (Enum, default=USD): Filter by currency\n\n### Response\nReturns list of available Quote Requests with basic details."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Other Charges from Quote Requests",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/quote-request/other-charges",
+                  "host": ["{{API_URL}}"],
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "quote-request", "other-charges"]
+                },
+                "description": "Retrieves all other charges (OtherCharges) from all Quote Requests associated with a quotation. Returns a flat list.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Response\nReturns flat list of other charges with:\n- **description** (String): Charge description\n- **value** (BigDecimal): Charge amount\n- **qrNumber** (String): Quote Request number (origin of the charge)\n\n### Example Response\n```json\n[\n  { \"description\": \"Freight\", \"value\": 150.00, \"qrNumber\": \"QR-2026-001\" },\n  { \"description\": \"Handling\", \"value\": 25.00, \"qrNumber\": \"QR-2026-001\" },\n  { \"description\": \"Insurance\", \"value\": 50.00, \"qrNumber\": \"QR-2026-002\" }\n]\n```"
               },
               "response": []
             }

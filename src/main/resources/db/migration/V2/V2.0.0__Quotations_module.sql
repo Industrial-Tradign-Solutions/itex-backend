@@ -87,8 +87,8 @@ alter table t_ip_quotation_other_charges
         unique (ip_q_id, description);
 
 create table t_ip_quotations_cloned (
-    main_q_id uuid not null references t_ip_quotations_cloned,
-    clone_q_id uuid not null references t_ip_quotations_cloned,
+    main_q_id uuid not null references t_ip_quotations,
+    clone_q_id uuid not null references t_ip_quotations,
     primary key (main_q_id, clone_q_id)
 );
 
@@ -100,5 +100,3 @@ create table t_ip_quotation_history (
     created_at timestamp not null,
     data json
 );
-
-

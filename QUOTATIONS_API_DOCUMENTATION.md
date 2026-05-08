@@ -65,13 +65,14 @@ Handles product management:
 - ✅ Get product details
 - ✅ Remove product from quotation
 
-### 3. **IpQuotationQuoteRequestController**
-**Base URL:** `/itex/api/ip/q/{id_quotation}/quote-request`
+### 3. **IpQuotationQuoteRequestController** 👈 UPDATED
+**Base URL:** `/itex/api/ip/qr-q`
 
 Handles Quote Request linking:
 - ✅ List available QRs for client
 - ✅ Add QRs to quotation
 - ✅ Remove QR from quotation
+- ✅ Get Other Charges from QRs
 
 ### 4. **IpQuotationOtherChargeController** 👈 NEW
 **Base URL:** `/itex/api/ip/q/{id_quotation}/other_charges`
@@ -768,22 +769,21 @@ Removes a product from a quotation.
 
 ---
 
-## 🔗 Quote Request Management
+## 🔗 Quote Request Management 👈 UPDATED
 
-**Base URL:** `/itex/api/ip/q/{id_quotation}/quote-request`
+**Base URL:** `/itex/api/ip/qr-q`
 
 **Important:** All QR add/remove operations automatically register history (ADD_QR, REMOVE_QR). You only need to call the endpoints - history is handled by the system.
 
 ### 1. List Available Quote Requests
 
-**GET** `/ip/q/{id_quotation}/quote-request/available/{id_client}`
+**GET** `/ip/qr-q/list-qr-by-client-available-quotation/{id_client}`
 
 Returns a list of Quote Requests available to be linked to a quotation for a specific client.
 
 **Permission:** `CREATE_IP_QUOTATIONS` (4003001)
 
 **URL Parameters:**
-- `id_quotation` (UUID): Quotation ID (used for routing)
 - `id_client` (UUID): Client ID to filter Quote Requests
 
 **Query Parameters:**
@@ -816,7 +816,7 @@ Returns a list of Quote Requests available to be linked to a quotation for a spe
 
 ### 2. Add Quote Requests to Quotation
 
-**POST** `/ip/q/{id_quotation}/quote-request`
+**POST** `/ip/qr-q/{id_quotation}`
 
 Links existing Quote Requests to a quotation.
 
@@ -863,7 +863,7 @@ Links existing Quote Requests to a quotation.
 
 ### 3. Remove Quote Request from Quotation
 
-**DELETE** `/ip/q/{id_quotation}/quote-request/{id_qqr}`
+**DELETE** `/ip/qr-q/{id_quotation}/{id_qqr}`
 
 Unlinks a Quote Request from a quotation.
 
@@ -1070,13 +1070,13 @@ When retrieving a quotation, the `otherCharges` array is included:
 
 ---
 
-## 📊 QR Other Charges from Quotation 👈 NEW
+## 📊 QR Other Charges from Quotation 👈 UPDATED
 
-**Base URL:** `/itex/api/ip/q/{id_quotation}/quote-request`
+**Base URL:** `/itex/api/ip/qr-q`
 
 ### Get Other Charges from Quote Requests
 
-**GET** `/ip/q/{id_quotation}/quote-request/other-charges`
+**GET** `/ip/qr-q/{id_quotation}/other-charges`
 
 Retrieves all Other Charges from all Quote Requests associated with a quotation. Returns a flat list (not grouped by QR).
 

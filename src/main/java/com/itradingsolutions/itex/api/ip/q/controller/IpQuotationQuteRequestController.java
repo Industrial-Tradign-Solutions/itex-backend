@@ -36,7 +36,8 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/ip/q/{id_quotation}/quote-request")
+//@RequestMapping("/ip/q/{id_quotation}/quote-request")
+@RequestMapping("/ip/qr-q")
 @Validated
 @AllArgsConstructor
 public class IpQuotationQuteRequestController extends CommonController {
@@ -47,7 +48,7 @@ public class IpQuotationQuteRequestController extends CommonController {
     private final IpQuotationMapper quotationMapper;
     private final IIpQuotationHistoryService qHistoryService;
 
-    @PostMapping
+    @PostMapping("/{id_quotation}")
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
     public ResponseEntity<MessageResponse<IpQuotationResponse>> addQuoteRequestsToQuotation(
@@ -63,7 +64,7 @@ public class IpQuotationQuteRequestController extends CommonController {
         ));
     }
 
-    @DeleteMapping("/{id_qqr}")
+    @DeleteMapping("/{id_quotation}/{id_qqr}")
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
     public ResponseEntity<MessageResponse<UUID>> removeQuoteRequestFromQuotation(
@@ -80,7 +81,7 @@ public class IpQuotationQuteRequestController extends CommonController {
         ));
     }
 
-    @GetMapping("/available/{id_client}")
+    @GetMapping("/list-qr-by-client-available-quotation/{id_client}")
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.CREATE_IP_QUOTATIONS)
     public ResponseEntity<List<ListIpQuoteRequestResponse>> getListQuoteRequestByClientAvailableToQuotation(
@@ -94,7 +95,7 @@ public class IpQuotationQuteRequestController extends CommonController {
         );
     }
 
-    @GetMapping("/other-charges")
+    @GetMapping("/{id_quotation}/other-charges")
     @ResponseStatus(HttpStatus.OK)
     @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
     public ResponseEntity<List<QuotationQuoteRequestOtherChargeResponse>> getOtherChargesFromQuoteRequests(

@@ -8,6 +8,7 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.IntegrityValidator;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationClientMismatchException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationIntegrityException;
@@ -36,6 +37,7 @@ import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenQuoteRequestExcept
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.repository.IClientContactRepository;
+import com.itradingsolutions.itex.api.partners.clients.services.IClientContactService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -48,6 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -62,6 +65,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuoteRequestService qrService;
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IClientContactRepository clientContactRepository;
+    private final IClientContactService clientContactService;
     private final IIpQuotationHistoryService historyService;
     private final IpQuotationOtherChargeMapper otherChargeMapper;
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
@@ -152,23 +156,67 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return dto;
     }
 
-    @Override
+@Override
     @Transactional
     public IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request) {
         var quotation = findById(id);
         validateEditable(quotation);
         
         var oldDto = quotationMapper.entityToDTO(quotation);
+        var oldConsecutive = quotation.getNumber();
 
-        if (request.salesRepId() != null)
-            quotation.setSalesRep(userService.findEntityById(request.salesRepId(), true));
+        Optional.ofNullable(request.clientId())
+            .filter(newClientId -> !newClientId.equals(quotation.getClient().getId()))
+            .ifPresent(newClientId -> {
+                Optional.ofNullable(quotation.getQuoteRequestsQuotations())
+                    .filter(qrList -> !qrList.isEmpty())
+                    .ifPresent(qrList -> {
+                        throw new QuotationClientMismatchException(
+                            simpleMessage("ip.q.client-change-blocked")
+                        );
+                    });
+                
+                var newClient = clientService.findClientById(newClientId, true);
+                quotation.setClient(newClient);
+                quotation.setPaymentTerms(newClient.getPaymentTerms());
+                quotation.setNumber(consecutiveService.generateConsecutive(
+                    CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, newClient.getCode()
+                ));
+                quotation.setClientContact(null);
+            });
+
+        Optional.ofNullable(request.currency())
+            .filter(newCurrency -> !newCurrency.equals(quotation.getCurrency()))
+            .ifPresent(newCurrency -> {
+                Optional.ofNullable(quotation.getQuoteRequestsQuotations())
+                    .filter(qrList -> !qrList.isEmpty())
+                    .ifPresent(qrList -> {
+                        qrList.stream()
+                            .filter(qr -> !qr.getQuoteRequest().getCurrency().equals(newCurrency))
+                            .findFirst()
+                            .ifPresent(qr -> {
+                                throw new QuotationCurrencyMismatchException(
+                                    compositeMessage("ip.q.currency-mismatch", new String[]{
+                                        qr.getQuoteRequest().getNumber(),
+                                        qr.getQuoteRequest().getCurrency().name(),
+                                        newCurrency.name()
+                                    })
+                                );
+                            });
+                    });
+                quotation.setCurrency(newCurrency);
+            });
 
         if (request.clientContactId() != null) {
             quotation.setClientContact(
-                    clientContactRepository.findById(request.clientContactId()).orElse(null)
+                clientContactService.findById(request.clientContactId(), quotation.getClient().getId())
             );
         } else {
             quotation.setClientContact(null);
+        }
+
+        if (!request.salesRepId().equals(quotation.getSalesRep().getId())) {
+            quotation.setSalesRep(userService.findEntityById(request.salesRepId(), true));
         }
 
         quotation.setClientQNumber(request.clientQrNumber());
@@ -180,11 +228,6 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if (request.validity() != null) quotation.setValidity(request.validity());
         if (request.validityType() != null) quotation.setValidityType(request.validityType());
         if (request.incoterms() != null) quotation.setIncoterms(request.incoterms());
-        
-        // Payment Terms requires special permission EDIT_PAYMENT_TERMS_IP_QUOTATIONS (4003006)
-        // The @AccessToAction annotation on the controller method UPDATE_IP_QUOTATIONS
-        // already validates access, but editing payment terms is an additional privilege
-        // that can be controlled separately through role permissions
         if (request.paymentTerms() != null) quotation.setPaymentTerms(request.paymentTerms());
 
         var integrityErrors = IntegrityValidator.validateQuotationIntegrity(quotation);
@@ -193,9 +236,14 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         }
 
         var saved = quotationRepository.save(quotation);
+        
+        if (!oldConsecutive.equalsIgnoreCase(saved.getNumber())) {
+            consecutiveService.saveConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, saved.getNumber());
+            consecutiveService.deleteConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, oldConsecutive);
+        }
+        
         var newDto = quotationMapper.entityToDTO(saved);
         
-        // Register UPDATE history
         historyService.addHistory(IpQuotationHistoryAction.UPDATE, oldDto, newDto);
         
         return newDto;

@@ -365,9 +365,9 @@
                   }
                 },
                 "url": {
-                  "raw": "{{API_URL}}/itex/api/ip/qr-q/{id_quotation}",
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/quote-requests",
                   "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "ip", "qr-q", "{id_quotation}"]
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "quote-requests"]
                 },
                 "description": "Adds one or more Quote Requests to a quotation. Only allowed in CREATED status.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Request Body\n- **quoteRequestIds** (List<UUID>, required): Array of Quote Request IDs to add\n\n### Validation\n- All QRs must have the same currency as the quotation\n- All QRs must belong to the same client as the quotation\n- QR must be in COMPLETED status\n\n### Response\nReturns updated quotation with the added QRs."
               },
@@ -379,9 +379,9 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{API_URL}}/itex/api/ip/qr-q/{id_quotation}/{id_qqr}",
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/quote-requests/{id_qqr}",
                   "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "ip", "qr-q", "{id_quotation}", "{id_qqr}"]
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "quote-requests", "{id_qqr}"]
                 },
                 "description": "Removes a Quote Request from the quotation. Only allowed in CREATED status.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id_qqr** (UUID, required): Quote Request ID to remove\n\n### Response\nReturns removed QR ID."
               },
@@ -393,9 +393,9 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{API_URL}}/itex/api/ip/qr-q/list-qr-by-client-available-quotation/{id_client}?view-completed-qr=false&currency=USD",
+                  "raw": "{{API_URL}}/itex/api/ip/qr/available-for-quotation/{id_client}?view-completed-qr=false&currency=USD",
                   "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "ip", "qr-q", "list-qr-by-client-available-quotation", "{id_client}"],
+                  "path": ["itex", "api", "ip", "qr", "available-for-quotation", "{id_client}"],
                   "query": [
                     {"key": "view-completed-qr", "value": "false"},
                     {"key": "currency", "value": "USD"}

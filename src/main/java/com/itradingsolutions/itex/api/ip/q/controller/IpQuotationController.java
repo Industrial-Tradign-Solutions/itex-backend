@@ -9,7 +9,9 @@ import com.itradingsolutions.itex.api.common.util.models.responses.MessageRespon
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationHistoryMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
+import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.OpenLockIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
@@ -17,6 +19,7 @@ import com.itradingsolutions.itex.api.ip.q.models.response.CreateQuotationRespon
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationHistoryResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
+import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
@@ -234,5 +237,48 @@ public class IpQuotationController extends CommonController {
                 errors.isEmpty() ? simpleMessage("ip.q.integrity.valid") : simpleMessage("ip.q.integrity.invalid"),
                 errors
         ));
+    }
+
+    @PostMapping("/{id_quotation}/quote-requests")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
+    public ResponseEntity<MessageResponse<IpQuotationResponse>> addQuoteRequestsToQuotation(
+            @PathVariable(name = "id_quotation") UUID idQuotation,
+            @RequestBody @Valid AddQuoteRequestsToQuotationRequest request
+    ) {
+        var resp = quotationService.addQuoteRequestsToQuotation(idQuotation, request.quoteRequestIds());
+        quotationHistoryService.addHistory(IpQuotationHistoryAction.ADD_QR, null, resp);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.q.qr.added"),
+                quotationMapper.dtoToResponse(resp)
+        ));
+    }
+
+    @DeleteMapping("/{id_quotation}/quote-requests/{id_qqr}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
+    public ResponseEntity<MessageResponse<UUID>> removeQuoteRequestFromQuotation(
+            @PathVariable(name = "id_quotation") UUID idQuotation,
+            @PathVariable(name = "id_qqr") UUID idQqr
+    ) {
+        var oldDto = quotationService.getQuotationForHistory(idQuotation);
+        quotationService.removeQuoteRequestFromQuotation(idQuotation, idQqr);
+        quotationHistoryService.addHistory(IpQuotationHistoryAction.REMOVE_QR, null, oldDto);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.q.qr.removed"),
+                idQqr
+        ));
+    }
+
+    @GetMapping("/{id_quotation}/quote-requests/other-charges")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
+    public ResponseEntity<List<QuotationQuoteRequestOtherChargeResponse>> getOtherChargesFromQuoteRequests(
+            @PathVariable(name = "id_quotation") UUID idQuotation
+    ) {
+        var list = quotationService.getOtherChargesFromQuoteRequests(idQuotation);
+        return ResponseEntity.ok(list);
     }
 }

@@ -5,6 +5,7 @@ import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleOption;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
+import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestHistoryAction;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
@@ -246,5 +247,19 @@ public class IpQuoteRequestController extends CommonController {
                                 qrMapper.dtoToListResponse(resp)
                         )
                 );
+    }
+
+    @GetMapping("/available-for-quotation/{id_client}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.CREATE_IP_QUOTATIONS)
+    public ResponseEntity<List<ListIpQuoteRequestResponse>> getAvailableForQuotation(
+            @PathVariable(name = "id_client") UUID idClient,
+            @RequestParam(name = "view-completed-qr", defaultValue = "false") boolean viewCompletedQR,
+            @RequestParam(name = "currency", defaultValue = "USD") Currency currency
+    ) {
+        var listQR = qrService.getListQuoteRequestByClientAvailableToQuotation(idClient, viewCompletedQR, currency);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                listQR.stream().map(qrMapper::dtoToListResponse).toList()
+        );
     }
 }

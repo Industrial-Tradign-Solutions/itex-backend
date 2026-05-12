@@ -22,8 +22,8 @@ public class IpQuoteRequestScheduler {
         list.forEach(qr -> ipQuoteRequestService.unlockIpQuoteRequest(qr.getId()));
     }
 
-    @Scheduled(cron = "30 55 23 * * *")
-    private void cronRejectIpQuoteRequest() {
+    @Scheduled(cron = "30 50 23 * * *")
+    private void cronRejectIpQuoteRequestCreated() {
         final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
 
         ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.CREATED)
@@ -32,7 +32,28 @@ public class IpQuoteRequestScheduler {
                 .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
     }
 
-    @Scheduled(cron = "30 51 23 * * *")
+    @Scheduled(cron = "30 50 23 * * *")
+    private void cronRejectIpQuoteRequestSent() {
+        final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
+
+        ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.SENT)
+                .stream()
+                .filter(qr -> qr.getSentAt().isBefore(limit))
+                .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
+    }
+
+    @Scheduled(cron = "30 50 23 * * *")
+    private void cronRejectIpQuoteRequestAnswered() {
+        final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
+
+        ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.ANSWERED)
+                .stream()
+                .filter(qr -> qr.getAnsweredAt().isBefore(limit))
+                .filter(qr -> qr.getListQuotations() != null && !qr.getListQuotations().isEmpty())
+                .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
+    }
+
+    @Scheduled(cron = "30 55 23 * * *")
     private void cronAnsweredIpQuoteRequest() {
         final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
 

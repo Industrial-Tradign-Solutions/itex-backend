@@ -1,27 +1,20 @@
 package com.itradingsolutions.itex.api.ip.q.service.impl;
 
-import com.itradingsolutions.itex.api.admin.user.models.dto.UserDTO;
-import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.service.impl.HistoryServiceImpl;
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
-import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationHistoryDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationHistoryEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
-import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationHistoryMapper;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationHistoryRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
-import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
-import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

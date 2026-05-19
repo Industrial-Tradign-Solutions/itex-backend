@@ -376,7 +376,7 @@ private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus
     private void validateSupplierRequiredForStatusChange(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus, IpQuoteRequestEntity qr) {
         if (requiresSupplierForStatusChange(currentStatus, newStatus) && qr.getSupplier() == null) {
             throw new NotChangeStatusException(
-                simpleMessage("ip.qr.supplier.required.for.status.change", newStatus.name())
+                compositeMessage("ip.qr.supplier.required.for.status.change", new String[]{newStatus.name()})
             );
         }
     }

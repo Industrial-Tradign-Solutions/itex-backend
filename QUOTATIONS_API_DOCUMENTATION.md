@@ -2,8 +2,8 @@
 
 **Base URL:** `/itex/api/ip/q`
 
-**Version:** 2.2  👈 UPDATED
-**Date:** May 12, 2026 (URL Routes Refactored)
+**Version:** 2.3
+**Date:** May 18, 2026 (Actual Endpoints)
 
 ---
 
@@ -79,7 +79,7 @@ Handles Quote Request linking within Quotation:
 - ✅ Remove QR from quotation (`DELETE /ip/q/{id}/quote-requests/{id_qqr}`)
 - ✅ Get Other Charges from QRs (`GET /ip/q/{id}/quote-requests/other-charges`)
 
-### 4. **IpQuotationOtherChargeController** 👈 NEW
+### 5. **IpQuotationOtherChargeController** 👈 NEW
 **Base URL:** `/itex/api/ip/q/{id_quotation}/other_charges`
 
 Handles Other Charges (freight, handling, insurance, etc.):
@@ -102,15 +102,15 @@ Handles Other Charges (freight, handling, insurance, etc.):
 {
   "CREATED": "Quotation created, can be edited",
   "SENT": "Quotation sent to client",
-  "ACCEPTED": "Quotation accepted by client",
-  "CLOSED": "Quotation closed (completed)",
+  "ANSWERED": "Client has answered the quotation",
+  "COMPLETE": "Quotation completed/closed",
   "REJECTED": "Quotation rejected"
 }
 ```
 
 **Status Flow:**
 ```
-CREATED → SENT → ACCEPTED → CLOSED
+CREATED → SENT → ANSWERED → COMPLETE
     ↓        ↓         ↓
        REJECTED
 ```
@@ -120,8 +120,7 @@ CREATED → SENT → ACCEPTED → CLOSED
 ```json
 {
   "NEW": "New product condition",
-  "USED": "Used product condition",
-  "REFURBISHED": "Refurbished product condition"
+  "USED": "Used product condition"
 }
 ```
 
@@ -166,18 +165,18 @@ Creates a new quotation with optional initial Quote Requests.
 {
   "clientId": "uuid",
   "currency": "USD",
-  "paymentTerms": "NET_30",
-  "incoterms": "FOB",
-  "observations": "Quotation for industrial equipment"  // Optional
+  "listQrId": ["uuid-qr1", "uuid-qr2"]  // Optional - initial QR to link
 }
 ```
 
 **Validation:**
 - `clientId` (UUID): Required - Client identifier
 - `currency` (Enum): Required - USD, EUR, GBP, CAD, MXN
-- `paymentTerms` (Enum): Required - NET_30, NET_45, NET_60, NET_90, IMMEDIATE
-- `incoterms` (Enum): Required - FOB, CIF, EXW, DDP, CFR, CIP
-- `observations` (String): Optional - Additional notes
+- `listQrId` (List\<UUID\>): Optional - Quote Request IDs to link on creation
+
+**Notes:**
+- `paymentTerms` and `incoterms` are NOT set on create - they come from the linked Quote Requests or must be set via Update endpoint
+- `observations` field is not available - use `remarks` (client-visible) or `internalRemarks` (internal) after creation
 
 **Response:** `200 OK`
 ```json
@@ -236,9 +235,11 @@ Updates an existing quotation's details.
 **Request Body:**
 ```json
 {
+  "clientId": "uuid",                  // Required (but shouldn't change after creation)
+  "currency": "USD",                   // Required (but shouldn't change after creation)
   "clientContactId": "uuid",           // Optional
   "clientQrNumber": "CLIENT-REF-123",  // Optional
-  "salesRepId": "uuid",                // Optional
+  "salesRepId": "uuid",                // Required
   "remarks": "Client-visible notes",   // Optional
   "internalRemarks": "Internal only",  // Optional
   "leadTime": 30,                      // Optional
@@ -329,16 +330,19 @@ Lists all quotations with pagination and filtering.
 
 ---
 
-### 4. Get Quotation by ID
+### 4. Open/Lock Quotation (Returns Full Details)
 
-**GET** `/ip/q/{id_quotation}` (implied from list endpoint)
+**PATCH** `/ip/q/open-lock/{id_quotation}?type=EDIT`
 
-Retrieve full details of a specific quotation.
+Opens and locks a quotation for editing while returning full quotation details.
 
 **Permission:** Module access `IP_QUOTATIONS`
 
 **URL Parameters:**
 - `id_quotation` (UUID): Quotation ID
+
+**Query Parameters:**
+- `type` (OpenAndLockType): Required - `EDIT` or `VIEW`
 
 **Response:** `200 OK`
 ```json
@@ -405,9 +409,17 @@ Retrieve full details of a specific quotation.
       }
     }
   ],
-  "clonedByQuotation": null  // 👈 NEW - shows original quotation if this is a clone
-}
+  "otherCharges": [],
+  "totalOtherCharges": 0.00,
+  "clonedByQuotation": null
+},
+"isOpenByUsername": true
 ```
+
+**Note:** This endpoint is used to both retrieve full quotation details AND lock it for editing. Use `type=VIEW` if you only want to see details without locking.
+
+**Errors:**
+- `423` - Already locked by another user
 
 ---
 
@@ -423,13 +435,13 @@ Changes the status of a quotation.
 - `id_quotation` (UUID): Quotation ID
 
 **Query Parameters:**
-- `status` (IpQuotationStatus): New status (CREATED, SENT, ACCEPTED, CLOSED)
+- `status` (IpQuotationStatus): New status (CREATED, SENT, ANSWERED, COMPLETE)
 
 **Allowed transitions:**
 - `CREATED` → `SENT`, `REJECTED`
-- `SENT` → `ACCEPTED`, `CLOSED`, `REJECTED`
-- `ACCEPTED` → `CLOSED`, `REJECTED`
-- `CLOSED` → (no transitions - final state)
+- `SENT` → `ANSWERED`, `COMPLETE`, `REJECTED`
+- `ANSWERED` → `COMPLETE`, `REJECTED`
+- `COMPLETE` → (no transitions - final state)
 - `REJECTED` → (no transitions - final state)
 
 **Response:** `200 OK`
@@ -1420,6 +1432,8 @@ CREATED → SENT → ANSWERED → COMPLETE
     ↓        ↓         ↓
        REJECTED
 ```
+
+**Actual Statuses:** CREATED, SENT, ANSWERED, COMPLETE, REJECTED
 
 ### 2. Lock Management
 - Always call `/open-lock/{id}` before editing

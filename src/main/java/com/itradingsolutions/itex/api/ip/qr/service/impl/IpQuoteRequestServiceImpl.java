@@ -360,6 +360,7 @@ private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus
         var currentStatus = qr.getStatus();
 
         validateNotSameStatus(qr, newStatus);
+        validateSupplierRequiredForStatusChange(currentStatus, newStatus, qr);
         validateStatusRequirements(qr, newStatus);
         validateNotFromComplete(currentStatus, newStatus);
         validateQuotationDependency(qr, currentStatus, newStatus);
@@ -370,6 +371,23 @@ private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus
         qr.setStatus(newStatus);
 
         return qrMapper.entityToDTO(qrRepository.save(qr));
+    }
+
+    private void validateSupplierRequiredForStatusChange(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus, IpQuoteRequestEntity qr) {
+        if (requiresSupplierForStatusChange(currentStatus, newStatus) && qr.getSupplier() == null) {
+            throw new NotChangeStatusException(
+                simpleMessage("ip.qr.supplier.required.for.status.change", newStatus.name())
+            );
+        }
+    }
+
+    private boolean requiresSupplierForStatusChange(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus) {
+        return switch (newStatus) {
+            case SENT -> currentStatus == IpQuoteRequestStatus.CREATED;
+            case ANSWERED -> currentStatus == IpQuoteRequestStatus.SENT;
+            case COMPLETE -> currentStatus == IpQuoteRequestStatus.ANSWERED;
+            default -> false;
+        };
     }
 
     private void validateNotSameStatus(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {

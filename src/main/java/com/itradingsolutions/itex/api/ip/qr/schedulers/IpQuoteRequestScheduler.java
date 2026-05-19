@@ -60,6 +60,7 @@ public class IpQuoteRequestScheduler {
         ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.SENT)
                 .stream()
                 .filter(qr -> qr.getCreatedAt().isBefore(limit))
+                .filter(qr -> qr.getSupplier() != null)
                 .forEach(qr -> {
                     if (qr.isValidAnswered()) {
                         ipQuoteRequestService.changeStatusQuoteRequest(qr.getId(), IpQuoteRequestStatus.ANSWERED);

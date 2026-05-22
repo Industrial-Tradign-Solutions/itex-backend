@@ -4,25 +4,42 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
 public record UpdateIpQuotationRequest(
-        @NotNull(message = "{ip.q.client.required}") UUID clientId,
-        @NotNull(message = "{ip.q.currency.required}") Currency currency,
+
+        @NotNull(message = "Client is required")
+        UUID clientId,
+
+        @NotNull(message = "Currency is required")
+        Currency currency,
+
         UUID clientContactId,
-        @Size(max = 50, message = "{ip.q.client-qr-number.size}") String clientQrNumber,
-        @NotNull(message = "{ip.q.sales-rep.required}") UUID salesRepId,
+
+        String clientQrNumber,
+
+        UUID salesRepId,
+
         String remarks,
+
         String internalRemarks,
-        @Positive(message = "{ip.q.lead-time.invalid}") Integer leadTime,
+
+        @Min(value = 0, message = "The lead time cannot be negative")
+        Integer leadTime,
+
         LeadTime leadTimeType,
-        @Positive(message = "{ip.q.validity.invalid}") Integer validity,
+
+        @Min(value = 0, message = "The validity cannot be negative")
+        Integer validity,
+
         LeadTime validityType,
+
         Incoterms incoterms,
+
         PaymentTerms paymentTerms
 ) {
 }

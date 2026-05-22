@@ -8,6 +8,8 @@ import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationsQuoteRequestSummaryDTO;
+import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestOtherChargesDTO;
+import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
 import lombok.Getter;
@@ -16,8 +18,13 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @Getter
 @Setter
@@ -53,17 +60,13 @@ public class IpQuotationDTO extends BaseDTO {
     private List<IpQuotationOtherChargeDTO> otherCharges;
     private IpQuotationDTO clonedByQuotation;
 
-    // products are derived in the service from all quoteRequestsQuotations entries
 
     public String getName() {
         return this.number;
     }
 
-    /**
-     * Calculates the total sum of all other charges.
-     *
-     * @return the sum of all other charge values, or BigDecimal.ZERO if no charges exist
-     */
+
+
     public BigDecimal getTotalOtherCharges() {
         if (otherCharges == null || otherCharges.isEmpty()) {
             return BigDecimal.ZERO;
@@ -71,5 +74,23 @@ public class IpQuotationDTO extends BaseDTO {
         return otherCharges.stream()
                 .map(IpQuotationOtherChargeDTO::getValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal getSubTotal() {
+        return BigDecimal.ZERO;
+    }
+
+    public BigDecimal getFreightCharges() {
+        return BigDecimal.ZERO;
+    }
+
+    public BigDecimal getTotal() {
+        return Stream.of(getSubTotal(), getFreightCharges(), getTotalOtherCharges())
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal getGrossWeightLbs() {
+        return BigDecimal.TWO;
     }
 }

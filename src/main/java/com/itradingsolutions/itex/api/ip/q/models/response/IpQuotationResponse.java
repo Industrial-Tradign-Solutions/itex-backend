@@ -17,6 +17,7 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -45,7 +46,6 @@ public class IpQuotationResponse extends BaseResponse {
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
     private ZonedDateTime applicationAt;
-    private String pdfUrl;
     private BasicUserResponse openBy;
     private ZonedDateTime openAt;
     private ZonedDateTime sentAt;
@@ -55,4 +55,12 @@ public class IpQuotationResponse extends BaseResponse {
     private List<BasicIpQuoteRequestResponse> listQuoteRequests;
     private List<IpQuotationProductResponse> products;
     private IpQuotationResponse clonedByQuotation;
+
+
+    private BigDecimal grossWeightLbs;
+
+    private BigDecimal totalOtherCharges;
+    private BigDecimal subTotal;
+    private BigDecimal total;
+    private BigDecimal freightCharges;
 }

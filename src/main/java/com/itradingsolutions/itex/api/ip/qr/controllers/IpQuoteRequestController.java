@@ -70,7 +70,7 @@ public class IpQuoteRequestController extends CommonController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @AccessToAction(action = ModuleAction.CREATE_IP_QUOTE_REQUESTS)
-    public ResponseEntity<MessageResponse<IpQuoteRequestResponse>> creatQuoteRequest(
+    public ResponseEntity<MessageResponse<IpQuoteRequestResponse>> createQuoteRequest(
             @RequestBody @Valid IpQuoteRequestRequest request
     ) {
         var resp = qrService.createIpQuoteRequest(qrMapper.requestToDTO(request));

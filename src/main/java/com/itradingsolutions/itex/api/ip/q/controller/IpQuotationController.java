@@ -15,7 +15,6 @@ import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuo
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.OpenLockIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
-import com.itradingsolutions.itex.api.ip.q.models.response.CreateQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationHistoryResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
@@ -62,7 +61,7 @@ public class IpQuotationController extends CommonController {
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.CREATE_IP_QUOTATIONS)
-    public ResponseEntity<MessageResponse<CreateQuotationResponse>> createQuotation(
+    public ResponseEntity<MessageResponse<ListIpQuotationResponse>> createQuotation(
             @RequestBody CreateIpQuotationRequest request
     ) {
         var resp = quotationService.createQuotation(request);
@@ -70,11 +69,7 @@ public class IpQuotationController extends CommonController {
             new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.created"),
-                new CreateQuotationResponse(
-                    quotationMapper.dtoToListResponse(resp),
-                    OpenAndLockType.EDIT,
-                    true
-                )
+                quotationMapper.dtoToListResponse(resp)
             )
         );
     }

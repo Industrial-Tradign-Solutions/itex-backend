@@ -54,8 +54,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -355,19 +353,21 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         );
     }
 
-private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus) {
+    private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus) {
         var qr = findById(qrId);
         var currentStatus = qr.getStatus();
 
         validateNotSameStatus(qr, newStatus);
         validateSupplierRequiredForStatusChange(currentStatus, newStatus, qr);
         validateStatusRequirements(qr, newStatus);
-        validateNotFromComplete(currentStatus, newStatus);
+        validateTerminalStatus(currentStatus);
         validateQuotationDependency(qr, currentStatus, newStatus);
         validateQuotationForReject(qr, newStatus);
 
-        clearAllTimestamps(qr);
         setStatusTimestamp(qr, newStatus);
+        if (newStatus.ordinal() < currentStatus.ordinal()) {
+            clearFutureTimestamps(qr, newStatus);
+        }
         qr.setStatus(newStatus);
 
         return qrMapper.entityToDTO(qrRepository.save(qr));
@@ -402,9 +402,11 @@ private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus
             throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
     }
 
-    private void validateNotFromComplete(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus) {
+    private void validateTerminalStatus(IpQuoteRequestStatus currentStatus) {
         if (currentStatus == IpQuoteRequestStatus.COMPLETE)
             throw new NotChangeStatusException(simpleMessage("ip.qr.cannot-change-complete-status"));
+        if (currentStatus == IpQuoteRequestStatus.REJECTED)
+            throw new NotChangeStatusException(simpleMessage("ip.qr.cannot-change-rejected-status"));
     }
 
     private void validateQuotationDependency(IpQuoteRequestEntity qr, IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus) {
@@ -438,13 +440,16 @@ private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus
                 });
     }
 
-    private void clearAllTimestamps(IpQuoteRequestEntity qr) {
-        Stream.<Consumer<IpQuoteRequestEntity>>of(
-                e -> e.setAnsweredAt(null),
-                e -> e.setCompleteAt(null),
-                e -> e.setRejectAt(null),
-                e -> e.setSentAt(null)
-        ).forEach(consumer -> consumer.accept(qr));
+    private void clearFutureTimestamps(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
+        switch (newStatus) {
+            case CREATED -> {
+                qr.setSentAt(null);
+                qr.setAnsweredAt(null);
+            }
+            case SENT ->
+                qr.setAnsweredAt(null);
+
+        }
     }
 
     private void setStatusTimestamp(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {

@@ -33,7 +33,11 @@ import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestR
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
+import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenQuoteRequestException;
+import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestDTO;
+import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.repository.IClientContactRepository;
@@ -52,6 +56,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -251,48 +257,116 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
 
     @Override
     @Transactional
-    public IpQuotationDTO changeStatusQuotation(UUID id, IpQuotationStatus status) {
-        var quotation = findById(id);
-        var oldDto = quotationMapper.entityToDTO(quotation);
-
-        if (status != IpQuotationStatus.REJECTED) {
-            var integrityErrors = IntegrityValidator.validateQuotationIntegrity(quotation);
-            if (!integrityErrors.isEmpty()) {
-                throw new QuotationIntegrityException(integrityErrors);
-            }
-        }
-
-        quotation.setStatus(status);
-        if (status == IpQuotationStatus.SENT) quotation.setSentAt(ZonedDateTime.now(zoneId));
-        else if (status == IpQuotationStatus.ANSWERED) quotation.setAnsweredAt(ZonedDateTime.now(zoneId));
-        else if (status == IpQuotationStatus.COMPLETE) quotation.setCompleteAt(ZonedDateTime.now(zoneId));
-        
-        var saved = quotationRepository.save(quotation);
-        var newDto = quotationMapper.entityToDTO(saved);
-        
-        // Register STATUS_CHANGE history
-        historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldDto, newDto);
-        
-        return newDto;
+    public IpQuotationDTO changeStatusQuotation(UUID id, IpQuotationStatus newStatus) {
+        return changeStatus(id, newStatus);
     }
 
     @Override
     @Transactional
     public IpQuotationDTO rejectQuotation(UUID id) {
-        var quotation = findById(id);
-        var oldDto = quotationMapper.entityToDTO(quotation);
-        
-        quotation.setStatus(IpQuotationStatus.REJECTED);
-        quotation.setRejectAt(ZonedDateTime.now(zoneId));
-        
-        var saved = quotationRepository.save(quotation);
-        var dto = quotationMapper.entityToDTO(saved);
-        
-        // Register REJECTED history
-        historyService.addHistory(IpQuotationHistoryAction.REJECTED, oldDto, dto);
-        
-        return dto;
+        return changeStatus(id, IpQuotationStatus.REJECTED);
     }
+    private IpQuotationDTO changeStatus(UUID qId, IpQuotationStatus newStatus) {
+        var quotation = findById(qId);
+        var oldQuotation = quotationMapper.entityToDTO(quotation);
+
+        var currentStatus = quotation.getStatus();
+
+        validateNotSameStatus(quotation, newStatus);
+        validateStatusRequirements(quotation, newStatus);
+        validateNotFromComplete(currentStatus);
+        validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
+        validatePurchaseOrderForReject(quotation, newStatus);
+
+        clearAllTimestamps(quotation, newStatus);
+        setStatusTimestamp(quotation, newStatus);
+        quotation.setStatus(newStatus);
+
+        var newQuotation = quotationMapper.entityToDTO(quotationRepository.save(quotation));
+        historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldQuotation, newQuotation);
+        return newQuotation;
+    }
+
+    private void validateNotSameStatus(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus.equals(quotation.getStatus()))
+            throw new NotChangeStatusException(simpleMessage("ip.q.equal-status"));
+    }
+
+    private void validateStatusRequirements(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus == IpQuotationStatus.SENT && (!quotation.isValidSent()))
+            throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-sent"));
+        if (newStatus == IpQuotationStatus.ANSWERED && (!quotation.isValidAnswered() || quotation.getSentAt() == null))
+            throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-answered"));
+        if (newStatus == IpQuotationStatus.COMPLETE && quotation.getAnsweredAt() == null)
+            throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-complete"));
+    }
+
+    private void validateNotFromComplete(IpQuotationStatus currentStatus) {
+        if (currentStatus == IpQuotationStatus.COMPLETE)
+            throw new NotChangeStatusException(simpleMessage("ip.q.cannot-change-complete-status"));
+    }
+
+    private void validatePurchaseOrderDependency(IpQuotationEntity quotation, IpQuotationStatus currentStatus, IpQuotationStatus newStatus) {
+        if (currentStatus == IpQuotationStatus.ANSWERED &&
+                (newStatus == IpQuotationStatus.SENT || newStatus == IpQuotationStatus.CREATED)) {
+            validatePurchaseOrderChangeStatus(quotation);
+        }
+    }
+
+    private void validatePurchaseOrderChangeStatus(IpQuotationEntity quotation) {
+        //TODO, validamos que el no tenga ninguna PO asignada
+        /*
+        Optional.ofNullable(qr.getQuotationsQuoteRequests())
+                .filter(list -> !list.isEmpty())
+                .ifPresent(list -> {
+                    throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
+                });
+
+         */
+    }
+
+    private void validatePurchaseOrderForReject(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus != IpQuotationStatus.REJECTED) return;
+        //TODO, validamos que todas las PO esten en rejected
+
+        /*
+        Optional.ofNullable(qr.getQuotationsQuoteRequests())
+                .filter(list -> !list.isEmpty())
+                .ifPresent(quotations -> {
+                    boolean allQuotationsRejected = quotations.stream()
+                            .map(IpQuotationsQuoteRequestEntity::getQuotation)
+                            .map(IpQuotationEntity::getStatus)
+                            .allMatch(status -> status == IpQuotationStatus.REJECTED);
+
+                    if (!allQuotationsRejected)
+                        throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
+                });
+         */
+    }
+
+    private void clearAllTimestamps(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        switch (newStatus) {
+            case CREATED -> {
+                quotation.setSentAt(null);
+                quotation.setAnsweredAt(null);
+            }
+            case SENT ->
+                quotation.setAnsweredAt(null);
+
+        }
+    }
+
+    private void setStatusTimestamp(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        var now = ZonedDateTime.now();
+        switch (newStatus) {
+            case ANSWERED -> quotation.setAnsweredAt(now);
+            case SENT -> quotation.setSentAt(now);
+            case COMPLETE -> quotation.setCompleteAt(now);
+            case REJECTED -> quotation.setRejectAt(now);
+            case CREATED -> { /* no timestamp */ }
+        }
+    }
+
 
     @Override
     @Transactional

@@ -21,6 +21,7 @@ import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationRespon
 import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
@@ -163,22 +164,24 @@ public class IpQuotationController extends CommonController {
         ));
     }
 
-    @PatchMapping("/change-status/{id_quotation}")
+    @PatchMapping("/{id_quotation}/change-status")
     @ResponseStatus(HttpStatus.OK)
     @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
-    public ResponseEntity<MessageResponse<IpQuotationResponse>> changeStatusQuotation(
+    public ResponseEntity<MessageResponse<ListIpQuotationResponse>> changeStatusQuotation(
             @PathVariable(name = "id_quotation") UUID idQuotation,
             @RequestParam IpQuotationStatus status
     ) {
+        if (status.equals(IpQuotationStatus.REJECTED))
+            throw new IllegalArgumentException("Cannot change status to REJECTED");
         var resp = quotationService.changeStatusQuotation(idQuotation, status);
         return ResponseEntity.ok(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.change-status"),
-                quotationMapper.dtoToResponse(resp)
+                quotationMapper.dtoToListResponse(resp)
         ));
     }
 
-    @PatchMapping("/reject/{id_quotation}")
+    @DeleteMapping("/{id_quotation}")
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.REJECT_IP_QUOTATIONS)
     public ResponseEntity<MessageResponse<IpQuotationResponse>> rejectQuotation(

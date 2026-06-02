@@ -149,4 +149,19 @@ public class IpQuotationEntity extends BaseEntity {
                 .map(IpQuotationsClonedEntity::getClonedQuotation)
                 .toList();
     }
+
+    public boolean isValidSent() {
+        if (this.quoteRequestsQuotations == null || this.quoteRequestsQuotations.isEmpty())
+            return false;
+
+        //TODO: Validamos que tengamos los items ingresados y que todos los items tengan ya los campos requeridos ingresados
+
+        return true;
+    }
+
+    public boolean isValidAnswered() {
+        if (this.sentAt == null)
+            return false;
+        return isValidSent();
+    }
 }

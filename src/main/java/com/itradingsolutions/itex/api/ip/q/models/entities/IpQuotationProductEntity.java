@@ -18,6 +18,7 @@ import lombok.Setter;
 
 import java.io.Serial;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "t_ip_quotation_products")
@@ -41,10 +42,17 @@ public class IpQuotationProductEntity extends BaseEntity {
     @Column(name = "number", nullable = false)
     private Integer number;
 
-    @Column(name = "profit_margin", nullable = false, precision = 5, scale = 4)
+    @Column(name = "profit_margin", nullable = false, precision = 3, scale = 2)
     private BigDecimal profitMargin = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "condition", nullable = false, length = 20)
     private IpQuotationProductCondition condition;
+
+    public void setProfitMargin(BigDecimal profitMargin) {
+        if (profitMargin.compareTo(BigDecimal.ZERO) < 0 || profitMargin.compareTo(BigDecimal.ONE) > 0) {
+            throw new IllegalArgumentException("El margen debe estar entre 0.00 y 1.00");
+        }
+        this.profitMargin = profitMargin.setScale(2, RoundingMode.HALF_UP);
+    }
 }

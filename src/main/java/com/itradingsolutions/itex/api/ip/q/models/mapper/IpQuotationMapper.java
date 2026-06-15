@@ -8,6 +8,8 @@ import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEnt
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
+import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
+import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -51,6 +53,8 @@ public interface IpQuotationMapper {
     }
 
     @Mapping(target = "quotationsQuoteRequestId", source = "quotationsQuoteRequest.id")
+    @Mapping(target = "qrNumber", expression = "java(mapQrNumberFromProduct(entity))")
+    @Mapping(target = "supplierName", expression = "java(mapSupplierNameFromProduct(entity))")
     IpQuotationProductDTO mapProduct(IpQuotationProductEntity entity);
 
     default List<IpQuotationProductDTO> mapProducts(IpQuotationEntity entity) {
@@ -61,5 +65,25 @@ public interface IpQuotationMapper {
                 .sorted(Comparator.comparingInt(p -> p.getNumber() != null ? p.getNumber() : 0))
                 .map(this::mapProduct)
                 .toList();
+    }
+
+    default String mapQrNumberFromProduct(IpQuotationProductEntity entity) {
+        if (entity == null) return null;
+        var qqr = entity.getQuotationsQuoteRequest();
+        if (qqr == null) return null;
+        IpQuoteRequestEntity qr = qqr.getQuoteRequest();
+        if (qr == null) return null;
+        return qr.getNumber();
+    }
+
+    default String mapSupplierNameFromProduct(IpQuotationProductEntity entity) {
+        if (entity == null) return null;
+        var qqr = entity.getQuotationsQuoteRequest();
+        if (qqr == null) return null;
+        IpQuoteRequestEntity qr = qqr.getQuoteRequest();
+        if (qr == null) return null;
+        SupplierEntity supplier = qr.getSupplier();
+        if (supplier == null) return null;
+        return supplier.getName();
     }
 }

@@ -65,7 +65,7 @@ create table t_ip_quotation_products (
     quotations_quote_request_id uuid not null references t_ip_quotations_quote_request,
     quote_request_product_id uuid references t_ip_quote_request_products,
     number int not null,
-    profit_margin NUMERIC(5,4) not null default 0,
+    profit_margin NUMERIC(3,2) not null default 0.00 CHECK (profit_margin >= 0.00 AND profit_margin <= 1.00),
     condition varchar(20) not null,
     created_at timestamp not null
 );

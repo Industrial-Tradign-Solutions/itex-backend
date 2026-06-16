@@ -77,7 +77,13 @@ public class IpQuotationDTO extends BaseDTO {
     }
 
     public BigDecimal getSubTotal() {
-        return BigDecimal.ZERO;
+        return Optional.ofNullable(this.products)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(IpQuotationProductDTO::getSellingExtendedPrice)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal getFreightCharges() {

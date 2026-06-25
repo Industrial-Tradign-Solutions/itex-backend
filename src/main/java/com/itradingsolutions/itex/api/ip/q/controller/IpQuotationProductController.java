@@ -6,6 +6,7 @@ import com.itradingsolutions.itex.api.common.util.models.responses.MessageRespon
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMapper;
+import com.itradingsolutions.itex.api.ip.q.models.requests.IpQuotationProductBulkRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.IpQuotationProductRequest;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationProductResponse;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -42,17 +44,28 @@ public class IpQuotationProductController extends CommonController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @AccessToAction(action = ModuleAction.UPDATE_IP_QUOTATIONS)
-    public ResponseEntity<MessageResponse<IpQuotationProductResponse>> addProductToQuotation(
+    public ResponseEntity<MessageResponse<List<IpQuotationProductResponse>>> addProductToQuotation(
             @PathVariable(name = "id_quotation") UUID idQuotation,
-            @RequestBody @Valid IpQuotationProductRequest request
+            @RequestBody @Valid IpQuotationProductBulkRequest bulkRequest
     ) {
-        var dto = buildDTO(request);
-        var resp = qProductService.createIpQuotationProduct(dto, idQuotation);
-        qHistoryService.addHistoryProduct(IpQuotationHistoryAction.ADD_PRODUCT, null, resp, idQuotation);
+        var dtos = bulkRequest.products().stream()
+                .map(this::buildDTO)
+                .toList();
+
+        var created = qProductService.createIpQuotationProducts(dtos, idQuotation);
+
+        created.forEach(dto ->
+                qHistoryService.addHistoryProduct(IpQuotationHistoryAction.ADD_PRODUCT, null, dto, idQuotation)
+        );
+
+        var responses = created.stream()
+                .map(qProductMapper::dtoToResponse)
+                .toList();
+
         return ResponseEntity.status(HttpStatus.CREATED).body(new MessageResponse<>(
                 SUCCESS_TITLE,
-                simpleMessage("ip.q.product.created"),
-                qProductMapper.dtoToResponse(resp)
+                simpleMessage("ip.q.product.bulk.created"),
+                responses
         ));
     }
 

@@ -159,6 +159,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         }
         var dto = quotationMapper.entityToDTO(quotation);
         loadClonedByQuotation(quotation, dto);
+        loadClonedQuotations(quotation, dto);
         return dto;
     }
 
@@ -421,7 +422,11 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO cloneQuotation(UUID id) {
         var original = findById(id);
-        
+        var user = userService.getUserAuthenticated();
+        if (isOpenStatus(original.getStatus()))
+            validateOpenQuotation(original, user);
+        validateMaxOpenQuotations(user.getId());
+
         // Clone the quotation entity
         var cloned = quotationMapper.clone(original);
         cloned.setStatus(IpQuotationStatus.CREATED);
@@ -476,16 +481,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         clonedRelation.setClonedQuotation(saved);
         clonedRepository.save(clonedRelation);
 
-        var dto = quotationMapper.entityToDTO(saved);
-
-        // Register CLONE history in original quotation
-        var originalDto = quotationMapper.entityToDTO(original);
-        historyService.addHistory(IpQuotationHistoryAction.CLONE, null, originalDto);
-        
-        // Register CREATE history in cloned quotation
-        historyService.addHistory(IpQuotationHistoryAction.CREATE, null, dto);
-        
-        return dto;
+        return quotationMapper.entityToDTO(saved);
     }
 
     private void validateEditable(IpQuotationEntity quotation) {
@@ -630,5 +626,29 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 .ifPresent(cloned -> dto.setClonedByQuotation(
                         quotationMapper.entityToDTO(cloned.getMainQuotation())
                 ));
+    }
+
+    private void loadClonedQuotations(IpQuotationEntity entity, IpQuotationDTO dto) {
+        var clonedQuotations = entity.getClonedQuotations();
+        if (clonedQuotations != null && !clonedQuotations.isEmpty()) {
+            dto.setClonedQuotations(
+                clonedQuotations.stream()
+                    .map(quotationMapper::entityToDTO)
+                    .toList()
+            );
+        }
+    }
+
+    private boolean isOpenStatus(IpQuotationStatus status) {
+        return status == IpQuotationStatus.CREATED
+                || status == IpQuotationStatus.SENT
+                || status == IpQuotationStatus.ANSWERED;
+    }
+
+    private void validateOpenQuotation(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity userAuthenticated) {
+        if (entity.getOpenBy() == null)
+            throw new NotExistIpQuotationException(simpleMessage("ip.q.not-block"));
+        if (!entity.getOpenBy().getId().equals(userAuthenticated.getId()))
+            throw new NotExistIpQuotationException(compositeMessage("ip.q.not-block-by", new String[]{entity.getOpenBy().getFullName()}));
     }
 }

@@ -56,6 +56,8 @@ public class IpQuotationResponse extends BaseResponse {
     private List<IpQuotationProductResponse> products;
     private IpQuotationResponse clonedByQuotation;
 
+    private List<ListIpQuotationResponse> clonedQuotations;
+
 
     private BigDecimal grossWeightLbs;
 

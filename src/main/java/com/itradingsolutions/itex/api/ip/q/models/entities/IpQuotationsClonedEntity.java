@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.models.entities;
 
+import com.itradingsolutions.itex.api.common.util.models.enums.UniqueDB;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -7,6 +8,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +21,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "t_ip_quotations_cloned")
+@Table(name = "t_ip_quotations_cloned", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "clone_q_id", name = UniqueDB.IP_Q_CLONED_ID)
+})
 @AllArgsConstructor
 @NoArgsConstructor
 public class IpQuotationsClonedEntity implements Serializable {

@@ -210,17 +210,22 @@ public class IpQuotationController extends CommonController {
     }
 
     @PatchMapping("/clone/{id_quotation}")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     @AccessToAction(action = ModuleAction.CLONE_IP_QUOTATIONS)
-    public ResponseEntity<MessageResponse<IpQuotationResponse>> cloneQuotation(
+    public ResponseEntity<MessageResponse<ListIpQuotationResponse>> cloneQuotation(
             @PathVariable(name = "id_quotation") UUID idQuotation
     ) {
+        var original = quotationService.getEntityById(idQuotation);
         var cloned = quotationService.cloneQuotation(idQuotation);
-        return ResponseEntity.ok(new MessageResponse<>(
-                SUCCESS_TITLE,
-                simpleMessage("ip.q.cloned"),
-                quotationMapper.dtoToResponse(cloned)
-        ));
+        var originalDto = quotationMapper.entityToDTO(original);
+        quotationHistoryService.addHistory(IpQuotationHistoryAction.CLONE, originalDto, cloned);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new MessageResponse<>(
+                        SUCCESS_TITLE,
+                        simpleMessage("ip.q.cloned"),
+                        quotationMapper.dtoToListResponse(cloned)
+                ));
     }
 
     @GetMapping("/validate-integrity/{id_quotation}")

@@ -92,6 +92,9 @@ create table t_ip_quotations_cloned (
     primary key (main_q_id, clone_q_id)
 );
 
+create unique index t_ip_quotations_cloned_clone_q_id_unique
+    on t_ip_quotations_cloned (clone_q_id);
+
 create table t_ip_quotation_history (
     id uuid not null primary key,
     ip_q_id uuid not null references t_ip_quotations,

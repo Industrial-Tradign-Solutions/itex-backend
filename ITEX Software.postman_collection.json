@@ -12,6 +12,36 @@
       "key": "API_URL",
       "value": "http://localhost:8080",
       "type": "string"
+    },
+    {
+      "key": "JWT_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "USER_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "USER_EMAIL",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "USER_NAME",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "USER_ROLE",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "USER_ROLE_ID",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -24,6 +54,61 @@
     ]
   },
   "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (pm.response.code === 200 && jsonData.token) {",
+                  "    pm.collectionVariables.set('JWT_TOKEN', jsonData.token);",
+                  "    pm.collectionVariables.set('USER_ID', jsonData.id);",
+                  "    pm.collectionVariables.set('USER_EMAIL', jsonData.email);",
+                  "    pm.collectionVariables.set('USER_NAME', jsonData.fullName);",
+                  "    pm.collectionVariables.set('USER_ROLE', jsonData.role);",
+                  "    pm.collectionVariables.set('USER_ROLE_ID', jsonData.roleId);",
+                  "    console.log('Token and user data saved to collection variables.');",
+                  "} else {",
+                  "    console.log('Login failed. No token received.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"your_username\",\n  \"password\": \"your_password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/login",
+              "host": ["{{API_URL}}"],
+              "path": ["login"]
+            },
+            "description": "Authenticates a user and returns a JWT token.\n\n**Note:** This endpoint is handled by Spring Security's JWT filter, not a REST controller.\n\n### Request Body\n- **username** (String, required): User's login username\n- **password** (String, required): User's password\n\n### Response (200 OK)\n```json\n{\n  \"id\": \"uuid\",\n  \"email\": \"user@example.com\",\n  \"user\": \"jdoe\",\n  \"token\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"fullName\": \"John Doe\",\n  \"expirationToken\": \"2026-01-15T23:59:59-05:00\",\n  \"roleId\": \"uuid\",\n  \"role\": \"Admin\",\n  \"passChanged\": true\n}\n```\n\n### Response (403 Forbidden)\n```json\n{\n  \"message\": \"¡Invalid credentials! \\n Bad credentials!\",\n  \"status\": 403,\n  \"data\": null\n}\n```\n\n### Auto-Save Variables\nAfter successful login, the following collection variables are automatically set:\n- `JWT_TOKEN` - Bearer token for authentication\n- `USER_ID` - Authenticated user's ID\n- `USER_EMAIL` - User's email\n- `USER_NAME` - User's full name\n- `USER_ROLE` - User's role name\n- `USER_ROLE_ID` - User's role ID"
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "IP Quotations",
       "item": [
@@ -711,24 +796,38 @@
               },
               "response": []
             },
-            {
-              "name": "Get Quote Request History",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{API_URL}}/itex/api/ip/qr/history/{id_quote_request}",
-                  "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "ip", "qr", "history", "{id_quote_request}"]
-                },
-                "description": "Retrieves the history/audit trail of a quote request.\n\n### Path Parameters\n- **id_quote_request** (UUID, required): Quote Request ID"
-              },
-              "response": []
-            }
-          ]
+        {
+          "name": "Get Quote Request History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/ip/qr/history/{id_quote_request}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "ip", "qr", "history", "{id_quote_request}"]
+            },
+            "description": "Retrieves the history/audit trail of a quote request.\n\n### Path Parameters\n- **id_quote_request** (UUID, required): Quote Request ID\n\n### Response\nReturns `List<IpQuoteRequestHistoryResponse>` with action, timestamp, user, and details."
+          },
+          "response": []
         },
         {
-          "name": "Quote Request Products",
+          "name": "Close List of Quote Requests",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/ip/qr/close-list",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "ip", "qr", "close-list"]
+            },
+            "description": "Closes/unlocks all quote requests currently open by the authenticated user.\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Quote requests closed successfully\",\n  \"data\": [\n    \"aa1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\",\n    \"bb2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e\"\n  ]\n}\n```"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quote Request Products",
           "item": [
             {
               "name": "Add Product to Quote Request",
@@ -1194,7 +1293,63 @@
               "host": ["{{API_URL}}"],
               "path": ["itex", "api", "ip", "products", "basic"]
             },
-            "description": "Retrieves a list of active products with basic info (id, name, sku)."
+            "description": "Retrieves a list of active products with basic info (id, name, sku).\n\n### Response\nReturns `List<BasicIpProductResponse>`."
+          },
+          "response": []
+        },
+        {
+          "name": "Close List of Products",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"cc3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f\",\n  \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\"\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/ip/products/close-list",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "ip", "products", "close-list"]
+            },
+            "description": "Closes/unlocks multiple products at once.\n\n### Request Body\n- **Body** (List<UUID>, required): Array of product UUIDs to close\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Products closed successfully\",\n  \"data\": [\n    \"cc3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f\",\n    \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\"\n  ]\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"cc3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f\",\n  \"newProductId\": \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/ip/products/replace",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "ip", "products", "replace"]
+            },
+            "description": "Replaces one product with another across all Quote Requests and Quotations. The old product is removed and the new product is added with the same configuration.\n\n### Request Body\n- **productId** (UUID, required): ID of the product to be replaced (removed)\n- **newProductId** (UUID, required): ID of the new product to take its place\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Product replaced successfully\",\n  \"data\": {\n    \"id\": \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\",\n    \"description\": \"New Product Description\",\n    ...\n  }\n}\n```\n\n### Response (400 Bad Request)\n```json\n{\n  \"title\": \"Error\",\n  \"message\": \"Product ID is Required\",\n  \"data\": null\n}\n```"
           },
           "response": []
         }
@@ -1319,7 +1474,63 @@
               "host": ["{{API_URL}}"],
               "path": ["itex", "api", "partners", "clients", "list-active"]
             },
-            "description": "Retrieves a list of all active clients."
+            "description": "Retrieves a list of all active clients with basic info (id, code, name, address, paymentTerms, infoByDepartment).\n\n### Response\nReturns `List<BasicClientResponse>`."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/clients/dashboard",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "clients", "dashboard"]
+            },
+            "description": "Retrieves client dashboard statistics.\n\n**Deprecated:** This endpoint will be removed in future versions.\n\n### Response (200 OK)\n```json\n{\n  \"totalClients\": 150,\n  \"totalProspects\": 25\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Load Open Clients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/clients/load-open-clients",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "clients", "load-open-clients"]
+            },
+            "description": "Retrieves all clients currently open/locked by the authenticated user.\n\n### Response\nReturns `List<ListClientResponse>` with basic info of locked clients (id, code, name, taxId, city, address, industry, status)."
+          },
+          "response": []
+        },
+        {
+          "name": "Close List of Clients",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8\",\n  \"4d0339c8-2b8c-5782-bf2b-9d4e1db1c6d9\"\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/clients/close-list-clients",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "clients", "close-list-clients"]
+            },
+            "description": "Closes/unlocks multiple clients at once.\n\n### Request Body\n- **Body** (List<UUID>, required): Array of client UUIDs to close\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Clients closed successfully\",\n  \"data\": [\n    \"3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8\",\n    \"4d0339c8-2b8c-5782-bf2b-9d4e1db1c6d9\"\n  ]\n}\n```"
           },
           "response": []
         }
@@ -1401,7 +1612,77 @@
               "host": ["{{API_URL}}"],
               "path": ["itex", "api", "partners", "suppliers", "close-supplier", "{supplierId}"]
             },
-            "description": "Closes/unlocks a supplier."
+            "description": "Closes/unlocks a single supplier.\n\n### Path Parameters\n- **supplierId** (UUID, required): Supplier ID\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Supplier closed successfully\",\n  \"data\": \"uuid-of-supplier\"\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "List Active Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/suppliers/list-active",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "suppliers", "list-active"]
+            },
+            "description": "Retrieves a list of all active suppliers with basic info.\n\n### Response\nReturns `List<BasicSupplierResponse>` with id, name, address, paymentTerms, infoByDepartment."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Supplier Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/suppliers/dashboard",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "suppliers", "dashboard"]
+            },
+            "description": "Retrieves supplier dashboard statistics.\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Dashboard loaded\",\n  \"data\": 42\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Load Open Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/suppliers/load-open-suppliers",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "suppliers", "load-open-suppliers"]
+            },
+            "description": "Retrieves all suppliers currently open/locked by the authenticated user.\n\n### Response\nReturns `List<ListSupplierResponse>` with basic info of locked suppliers (id, name, taxId, city, address, status)."
+          },
+          "response": []
+        },
+        {
+          "name": "Close List of Suppliers",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\",\n  \"ee5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b\"\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/partners/suppliers/close-list-suppliers",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "partners", "suppliers", "close-list-suppliers"]
+            },
+            "description": "Closes/unlocks multiple suppliers at once.\n\n### Request Body\n- **Body** (List<UUID>, required): Array of supplier UUIDs to close\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Suppliers closed successfully\",\n  \"data\": [\n    \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\",\n    \"ee5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b\"\n  ]\n}\n```"
           },
           "response": []
         }
@@ -1447,11 +1728,11 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{API_URL}}/itex/api/master/locations/countries/lists",
+                  "raw": "{{API_URL}}/itex/api/master/locations/countries/basic",
                   "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "master", "locations", "countries", "lists"]
+                  "path": ["itex", "api", "master", "locations", "countries", "basic"]
                 },
-                "description": "Retrieves countries with basic info (id, name, nameShort)."
+                "description": "Retrieves countries with basic info grouped by active/inactive.\n\n### Response (200 OK)\n```json\n{\n  \"active\": [\n    { \"id\": \"uuid\", \"name\": \"United States\", \"nameShort\": \"US\" }\n  ],\n  \"inactive\": []\n}\n```"
               },
               "response": []
             },
@@ -1550,11 +1831,11 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{API_URL}}/itex/api/master/locations/states/lists",
+                  "raw": "{{API_URL}}/itex/api/master/locations/states/basic",
                   "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "master", "locations", "states", "lists"]
+                  "path": ["itex", "api", "master", "locations", "states", "basic"]
                 },
-                "description": "Retrieves states with basic info."
+                "description": "Retrieves states with basic info grouped by active/inactive.\n\n### Response (200 OK)\n```json\n{\n  \"active\": [\n    { \"id\": \"uuid\", \"name\": \"Florida\", \"nameShort\": \"FL\", \"countryId\": \"uuid\" }\n  ],\n  \"inactive\": []\n}\n```"
               },
               "response": []
             },
@@ -1653,11 +1934,11 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{API_URL}}/itex/api/master/locations/cities/lists",
+                  "raw": "{{API_URL}}/itex/api/master/locations/cities/basic",
                   "host": ["{{API_URL}}"],
-                  "path": ["itex", "api", "master", "locations", "cities", "lists"]
+                  "path": ["itex", "api", "master", "locations", "cities", "basic"]
                 },
-                "description": "Retrieves cities with basic info (id, name, fullName)."
+                "description": "Retrieves cities with basic info grouped by active/inactive.\n\n### Response (200 OK)\n```json\n{\n  \"active\": [\n    { \"id\": \"uuid\", \"name\": \"Miami\", \"fullName\": \"Miami, FL\", \"stateId\": \"uuid\" }\n  ],\n  \"inactive\": []\n}\n```"
               },
               "response": []
             },
@@ -1758,11 +2039,29 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{API_URL}}/itex/api/master/departments/lists",
+              "raw": "{{API_URL}}/itex/api/master/departments/basic",
               "host": ["{{API_URL}}"],
-              "path": ["itex", "api", "master", "departments", "lists"]
+              "path": ["itex", "api", "master", "departments", "basic"]
             },
-            "description": "Retrieves departments with basic info grouped by active/inactive."
+            "description": "Retrieves departments with basic info grouped by active/inactive.\n\n### Response (200 OK)\n```json\n{\n  \"active\": [\n    { \"id\": \"uuid\", \"name\": \"Sales\", \"description\": \"Sales Department\" }\n  ],\n  \"inactive\": []\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Show Departments by Info Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/master/departments/show_info?clientInfo=true&supplierInfo=false",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "master", "departments", "show_info"],
+              "query": [
+                {"key": "clientInfo", "value": "true"},
+                {"key": "supplierInfo", "value": "false"}
+              ]
+            },
+            "description": "Retrieves departments filtered by info type (client or supplier info).\n\n### Query Parameters\n- **clientInfo** (boolean, default=false): Filter departments with client info\n- **supplierInfo** (boolean, default=false): Filter departments with supplier info\n\n### Response (200 OK)\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"name\": \"Sales\",\n    \"description\": \"Sales Department\",\n    \"active\": true,\n    \"clientInfo\": true\n  }\n]\n```"
           },
           "response": []
         },
@@ -2154,7 +2453,72 @@
               "host": ["{{API_URL}}"],
               "path": ["itex", "api", "master", "brands", "assign-brand-supplier"]
             },
-            "description": "Assigns a brand to a supplier."
+            "description": "Assigns a single brand to a supplier.\n\n### Request Body\n- **brandId** (UUID, required): Brand ID\n- **supplierId** (UUID, required): Supplier ID\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Brand assigned to supplier successfully\",\n  \"data\": null\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Brand to Supplier List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brandId\": \"uuid\",\n  \"supplierIds\": [\n    \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\",\n    \"ee5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/master/brands/assign-brand-supplier-list",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "master", "brands", "assign-brand-supplier-list"]
+            },
+            "description": "Assigns a brand to multiple suppliers at once.\n\n### Request Body\n- **brandId** (UUID, required): Brand ID to assign\n- **supplierIds** (List<UUID>, required): Array of Supplier IDs\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Brand assigned to suppliers successfully\",\n  \"data\": null\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Unassign Supplier from Brand",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/master/brands/unassign-supplier/{brandId}/{supplierId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "master", "brands", "unassign-supplier", "{brandId}", "{supplierId}"]
+            },
+            "description": "Removes the association between a brand and a supplier.\n\n### Path Parameters\n- **brandId** (UUID, required): Brand ID\n- **supplierId** (UUID, required): Supplier ID to unassign\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Supplier unassigned from brand successfully\",\n  \"data\": \"uuid-of-brand\"\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Brand Name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "Test Brand Name"
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/master/brands/validate-brand",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "master", "brands", "validate-brand"]
+            },
+            "description": "Validates a brand name and returns the brand if it exists.\n\n### Request Body\n- **Body** (String, required): Brand name to validate (text/plain)\n\n### Response (200 OK)\n```json\n{\n  \"id\": \"uuid\",\n  \"name\": \"Test Brand Name\",\n  \"active\": true\n}\n```\n\n### Response (404 Not Found)\nReturns null or empty if brand doesn't exist."
           },
           "response": []
         }
@@ -2407,7 +2771,21 @@
               "host": ["{{API_URL}}"],
               "path": ["itex", "api", "admin", "roles"]
             },
-            "description": "Retrieves a list of all roles."
+            "description": "Retrieves a list of all roles with full details.\n\n### Response\nReturns `List<RoleResponse>` with id, name, description, active, createdAt, updatedAt."
+          },
+          "response": []
+        },
+        {
+          "name": "List Basic Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/basic",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "basic"]
+            },
+            "description": "Retrieves roles with basic info grouped by active/inactive.\n\n### Response (200 OK)\n```json\n{\n  \"active\": [\n    { \"id\": \"uuid\", \"name\": \"Admin\", \"description\": \"System Administrator\" }\n  ],\n  \"inactive\": []\n}\n```"
           },
           "response": []
         },
@@ -2533,7 +2911,206 @@
               "host": ["{{API_URL}}"],
               "path": ["itex", "api", "admin", "role-menus"]
             },
-            "description": "Retrieves all available role menus (modules)."
+            "description": "Retrieves all available role menus (modules) in the system.\n\n### Response\nReturns list of all menu items that can be assigned to roles."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Role Menus",
+      "item": [
+        {
+          "name": "Get Role Menus by Role ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/menu/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "menu", "{roleId}"]
+            },
+            "description": "Retrieves all menus assigned to a specific role with full structure.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Response (200 OK)\n```json\n{\n  \"menus\": [\n    {\n      \"id\": \"uuid\",\n      \"name\": \"Dashboard\",\n      \"options\": [\n        { \"id\": \"uuid\", \"name\": \"View\", \"active\": true }\n      ]\n    }\n  ]\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role Menu IDs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/menu/list-id/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "menu", "list-id", "{roleId}"]
+            },
+            "description": "Retrieves only the menu IDs assigned to a specific role.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Response (200 OK)\n```json\n{\n  \"menuIds\": [\n    \"uuid-menu-1\",\n    \"uuid-menu-2\"\n  ]\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role Menus",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menuIds\": [\n    \"uuid-menu-1\",\n    \"uuid-menu-2\",\n    \"uuid-menu-3\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/menu/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "menu", "{roleId}"]
+            },
+            "description": "Updates the menu assignments for a role. Replaces all existing menus with the new list.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Request Body\n- **menuIds** (List<UUID>, required): Array of menu IDs to assign to the role\n\n### Response (200 OK)\nReturns `List<RoleMenuDTO>` with the updated menu assignments."
+          },
+          "response": []
+        },
+        {
+          "name": "List Menus for Role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/menu/list-menus/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "menu", "list-menus", "{roleId}"]
+            },
+            "description": "Retrieves all available menus organized by module for a specific role. Shows which menus are assigned and which are not.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Response (200 OK)\nReturns `List<MainMenuDTO>` with full menu structure including assignment status."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Role Actions",
+      "item": [
+        {
+          "name": "Get Role Actions by Role ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/action/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "action", "{roleId}"]
+            },
+            "description": "Retrieves all actions (permissions) assigned to a specific role.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Response (200 OK)\n```json\n{\n  \"actions\": [\n    {\n      \"id\": \"uuid\",\n      \"name\": \"CREATE_CLIENT\",\n      \"description\": \"Can create clients\"\n    }\n  ]\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role Action IDs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/action/list-id/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "action", "list-id", "{roleId}"]
+            },
+            "description": "Retrieves only the action IDs assigned to a specific role.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Response (200 OK)\n```json\n{\n  \"actionIds\": [\n    \"uuid-action-1\",\n    \"uuid-action-2\"\n  ]\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role Actions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actionIds\": [\n    \"uuid-action-1\",\n    \"uuid-action-2\",\n    \"uuid-action-3\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/admin/roles/action/{roleId}",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "admin", "roles", "action", "{roleId}"]
+            },
+            "description": "Updates the action (permission) assignments for a role. Replaces all existing actions with the new list.\n\n### Path Parameters\n- **roleId** (UUID, required): Role ID\n\n### Request Body\n- **actionIds** (List<UUID>, required): Array of action IDs to assign to the role\n\n### Response (200 OK)\nReturns `List<RoleActionDTO>` with the updated action assignments."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Email",
+      "item": [
+        {
+          "name": "Send Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Welcome to ITEX\",\n  \"body\": \"<h1>Welcome!</h1><p>Your account has been created.</p>\",\n  \"to\": [\"user@example.com\"],\n  \"cc\": [],\n  \"cco\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/email/sent",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "email", "sent"]
+            },
+            "description": "Sends an email to the specified recipients.\n\n### Request Body\n- **subject** (String, required): Email subject\n- **body** (String, required): Email body (HTML supported)\n- **to** (List<String>, required): List of recipient email addresses (min 1)\n- **cc** (List<String>, optional): CC recipients\n- **cco** (List<String>, optional): BCC recipients\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Email sent successfully\",\n  \"data\": \"Email sent\"\n}\n```\n\n### Response (400 Bad Request)\n```json\n{\n  \"title\": \"Error\",\n  \"message\": \"Subject is required\",\n  \"data\": null\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Email with Attachments",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "request",
+                  "value": "{\n  \"subject\": \"Invoice Attached\",\n  \"body\": \"<h1>Invoice</h1><p>Please find the invoice attached.</p>\",\n  \"to\": [\"client@example.com\"],\n  \"cc\": [],\n  \"cco\": []\n}",
+                  "type": "text",
+                  "contentType": "application/json"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{API_URL}}/itex/api/email/send-attachment",
+              "host": ["{{API_URL}}"],
+              "path": ["itex", "api", "email", "send-attachment"]
+            },
+            "description": "Sends an email with file attachments.\n\n### Request (multipart/form-data)\n- **request** (EmailRequest, required): Email details as JSON part\n  - **subject** (String, required): Email subject\n  - **body** (String, required): Email body (HTML supported)\n  - **to** (List<String>, required): Recipient email addresses\n  - **cc** (List<String>, optional): CC recipients\n  - **cco** (List<String>, optional): BCC recipients\n- **files** (MultipartFile, required): One or more files to attach\n\n### Response (200 OK)\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Email sent successfully\",\n  \"data\": \"Email sent\"\n}\n```"
           },
           "response": []
         }

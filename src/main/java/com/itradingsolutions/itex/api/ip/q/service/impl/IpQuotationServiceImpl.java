@@ -12,6 +12,7 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationClientMismatchExc
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationIntegrityException;
+import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationStatusRestrictionException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
@@ -56,8 +57,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -373,10 +372,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId) {
         var quotation = findById(quotationId);
-        validateEditable(quotation);
-        var qqr = qqrRepository.findByIdAndQuotation_Id(qqrId, quotationId)
-                .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
-        qqrRepository.delete(qqr);
+        validateQuotationForQRDeletion(quotation);
+        var exists = qqrRepository.existsByIdAndQuotation_Id(qqrId, quotationId);
+        if (!exists) {
+            throw new NotExistIpQuotationException(simpleMessage("ip.q.qr.not-exist"));
+        }
+        qqrRepository.deleteProductsByQqrId(qqrId);
+        qqrRepository.deleteQqrById(qqrId);
     }
 
     @Override
@@ -487,6 +489,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private void validateEditable(IpQuotationEntity quotation) {
         if (quotation.getStatus() == IpQuotationStatus.COMPLETE || quotation.getStatus() == IpQuotationStatus.REJECTED)
             throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
+    }
+
+    private void validateQuotationForQRDeletion(IpQuotationEntity quotation) {
+        if (quotation.getStatus() != IpQuotationStatus.CREATED &&
+            quotation.getStatus() != IpQuotationStatus.SENT) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.qr.cannot-delete"));
+        }
     }
 
     private void validateMaxOpenQuotations(UUID idUser) {

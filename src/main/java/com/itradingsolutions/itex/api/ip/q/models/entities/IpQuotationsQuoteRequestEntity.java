@@ -57,6 +57,9 @@ public class IpQuotationsQuoteRequestEntity implements Serializable {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "quotationsQuoteRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IpQuotationProductEntity> quotationProducts;
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "quotationsQuoteRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IpQuotationOtherChargesQuoteRequestEntity> quotationsOtherCharges;
+
     public int getMaxNumberOfProducts() {
         if (quotationProducts == null || quotationProducts.isEmpty()) return 1;
         return quotationProducts.stream()

@@ -101,6 +101,12 @@ public class IpQuotationDTO extends BaseDTO {
     }
 
     public BigDecimal getGrossWeightLbs() {
-        return BigDecimal.TWO;
+        return Optional.ofNullable(products)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(IpQuotationProductDTO::getGrossWeightLbs)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

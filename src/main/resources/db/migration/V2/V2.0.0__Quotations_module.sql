@@ -103,3 +103,14 @@ create table t_ip_quotation_history (
     created_at timestamp not null,
     data json
 );
+
+create table t_ip_quotation_other_charges_quote_request (
+    id uuid not null primary key,
+    quotations_quote_request_id uuid not null references t_ip_quotations_quote_request,
+    qr_other_charge_id uuid not null references t_ip_quote_requests_other_charges,
+    created_at timestamp not null
+);
+
+alter table t_ip_quotation_other_charges_quote_request
+    add constraint t_ip_quotation_other_charges_qqr_unique
+        unique (qr_other_charge_id, quotations_quote_request_id);

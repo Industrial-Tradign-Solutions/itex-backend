@@ -6,12 +6,13 @@ import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationsQuoteRequestSummaryDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationOtherChargesQuoteRequestEntity;
-import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargesQuoteRequestMapper;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationOtherChargesQuoteRequestResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
+import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import org.mapstruct.Mapper;
@@ -22,7 +23,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {IpQuotationOtherChargeMapper.class, IpQuotationOtherChargesQuoteRequestMapper.class})
 public interface IpQuotationMapper {
 
     ListIpQuotationResponse dtoToListResponse(IpQuotationDTO dto);
@@ -32,6 +34,7 @@ public interface IpQuotationMapper {
     @Mapping(target = "qrOtherCharges", expression = "java(mapQrOtherCharges(entity))")
     IpQuotationDTO entityToDTO(IpQuotationEntity entity);
 
+    @Mapping(target = "otherCharges", expression = "java(mapOtherChargesResponse(dto))")
     @Mapping(target = "qrOtherCharges", expression = "java(mapQrOtherChargesResponse(dto))")
     IpQuotationResponse dtoToResponse(IpQuotationDTO dto);
     
@@ -104,6 +107,15 @@ public interface IpQuotationMapper {
 
     @Mapping(target = "qrOtherCharge", source = "dto.qrOtherCharge")
     IpQuotationOtherChargesQuoteRequestResponse mapQrOtherChargeToResponse(IpQuotationOtherChargesQuoteRequestDTO dto);
+
+    IpQuotationOtherChargeResponse mapOtherChargeToResponse(IpQuotationOtherChargeDTO dto);
+
+    default List<IpQuotationOtherChargeResponse> mapOtherChargesResponse(IpQuotationDTO dto) {
+        if (dto.getOtherCharges() == null) return Collections.emptyList();
+        return dto.getOtherCharges().stream()
+                .map(this::mapOtherChargeToResponse)
+                .toList();
+    }
 
     default String mapSupplierNameFromProduct(IpQuotationProductEntity entity) {
         if (entity == null) return null;

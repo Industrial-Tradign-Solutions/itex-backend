@@ -186,7 +186,7 @@
                   "host": ["{{API_URL}}"],
                   "path": ["itex", "api", "ip", "q", "{id_quotation}"]
                 },
-                "description": "Retrieves detailed information of a specific quotation including products, quote requests, and other charges.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Response\nReturns IpQuotationResponse with full details: client, currency, status, products[], quoteRequests[], otherCharges[], totals, etc."
+                "description": "Retrieves detailed information of a specific quotation including products, quote requests, and other charges.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Response\nReturns IpQuotationResponse with full details: client, currency, status, products[], quoteRequests[], **otherCharges[]** (propios), **qrOtherCharges[]** (importados desde QR), totals, etc."
               },
               "response": []
             },
@@ -468,7 +468,7 @@
                   "host": ["{{API_URL}}"],
                   "path": ["itex", "api", "ip", "q", "{id_quotation}", "quote-requests", "{id_qqr}"]
                 },
-                "description": "Removes a Quote Request from the quotation. Only allowed in CREATED status.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id_qqr** (UUID, required): Quote Request ID to remove\n\n### Response\nReturns removed QR ID."
+                "description": "Removes a Quote Request from the quotation. Only allowed in CREATED status.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id_qqr** (UUID, required): Quote Request ID to remove\n\n### Cascade\n- All products from this QR are removed\n- All QR-imported other charges from this QR are removed\n\n### Response\nReturns removed QR ID."
               },
               "response": []
             },
@@ -590,6 +590,76 @@
                   "path": ["itex", "api", "ip", "q", "{id_quotation}", "other_charges", "{id_other_charge}"]
                 },
                 "description": "Removes an other charge from the quotation. Only allowed in CREATED status.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id_other_charge** (UUID, required): Other Charge ID to remove\n\n### Response\nReturns removed other charge ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Import Other Charges from QR",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"items\": [\n    {\n      \"quotationsQuoteRequestId\": \"uuid-del-qqr-junction\",\n      \"qrOtherChargeId\": \"uuid-del-other-charge\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/other_charges/import-from-qr",
+                  "host": ["{{API_URL}}"],
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "other_charges", "import-from-qr"]
+                },
+                "description": "Imports other charges from associated Quote Requests into the Quotation. Read-only after import.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Request Body\n- **items[]** (Array, required): List of items to import\n  - **quotationsQuoteRequestId** (UUID, required): Q-QR junction ID (obtained from listQuoteRequests[i].qqrId)\n  - **qrOtherChargeId** (UUID, required): Other charge ID in the QR (obtained from available-from-qr)\n\n### Validation\n- Duplicate qrOtherChargeId in same request → error\n- Already imported qrOtherChargeId → silently skipped\n- quotationsQuoteRequestId not belonging to this Q → error\n\n### Response 201 Created\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"Other charges imported from QR successfully\",\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"quotationsQuoteRequestId\": \"uuid\",\n      \"qrOtherCharge\": {\n        \"id\": \"uuid\",\n        \"value\": 100.00,\n        \"description\": \"Handling fee\"\n      }\n    }\n  ]\n}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Available Other Charges from QR",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/other_charges/available-from-qr",
+                  "host": ["{{API_URL}}"],
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "other_charges", "available-from-qr"]
+                },
+                "description": "Retrieves other charges from associated QR that have NOT yet been imported.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n\n### Response 200 OK\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"value\": 100.00,\n    \"description\": \"Handling fee\",\n    \"qrNumber\": \"QR-001\"\n  }\n]\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Imported Other Charge from QR",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/other_charges/imported-from-qr/{id}",
+                  "host": ["{{API_URL}}"],
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "other_charges", "imported-from-qr", "{id}"]
+                },
+                "description": "Retrieves a specific imported other charge.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id** (UUID, required): Imported other charge ID\n\n### Response 200 OK\n```json\n{\n  \"id\": \"uuid\",\n  \"quotationsQuoteRequestId\": \"uuid\",\n  \"qrOtherCharge\": {\n    \"id\": \"uuid\",\n    \"value\": 100.00,\n    \"description\": \"Handling fee\"\n  }\n}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Imported Other Charge from QR",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_URL}}/itex/api/ip/q/{id_quotation}/other_charges/imported-from-qr/{id}",
+                  "host": ["{{API_URL}}"],
+                  "path": ["itex", "api", "ip", "q", "{id_quotation}", "other_charges", "imported-from-qr", "{id}"]
+                },
+                "description": "Removes an imported other charge from the quotation. Read-only items cannot be edited, only deleted.\n\n### Path Parameters\n- **id_quotation** (UUID, required): Quotation ID\n- **id** (UUID, required): Imported other charge ID to remove\n\n### Response 200 OK\n```json\n{\n  \"title\": \"Success\",\n  \"message\": \"QR other charge removed from quotation\",\n  \"data\": \"uuid-del-registro-eliminado\"\n}\n```"
               },
               "response": []
             }

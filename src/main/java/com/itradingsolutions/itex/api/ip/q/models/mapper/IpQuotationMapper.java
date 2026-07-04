@@ -1,11 +1,15 @@
 package com.itradingsolutions.itex.api.ip.q.models.mapper;
 
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
+import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargesQuoteRequestDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationsQuoteRequestSummaryDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationOtherChargesQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargesQuoteRequestMapper;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationOtherChargesQuoteRequestResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
@@ -25,8 +29,10 @@ public interface IpQuotationMapper {
 
     @Mapping(target = "listQuoteRequests", source = "quoteRequestsQuotations")
     @Mapping(target = "products", expression = "java(mapProducts(entity))")
+    @Mapping(target = "qrOtherCharges", expression = "java(mapQrOtherCharges(entity))")
     IpQuotationDTO entityToDTO(IpQuotationEntity entity);
 
+    @Mapping(target = "qrOtherCharges", expression = "java(mapQrOtherChargesResponse(dto))")
     IpQuotationResponse dtoToResponse(IpQuotationDTO dto);
     
     @Mapping(target = "id", ignore = true)
@@ -75,6 +81,29 @@ public interface IpQuotationMapper {
         if (qr == null) return null;
         return qr.getNumber();
     }
+
+    default List<IpQuotationOtherChargesQuoteRequestDTO> mapQrOtherCharges(IpQuotationEntity entity) {
+        if (entity.getQuoteRequestsQuotations() == null) return Collections.emptyList();
+        return entity.getQuoteRequestsQuotations().stream()
+                .filter(qqr -> qqr.getQuotationsOtherCharges() != null)
+                .flatMap(qqr -> qqr.getQuotationsOtherCharges().stream())
+                .map(this::mapQrOtherCharge)
+                .toList();
+    }
+
+    @Mapping(target = "quotationsQuoteRequestId", source = "entity.quotationsQuoteRequest.id")
+    @Mapping(target = "qrOtherCharge", source = "entity.qrOtherCharge")
+    IpQuotationOtherChargesQuoteRequestDTO mapQrOtherCharge(IpQuotationOtherChargesQuoteRequestEntity entity);
+
+    default List<IpQuotationOtherChargesQuoteRequestResponse> mapQrOtherChargesResponse(IpQuotationDTO dto) {
+        if (dto.getQrOtherCharges() == null) return Collections.emptyList();
+        return dto.getQrOtherCharges().stream()
+                .map(this::mapQrOtherChargeToResponse)
+                .toList();
+    }
+
+    @Mapping(target = "qrOtherCharge", source = "dto.qrOtherCharge")
+    IpQuotationOtherChargesQuoteRequestResponse mapQrOtherChargeToResponse(IpQuotationOtherChargesQuoteRequestDTO dto);
 
     default String mapSupplierNameFromProduct(IpQuotationProductEntity entity) {
         if (entity == null) return null;

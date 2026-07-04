@@ -8,7 +8,6 @@ import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationsQuoteRequestSummaryDTO;
-import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestOtherChargesDTO;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
@@ -58,6 +57,7 @@ public class IpQuotationDTO extends BaseDTO {
     private List<IpQuotationsQuoteRequestSummaryDTO> listQuoteRequests;
     private List<IpQuotationProductDTO> products;
     private List<IpQuotationOtherChargeDTO> otherCharges;
+    private List<IpQuotationOtherChargesQuoteRequestDTO> qrOtherCharges;
     private IpQuotationDTO clonedByQuotation;
     private List<IpQuotationDTO> clonedQuotations;
 
@@ -69,12 +69,15 @@ public class IpQuotationDTO extends BaseDTO {
 
 
     public BigDecimal getTotalOtherCharges() {
-        if (otherCharges == null || otherCharges.isEmpty()) {
-            return BigDecimal.ZERO;
-        }
-        return otherCharges.stream()
+        var ownTotal = Optional.ofNullable(otherCharges)
+                .orElseGet(Collections::emptyList).stream()
                 .map(IpQuotationOtherChargeDTO::getValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var qrTotal = Optional.ofNullable(qrOtherCharges)
+                .orElseGet(Collections::emptyList).stream()
+                .map(oc -> oc.getQrOtherCharge().getValue())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return ownTotal.add(qrTotal);
     }
 
     public BigDecimal getSubTotal() {

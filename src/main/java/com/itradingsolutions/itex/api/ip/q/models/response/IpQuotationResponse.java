@@ -54,6 +54,7 @@ public class IpQuotationResponse extends BaseResponse {
     private ZonedDateTime rejectAt;
     private List<BasicIpQuoteRequestResponse> listQuoteRequests;
     private List<IpQuotationProductResponse> products;
+    private List<IpQuotationOtherChargesQuoteRequestResponse> qrOtherCharges;
     private IpQuotationResponse clonedByQuotation;
 
     private List<ListIpQuotationResponse> clonedQuotations;

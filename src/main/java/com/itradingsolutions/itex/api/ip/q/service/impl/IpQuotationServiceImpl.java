@@ -378,6 +378,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
             throw new NotExistIpQuotationException(simpleMessage("ip.q.qr.not-exist"));
         }
         qqrRepository.deleteProductsByQqrId(qqrId);
+        qqrRepository.deleteOtherChargesByQqrId(qqrId);
         qqrRepository.deleteQqrById(qqrId);
     }
 

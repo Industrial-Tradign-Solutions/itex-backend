@@ -17,6 +17,7 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.QuoteRequestAlreadyLinkedE
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationOtherChargeEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationOtherChargesQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsClonedEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
@@ -459,7 +460,19 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                         clonedQqr.getQuotationProducts().add(clonedProduct);
                     });
                 }
-                
+
+                // Clone QR-imported other charges
+                clonedQqr.setQuotationsOtherCharges(new ArrayList<>());
+                if (originalQqr.getQuotationsOtherCharges() != null) {
+                    originalQqr.getQuotationsOtherCharges().forEach(originalImported -> {
+                        var clonedImported = new IpQuotationOtherChargesQuoteRequestEntity();
+                        clonedImported.setQuotationsQuoteRequest(clonedQqr);
+                        clonedImported.setQrOtherCharge(originalImported.getQrOtherCharge());
+                        clonedImported.setCreatedAt(ZonedDateTime.now(zoneId));
+                        clonedQqr.getQuotationsOtherCharges().add(clonedImported);
+                    });
+                }
+
                 cloned.getQuoteRequestsQuotations().add(clonedQqr);
             });
         }

@@ -19,6 +19,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -54,11 +55,12 @@ public interface IpQuotationMapper {
     IpQuotationEntity clone(IpQuotationEntity source);
 
     default IpQuotationsQuoteRequestSummaryDTO map(IpQuotationsQuoteRequestEntity entity) {
-        return new IpQuotationsQuoteRequestSummaryDTO(
-                entity.getId(),
-                entity.getQuoteRequest() != null ? entity.getQuoteRequest().getId() : null,
-                entity.getQuoteRequest() != null ? entity.getQuoteRequest().getNumber() : null
-        );
+        var dto = new IpQuotationsQuoteRequestSummaryDTO();
+        dto.setQqrId(entity.getId());
+        dto.setId(entity.getQuoteRequest() != null ? entity.getQuoteRequest().getId() : null);
+        dto.setNumber(entity.getQuoteRequest() != null ? entity.getQuoteRequest().getNumber() : null);
+        dto.setFreightCharges(entity.getQuoteRequest() != null ? entity.getQuoteRequest().getFreightCharges() : BigDecimal.ZERO);
+        return dto;
     }
 
     @Mapping(target = "quotationsQuoteRequestId", source = "quotationsQuoteRequest.id")

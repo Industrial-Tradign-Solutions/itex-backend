@@ -91,7 +91,13 @@ public class IpQuotationDTO extends BaseDTO {
     }
 
     public BigDecimal getFreightCharges() {
-        return BigDecimal.ZERO;
+        return Optional.ofNullable(listQuoteRequests)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(IpQuotationsQuoteRequestSummaryDTO::getFreightCharges)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal getTotal() {

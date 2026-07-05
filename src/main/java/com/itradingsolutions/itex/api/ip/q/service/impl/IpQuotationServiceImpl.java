@@ -671,14 +671,10 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 return jasperService.getPdfBytes(pdfPath);
 
             JasperReport reportTemplate = getReportTemplateFor(quotation);
-
-            var reportDTO = new IpQuotationReportDTO(quotationMapper.entityToDTO(quotation));
-
-            int totalPages = jasperService.getTotalPages(reportTemplate, reportDTO);
-
+            int totalPages = jasperService.getTotalPages(reportTemplate, new IpQuotationReportDTO(quotationMapper.entityToDTO(quotation)));
             pdfPath = jasperService.generatePDF(
                     reportTemplate,
-                    reportDTO,
+                    new IpQuotationReportDTO(quotationMapper.entityToDTO(quotation)),
                     quotation.getNumber(),
                     quotation.getCreatedAt(),
                     CONSECUTIVE_DEPARTMENT,

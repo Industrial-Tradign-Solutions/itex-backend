@@ -5,6 +5,7 @@ import com.itradingsolutions.itex.api.common.models.responses.BaseResponse;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
+import com.itradingsolutions.itex.api.ip.q.models.response.BasicQuotationResponse;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientContactResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientResponse;
@@ -64,4 +65,6 @@ public class IpQuoteRequestResponse extends BaseResponse {
     private ZonedDateTime answeredAt;
     private ZonedDateTime completeAt;
     private ZonedDateTime rejectAt;
+
+    private List<BasicQuotationResponse> listQuotations;
 }

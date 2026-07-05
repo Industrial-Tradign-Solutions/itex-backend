@@ -5,6 +5,7 @@ import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
+import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
@@ -61,6 +62,8 @@ public class IpQuoteRequestDTO extends BaseDTO {
     private ZonedDateTime answeredAt;
     private ZonedDateTime completeAt;
     private ZonedDateTime rejectAt;
+
+    private List<IpQuotationDTO> listQuotations;
 
     public String getName() {
         return this.number;

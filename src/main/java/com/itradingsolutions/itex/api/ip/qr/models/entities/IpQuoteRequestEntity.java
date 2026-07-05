@@ -6,6 +6,7 @@ import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
 import com.itradingsolutions.itex.api.common.util.models.enums.UniqueDB;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientContactEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
@@ -142,6 +143,9 @@ public class IpQuoteRequestEntity extends BaseEntity {
     @Column(name = "reject_at")
     private ZonedDateTime rejectAt;
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "quoteRequest", cascade = CascadeType.ALL)
+    private List<IpQuotationsQuoteRequestEntity> quotationsQuoteRequests;
+
     public List<IpQuoteRequestProductEntity> getProducts() {
         return Optional.ofNullable(products)
                 .filter(list -> !list.isEmpty())
@@ -161,21 +165,21 @@ public class IpQuoteRequestEntity extends BaseEntity {
 
     public int getMaxNumberOfProducts() {
         return Optional.ofNullable(products)
-                .filter(list -> !list.isEmpty())
-                .map(list -> list.stream()
-                        .mapToInt(IpQuoteRequestProductEntity::getNumber)
-                        .max()
-                        .orElse(0))
-                .orElse(0) + 1;
+            .filter(list -> !list.isEmpty())
+            .map(list -> list.stream()
+                .mapToInt(IpQuoteRequestProductEntity::getNumber)
+                .max()
+                .orElse(0))
+            .orElse(0) + 1;
     }
 
     public boolean isValidAnswered() {
         return Optional.ofNullable(this.products)
-                .filter(p -> !p.isEmpty())
-                .map(p -> p.stream().allMatch(product ->
-                        product.getUnitPrice() != null &&
-                                product.getLeadTime() != null &&
-                                product.getLeadTimeType() != null))
-                .orElse(false);
+            .filter(p -> !p.isEmpty())
+            .map(p -> p.stream().allMatch(product ->
+                product.getUnitPrice() != null &&
+                product.getLeadTime() != null &&
+                product.getLeadTimeType() != null))
+            .orElse(false);
     }
 }

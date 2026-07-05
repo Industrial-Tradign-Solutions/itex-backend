@@ -77,6 +77,14 @@ public enum ModuleAction {
     REJECT_IP_QUOTE_REQUESTS (4002006L, ModuleOption.IP_QUOTE_REQUESTS, "Reject QR"),
     //Usable el 4002007
     EDIT_PAYMENT_TERMS_IP_QUOTE_REQUESTS (4002008L, ModuleOption.IP_QUOTE_REQUESTS, "Edit Payment Terms from QR"),
+
+    /*IP QUOTATIONS MODULE ACTIONS*/
+    CREATE_IP_QUOTATIONS (4003001L, ModuleOption.IP_QUOTATIONS, "Create Q"),
+    UPDATE_IP_QUOTATIONS (4003002L, ModuleOption.IP_QUOTATIONS, "Update Q"),
+    VIEW_HISTORY_IP_QUOTATIONS (4003003L, ModuleOption.IP_QUOTATIONS, "View History Q"),
+    CLONE_IP_QUOTATIONS (4003004L, ModuleOption.IP_QUOTATIONS, "Clone Q"),
+    REJECT_IP_QUOTATIONS (4003005L, ModuleOption.IP_QUOTATIONS, "Reject Q"),
+    EDIT_PAYMENT_TERMS_IP_QUOTATIONS (4003006L, ModuleOption.IP_QUOTATIONS, "Edit Payment Terms from Q"),
     ;
     private final Long id;
     private final ModuleOption moduleOption;

@@ -5,6 +5,7 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.util.models.enums.BaseEnum;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.HistoryActions;
+import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentMethod;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
@@ -14,6 +15,9 @@ import com.itradingsolutions.itex.api.common.util.models.responses.EnumItem;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.products.services.IIpProductService;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
+import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
@@ -56,6 +60,9 @@ public class UtilController extends CommonController {
         response.add(getItem("ip_quote_request_status", getKeyValueList(IpQuoteRequestStatus.class)));
         response.add(getItem("unit_type", getKeyValueList(UnitType.class)));
         response.add(getItem("lead_time", getKeyValueList(LeadTime.class)));
+        response.add(getItem("ip_quotation_status", getKeyValueList(IpQuotationStatus.class)));
+        response.add(getItem("incoterms", getKeyValueList(Incoterms.class)));
+        response.add(getItem("ip_quotation_product_condition", getKeyValueList(IpQuotationProductCondition.class)));
         return ResponseEntity.ok(response);
     }
 
@@ -63,6 +70,7 @@ public class UtilController extends CommonController {
     private final ISupplierService supplierService;
     private final IIpProductService ipProductService;
     private final IIpQuoteRequestService quoteRequestService;
+    private final IpQuotationService quotationService;
 
     @DeleteMapping("/action/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -85,6 +93,10 @@ public class UtilController extends CommonController {
             log.info("Unlocking IP Quote Requests by {}", auth.getName());
             var listAllQuoteRequests = quoteRequestService.listAllOpenIpQuoteRequest(auth.getName());
             listAllQuoteRequests.forEach(qr -> quoteRequestService.unlockIpQuoteRequest(qr.getId()));
+
+            log.info("Unlocking IP Quotations by {}", auth.getName());
+            var listQuotations = quotationService.listAllOpenIpQuotation(auth.getName());
+            listQuotations.forEach(q -> quotationService.unlockIpQuotation(q.getId()));
 
             log.info("Unlocking all items end.");
         }).start();

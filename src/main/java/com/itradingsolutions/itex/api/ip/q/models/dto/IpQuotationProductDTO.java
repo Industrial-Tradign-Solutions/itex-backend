@@ -21,6 +21,8 @@ public class IpQuotationProductDTO extends BaseDTO {
     private Integer number;
     private BigDecimal profitMargin;
     private IpQuotationProductCondition condition;
+    private String qrNumber;
+    private String supplierName;
 
     public BigDecimal getSellingUnitPrice() {
         if (quoteRequestProduct == null || quoteRequestProduct.getUnitPrice() == null)
@@ -32,14 +34,14 @@ public class IpQuotationProductDTO extends BaseDTO {
                 .setScale(5, RoundingMode.HALF_UP);
     }
 
-    public BigDecimal getExtendedPrice() {
-        if (quoteRequestProduct == null || quoteRequestProduct.getQuantity() == null)
+    public BigDecimal getSellingExtendedPrice() {
+        if (quoteRequestProduct == null || quoteRequestProduct.getExtendedPrice() == null)
             return BigDecimal.ZERO;
-        BigDecimal sellingPrice = getSellingUnitPrice();
-        if (BigDecimal.ZERO.compareTo(sellingPrice) == 0)
-            return BigDecimal.ZERO;
-        return sellingPrice.multiply(quoteRequestProduct.getQuantity())
-                .setScale(2, RoundingMode.HALF_UP);
+        if (profitMargin == null || BigDecimal.ZERO.compareTo(profitMargin) == 0)
+            return quoteRequestProduct.getExtendedPrice();
+        return quoteRequestProduct.getExtendedPrice()
+                .multiply(BigDecimal.ONE.add(profitMargin))
+                .setScale(5, RoundingMode.HALF_UP);
     }
 
     public BigDecimal getGrossWeightLbs() {

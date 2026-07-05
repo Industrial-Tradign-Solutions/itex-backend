@@ -14,6 +14,8 @@ public record IpQuotationProductResponse(
         BigDecimal profitMargin,
         IpQuotationProductCondition condition,
         BigDecimal sellingUnitPrice,
-        BigDecimal extendedPrice,
-        BigDecimal grossWeightLbs
+        BigDecimal sellingExtendedPrice,
+        BigDecimal grossWeightLbs,
+        String qrNumber,
+        String supplierName
 ) {}

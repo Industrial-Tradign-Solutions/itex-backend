@@ -29,6 +29,7 @@ import lombok.Setter;
 import java.io.Serial;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(
@@ -127,4 +128,40 @@ public class IpQuotationEntity extends BaseEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "quotation", cascade = CascadeType.ALL)
     private List<IpQuotationsQuoteRequestEntity> quoteRequestsQuotations;
+
+    /**
+     * Additional charges associated with this quotation (e.g., freight, handling, customs).
+     * <p>
+     * These charges are included in the total quotation amount and are automatically
+     * deleted when the quotation is deleted (orphanRemoval = true).
+     * </p>
+     */
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "ipQuotation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IpQuotationOtherChargeEntity> otherCharges;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "mainQuotation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IpQuotationsClonedEntity> clonedQuotations;
+
+    public List<IpQuotationEntity> getClonedQuotations() {
+        return Optional.ofNullable(clonedQuotations)
+                .orElseGet(List::of)
+                .stream()
+                .map(IpQuotationsClonedEntity::getClonedQuotation)
+                .toList();
+    }
+
+    public boolean isValidSent() {
+        if (this.quoteRequestsQuotations == null || this.quoteRequestsQuotations.isEmpty())
+            return false;
+
+        //TODO: Validamos que tengamos los items ingresados y que todos los items tengan ya los campos requeridos ingresados
+
+        return true;
+    }
+
+    public boolean isValidAnswered() {
+        if (this.sentAt == null)
+            return false;
+        return isValidSent();
+    }
 }

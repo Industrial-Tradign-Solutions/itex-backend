@@ -11,6 +11,7 @@ public record IpQuotationProductRequest(
         @NotNull(message = "Quotation Quote Request reference is required")
         UUID quotationsQuoteRequestId,
 
+        @NotNull(message = "Product is required")
         UUID quoteRequestProductId,
 
         @NotNull(message = "Profit margin is required")

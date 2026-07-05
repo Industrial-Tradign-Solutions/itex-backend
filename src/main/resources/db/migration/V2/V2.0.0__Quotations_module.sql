@@ -65,10 +65,35 @@ create table t_ip_quotation_products (
     quotations_quote_request_id uuid not null references t_ip_quotations_quote_request,
     quote_request_product_id uuid references t_ip_quote_request_products,
     number int not null,
-    profit_margin NUMERIC(5,4) not null default 0,
+    profit_margin NUMERIC(3,2) not null default 0.00 CHECK (profit_margin >= 0.00 AND profit_margin <= 1.00),
     condition varchar(20) not null,
     created_at timestamp not null
 );
+
+alter table t_ip_quotation_products
+    add constraint t_ip_quotation_products_unique_product
+        unique (quote_request_product_id, quotations_quote_request_id);
+
+create table t_ip_quotation_other_charges (
+    id uuid not null primary key,
+    ip_q_id uuid not null references t_ip_quotations,
+    description varchar(150) not null,
+    value numeric(15,2) not null default 0,
+    created_at timestamp not null
+);
+
+alter table t_ip_quotation_other_charges
+    add constraint t_ip_quotation_other_charges_unique_description
+        unique (ip_q_id, description);
+
+create table t_ip_quotations_cloned (
+    main_q_id uuid not null references t_ip_quotations,
+    clone_q_id uuid not null references t_ip_quotations,
+    primary key (main_q_id, clone_q_id)
+);
+
+create unique index t_ip_quotations_cloned_clone_q_id_unique
+    on t_ip_quotations_cloned (clone_q_id);
 
 create table t_ip_quotation_history (
     id uuid not null primary key,
@@ -78,3 +103,14 @@ create table t_ip_quotation_history (
     created_at timestamp not null,
     data json
 );
+
+create table t_ip_quotation_other_charges_quote_request (
+    id uuid not null primary key,
+    quotations_quote_request_id uuid not null references t_ip_quotations_quote_request,
+    qr_other_charge_id uuid not null references t_ip_quote_requests_other_charges,
+    created_at timestamp not null
+);
+
+alter table t_ip_quotation_other_charges_quote_request
+    add constraint t_ip_quotation_other_charges_qqr_unique
+        unique (qr_other_charge_id, quotations_quote_request_id);

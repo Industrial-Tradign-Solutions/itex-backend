@@ -41,9 +41,6 @@ public class MailServiceImpl extends UtilServiceAbs implements IMailService {
     @Value("${spring.mail.password}")
     private String mailFromPass;
 
-    @Value("${spring.profiles.active}")
-    private String profileActive;
-
     private static final String TEMPLATE_ERROR_MESSAGE = "emails.error.send";
 
     @Override
@@ -125,7 +122,7 @@ public class MailServiceImpl extends UtilServiceAbs implements IMailService {
                 }
             }
 
-            helper.setSubject(getSubject(email.subject()));
+            helper.setSubject(email.subject());
             sendAndRestoreMail(message);
         } catch (TemplateException | MessagingException | IOException ex) {
             throw new NotSendEmailException(simpleMessage(TEMPLATE_ERROR_MESSAGE), ex);
@@ -140,13 +137,13 @@ public class MailServiceImpl extends UtilServiceAbs implements IMailService {
             String htmlContent = FreeMarkerTemplateUtils.processTemplateIntoString(template, templateModel);
 
             helper.setFrom(getFrom(mailFrom));
-            helper.setTo(getTo(to));
+            helper.setTo(to);
             helper.setText(htmlContent, true);
             helper.addInline("logoId", new ClassPathResource("images/logo.png"));
             if (templateEnum.equals(MailTemplates.REGISTER_USER)) {
                 helper.addInline("navButtonId", new ClassPathResource("images/navToItexButton.png"));
             }
-            helper.setSubject(getSubject(subject));
+            helper.setSubject(subject);
             sendAndRestoreMail(message);
         } catch (TemplateException | MessagingException | IOException ex) {
             throw new NotSendEmailException(simpleMessage(TEMPLATE_ERROR_MESSAGE), ex);
@@ -166,35 +163,13 @@ public class MailServiceImpl extends UtilServiceAbs implements IMailService {
     private void sendBasicAction(String to, String subject, String body) {
         SimpleMailMessage email = new SimpleMailMessage();
         email.setFrom(getFrom(mailFrom));
-        email.setTo(getTo(to));
-        email.setSubject(getSubject(subject));
+        email.setTo(to);
+        email.setSubject(subject);
         email.setText(body);
         sendAndRestoreMail(email);
     }
 
-    private String getSubject(String subject) {
-        if (profileActive.equalsIgnoreCase("dev")) {
-            return subject + " - (DEVELOP)";
-        } else if (profileActive.equalsIgnoreCase("qa")) {
-            return subject + " - (TEST)";
-        }
-        return subject;
-    }
-
-    private String getTo(String to) {
-        if (profileActive.equalsIgnoreCase("dev")) {
-            return mailFrom;
-        } else {
-            return to;
-        }
-    }
-
     private String getFrom(String fromMail) {
-        if (profileActive.equalsIgnoreCase("dev")) {
-            return "ITEX Software (DEVELOP) - ITS<" + fromMail + ">";
-        } else if (profileActive.equalsIgnoreCase("qa")) {
-            return "ITEX Software (TEST) - ITS<" + fromMail + ">";
-        }
         return "ITEX Software - ITS<" + fromMail + ">";
     }
 

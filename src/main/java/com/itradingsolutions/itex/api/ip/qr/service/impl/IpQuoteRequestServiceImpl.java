@@ -13,6 +13,7 @@ import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
@@ -354,53 +355,112 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
 
     private IpQuoteRequestDTO changeStatus(UUID qrId, IpQuoteRequestStatus newStatus) {
         var qr = findById(qrId);
-        if (newStatus.equals(qr.getStatus()))
-            throw new NotChangeStatusException(simpleMessage("ip.qr.equal-status"));
+        var currentStatus = qr.getStatus();
 
-        if (newStatus.equals(IpQuoteRequestStatus.ANSWERED)) {
-            if (!qr.isValidAnswered() || qr.getSentAt() == null)
-                throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-answered"));
-            qr.setAnsweredAt(ZonedDateTime.now());
-            qr.setCompleteAt(null);
-            qr.setRejectAt(null);
-        } else if (newStatus.equals(IpQuoteRequestStatus.SENT)) {
-            validateQuotationChangeStatus(qr);
-            qr.setSentAt(ZonedDateTime.now());
-            qr.setAnsweredAt(null);
-            qr.setCompleteAt(null);
-            qr.setRejectAt(null);
-        }  else if (newStatus.equals(IpQuoteRequestStatus.COMPLETE)) {
-            if (qr.getAnsweredAt() == null)
-                throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
-            qr.setCompleteAt(ZonedDateTime.now());
-            qr.setRejectAt(null);
-        } else if (newStatus.equals(IpQuoteRequestStatus.REJECTED)) {
-            if (qr.getQuotationsQuoteRequests().stream()
-                    .anyMatch(q ->
-                            !IpQuotationStatus.REJECTED.equals(
-                                    q.getQuotation().getStatus()
-                            )
-                    )) {
-                throw new NotChangeStatusException(
-                        simpleMessage("ip.qr.assigned-to-q-rejected")
-                );
-            }
-            qr.setRejectAt(ZonedDateTime.now());
-            qr.setCompleteAt(null);
-        } else if (newStatus.equals(IpQuoteRequestStatus.CREATED)) {
-            validateQuotationChangeStatus(qr);
-            qr.setAnsweredAt(null);
-            qr.setCompleteAt(null);
-            qr.setRejectAt(null);
-            qr.setSentAt(null);
+        validateNotSameStatus(qr, newStatus);
+        validateSupplierRequiredForStatusChange(currentStatus, newStatus, qr);
+        validateStatusRequirements(qr, newStatus);
+        validateTerminalStatus(currentStatus);
+        validateQuotationDependency(qr, currentStatus, newStatus);
+        validateQuotationForReject(qr, newStatus);
+
+        setStatusTimestamp(qr, newStatus);
+        if (newStatus.ordinal() < currentStatus.ordinal()) {
+            clearFutureTimestamps(qr, newStatus);
         }
         qr.setStatus(newStatus);
+
         return qrMapper.entityToDTO(qrRepository.save(qr));
     }
 
+    private void validateSupplierRequiredForStatusChange(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus, IpQuoteRequestEntity qr) {
+        if (requiresSupplierForStatusChange(currentStatus, newStatus) && qr.getSupplier() == null) {
+            throw new NotChangeStatusException(
+                compositeMessage("ip.qr.supplier.required.for.status.change", new String[]{newStatus.name()})
+            );
+        }
+    }
+
+    private boolean requiresSupplierForStatusChange(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus) {
+        return switch (newStatus) {
+            case SENT -> currentStatus == IpQuoteRequestStatus.CREATED;
+            case ANSWERED -> currentStatus == IpQuoteRequestStatus.SENT;
+            case COMPLETE -> currentStatus == IpQuoteRequestStatus.ANSWERED;
+            default -> false;
+        };
+    }
+
+    private void validateNotSameStatus(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
+        if (newStatus.equals(qr.getStatus()))
+            throw new NotChangeStatusException(simpleMessage("ip.qr.equal-status"));
+    }
+
+    private void validateStatusRequirements(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
+        if (newStatus == IpQuoteRequestStatus.ANSWERED && (!qr.isValidAnswered() || qr.getSentAt() == null))
+            throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-answered"));
+        if (newStatus == IpQuoteRequestStatus.COMPLETE && qr.getAnsweredAt() == null)
+            throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
+    }
+
+    private void validateTerminalStatus(IpQuoteRequestStatus currentStatus) {
+        if (currentStatus == IpQuoteRequestStatus.COMPLETE)
+            throw new NotChangeStatusException(simpleMessage("ip.qr.cannot-change-complete-status"));
+        if (currentStatus == IpQuoteRequestStatus.REJECTED)
+            throw new NotChangeStatusException(simpleMessage("ip.qr.cannot-change-rejected-status"));
+    }
+
+    private void validateQuotationDependency(IpQuoteRequestEntity qr, IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus) {
+        if (currentStatus == IpQuoteRequestStatus.ANSWERED &&
+            (newStatus == IpQuoteRequestStatus.SENT || newStatus == IpQuoteRequestStatus.CREATED)) {
+            validateQuotationChangeStatus(qr);
+        }
+    }
+
     private void validateQuotationChangeStatus(IpQuoteRequestEntity qr) {
-        if (qr.getQuotationsQuoteRequests() != null && !qr.getQuotationsQuoteRequests().isEmpty())
-            throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
+        Optional.ofNullable(qr.getQuotationsQuoteRequests())
+                .filter(list -> !list.isEmpty())
+                .ifPresent(list -> {
+                    throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
+                });
+    }
+
+    private void validateQuotationForReject(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
+        if (newStatus != IpQuoteRequestStatus.REJECTED) return;
+
+        Optional.ofNullable(qr.getQuotationsQuoteRequests())
+                .filter(list -> !list.isEmpty())
+                .ifPresent(quotations -> {
+                    boolean allQuotationsRejected = quotations.stream()
+                            .map(IpQuotationsQuoteRequestEntity::getQuotation)
+                            .map(IpQuotationEntity::getStatus)
+                            .allMatch(status -> status == IpQuotationStatus.REJECTED);
+
+                    if (!allQuotationsRejected)
+                        throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
+                });
+    }
+
+    private void clearFutureTimestamps(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
+        switch (newStatus) {
+            case CREATED -> {
+                qr.setSentAt(null);
+                qr.setAnsweredAt(null);
+            }
+            case SENT ->
+                qr.setAnsweredAt(null);
+
+        }
+    }
+
+    private void setStatusTimestamp(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
+        var now = ZonedDateTime.now();
+        switch (newStatus) {
+            case ANSWERED -> qr.setAnsweredAt(now);
+            case SENT -> qr.setSentAt(now);
+            case COMPLETE -> qr.setCompleteAt(now);
+            case REJECTED -> qr.setRejectAt(now);
+            case CREATED -> { /* no timestamp */ }
+        }
     }
 
     private boolean isOpenStatus(IpQuoteRequestStatus status) {

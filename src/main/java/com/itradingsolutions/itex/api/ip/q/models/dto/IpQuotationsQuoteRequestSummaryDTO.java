@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -18,4 +19,5 @@ public class IpQuotationsQuoteRequestSummaryDTO {
     /** The QR's own id — used for opening the QR or loading its products */
     private UUID id;
     private String number;
+    private BigDecimal freightCharges;
 }

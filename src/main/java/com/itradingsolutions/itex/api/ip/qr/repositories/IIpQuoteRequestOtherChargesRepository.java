@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -24,4 +26,7 @@ public interface IIpQuoteRequestOtherChargesRepository extends JpaRepository<IpQ
     @Modifying
     @Query("DELETE FROM IpQuoteRequestOtherChargesEntity p WHERE p.ipQuoteRequest.id = ?1 AND p.id = ?2")
     void deleteById(UUID qrId, UUID qrProductId);
+
+    @Query("SELECT p FROM IpQuoteRequestOtherChargesEntity p WHERE p.ipQuoteRequest.id IN ?1")
+    List<IpQuoteRequestOtherChargesEntity> findByIpQuoteRequestIds(Set<UUID> qrIds);
 }

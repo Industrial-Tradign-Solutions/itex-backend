@@ -21,14 +21,15 @@ import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationRespon
 import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
-import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -207,6 +208,18 @@ public class IpQuotationController extends CommonController {
                         .map(quotationHistoryMapper::dtoToResponse)
                         .toList()
         );
+    }
+
+    @GetMapping("/print/{id_quotation}")
+    @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
+    public ResponseEntity<byte[]> printQuotation(
+            @PathVariable("id_quotation") UUID idQuotation
+    ) {
+        byte[] pdfBytes = quotationService.printQuotation(idQuotation);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", "quotation_" + idQuotation + ".pdf");
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     @PatchMapping("/clone/{id_quotation}")

@@ -42,4 +42,7 @@ public interface IpQuotationService {
 
     // Integrity Validation
     List<String> validateIntegrity(UUID quotationId);
+
+    // PDF Generation
+    byte[] printQuotation(UUID quotationId);
 }

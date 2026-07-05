@@ -4,10 +4,15 @@ import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveModule;
 import com.itradingsolutions.itex.api.common.consecutive.services.IConsecutiveService;
+import com.itradingsolutions.itex.api.common.jasper.exceptions.NotGenerateReportException;
+import com.itradingsolutions.itex.api.common.jasper.model.enums.JasperReport;
+import com.itradingsolutions.itex.api.common.jasper.service.JasperService;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.IntegrityValidator;
+import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.ip.q.models.dto.reports.IpQuotationReportDTO;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationClientMismatchException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationCurrencyMismatchException;
@@ -53,6 +58,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import net.sf.jasperreports.engine.JRException;
+
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,6 +84,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IpQuotationOtherChargeMapper otherChargeMapper;
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
     private final IIpQuotationClonedRepository clonedRepository;
+    private final JasperService jasperService;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
@@ -644,6 +653,47 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return IntegrityValidator.validateQuotationIntegrity(quotation);
     }
 
+    @Override
+    @Transactional
+    public byte[] printQuotation(UUID quotationId) {
+        IpQuotationEntity quotation = findById(quotationId);
+        IpQuotationStatus status = quotation.getStatus();
+
+        if (isOpenStatus(status))
+            validateOpenQuotation(quotation, userService.getUserAuthenticated());
+
+        if (quotation.getQuoteRequestsQuotations() == null || quotation.getQuoteRequestsQuotations().isEmpty())
+            throw new NotGenerateReportException(simpleMessage("ip.q.not-generate-doc"));
+
+        try {
+            String pdfPath = quotation.getPdfUrl();
+            if (isFinalStatus(status) && pdfPath != null)
+                return jasperService.getPdfBytes(pdfPath);
+
+            JasperReport reportTemplate = getReportTemplateFor(quotation);
+
+            var reportDTO = new IpQuotationReportDTO(quotationMapper.entityToDTO(quotation));
+
+            int totalPages = jasperService.getTotalPages(reportTemplate, reportDTO);
+
+            pdfPath = jasperService.generatePDF(
+                    reportTemplate,
+                    reportDTO,
+                    quotation.getNumber(),
+                    quotation.getCreatedAt(),
+                    CONSECUTIVE_DEPARTMENT,
+                    CONSECUTIVE_TYPE,
+                    totalPages
+            );
+            quotation.setPdfUrl(pdfPath);
+            quotationRepository.save(quotation);
+            return jasperService.getPdfBytes(pdfPath);
+
+        } catch (JRException | IOException ex) {
+            throw new NotGenerateReportException(ex);
+        }
+    }
+
     private void loadClonedByQuotation(IpQuotationEntity entity, IpQuotationDTO dto) {
         clonedRepository.fetchByClonedId(entity.getId())
                 .ifPresent(cloned -> dto.setClonedByQuotation(
@@ -666,6 +716,17 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return status == IpQuotationStatus.CREATED
                 || status == IpQuotationStatus.SENT
                 || status == IpQuotationStatus.ANSWERED;
+    }
+
+    private boolean isFinalStatus(IpQuotationStatus status) {
+        return status == IpQuotationStatus.COMPLETE
+                || status == IpQuotationStatus.REJECTED;
+    }
+
+    private JasperReport getReportTemplateFor(IpQuotationEntity quotation) {
+        return Language.ENGLISH.equals(quotation.getClient().getLanguage())
+                ? JasperReport.IP_Q_EN
+                : JasperReport.IP_Q_ES;
     }
 
     private void validateOpenQuotation(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity userAuthenticated) {

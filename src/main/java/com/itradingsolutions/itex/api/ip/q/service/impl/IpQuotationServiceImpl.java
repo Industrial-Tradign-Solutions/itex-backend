@@ -303,7 +303,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     private void validateStatusRequirements(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
-        if (newStatus == IpQuotationStatus.SENT && (!quotation.isValidSent()))
+        if (newStatus == IpQuotationStatus.SENT)
             throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-sent"));
         if (newStatus == IpQuotationStatus.ANSWERED && (!quotation.isValidAnswered() || quotation.getSentAt() == null))
             throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-answered"));

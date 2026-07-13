@@ -32,7 +32,7 @@ CREATE TABLE t_ip_purchase_orders (
     client_id               UUID            NOT NULL    REFERENCES t_clients(id),
     client_contact_id       UUID                        REFERENCES t_clients_contacts(id),
     client_po_number        VARCHAR(50),
-    supplier_id             UUID            NOT NULL    REFERENCES t_suppliers(id),
+    supplier_id             UUID                        REFERENCES t_suppliers(id),
     supplier_contact_id     UUID                        REFERENCES t_suppliers_contacts(id),
     supplier_po_number      VARCHAR(50),
     sales_rep_id            uuid            not null    references t_users,

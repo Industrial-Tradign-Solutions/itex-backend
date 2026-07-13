@@ -74,7 +74,7 @@ public class PurchaseOrderEntity extends BaseEntity {
     private String clientPoNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplier_id", nullable = false)
+    @JoinColumn(name = "supplier_id")
     private SupplierEntity supplier;
 
     @ManyToOne(fetch = FetchType.LAZY)

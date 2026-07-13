@@ -35,6 +35,7 @@ CREATE TABLE t_ip_purchase_orders (
     supplier_id             UUID            NOT NULL    REFERENCES t_suppliers(id),
     supplier_contact_id     UUID                        REFERENCES t_suppliers_contacts(id),
     supplier_po_number      VARCHAR(50),
+    sales_rep_id            uuid            not null    references t_users,
     payment_terms           VARCHAR(40)     NOT NULL,
     lead_time               INTEGER         NOT NULL    DEFAULT 0,
     lead_time_type          VARCHAR(20)     NOT NULL    DEFAULT 'WEEKS',

@@ -84,6 +84,10 @@ public class PurchaseOrderEntity extends BaseEntity {
     @Column(name = "supplier_po_number", length = 50)
     private String supplierPoNumber;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sales_rep_id")
+    private UserEntity salesRep;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_terms", length = 40, nullable = false)
     private PaymentTerms paymentTerms;

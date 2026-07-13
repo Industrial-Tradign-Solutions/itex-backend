@@ -92,6 +92,7 @@ public enum ModuleAction {
     VIEW_HISTORY_PURCHASE_ORDER (4004003L, ModuleOption.IP_PURCHASE_ORDERS, "View History Purchase Order"),
     REJECT_PURCHASE_ORDER (4004004L, ModuleOption.IP_PURCHASE_ORDERS, "Reject Purchase Order"),
     EDIT_PAYMENT_TERMS_PURCHASE_ORDER (4004005L, ModuleOption.IP_PURCHASE_ORDERS, "Edit Payment Terms Purchase Order"),
+    CLONE_PURCHASE_ORDER (4004006L, ModuleOption.IP_PURCHASE_ORDERS, "Clone Purchase Order"),
     ;
     private final Long id;
     private final ModuleOption moduleOption;

@@ -22,6 +22,8 @@ INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_a
 VALUES (4004004, 'Reject Purchase Order', 'Reject a Purchase Order', 4004, true, now());
 INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
 VALUES (4004005, 'Edit Payment Terms Purchase Order', 'Allows you to edit payment terms and not use those of the Client', 4004, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (4004006, 'Clone Purchase Order', 'Allows you to clone a Purchase Order', 4004, true, now());
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 CREATE TABLE t_ip_purchase_orders (
     id                      UUID            NOT NULL    PRIMARY KEY,

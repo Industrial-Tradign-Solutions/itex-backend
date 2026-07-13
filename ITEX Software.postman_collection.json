@@ -5351,6 +5351,41 @@
                                                        "response":  [
 
                                                                     ]
+                                                   },
+                                                   {
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "url":  {
+                                                                                   "query":  [
+                                                                                                 {
+                                                                                                     "key":  "page",
+                                                                                                     "value":  "0"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "key":  "size",
+                                                                                                     "value":  "10"
+                                                                                                 }
+                                                                                             ],
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po?page=0\u0026size=10",
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Returns a paginated, filterable list of Purchase Orders.\n\n### Query Parameters\n- **page** (int, default=0): Zero-based page index\n- **size** (int, default=10): Page size\n- **shortBy** (String): Sort field (number, createdAt, status, etc.)\n- **shortOrder** (int): 1=ASC, else DESC\n- **number** (String): Exact match on PO number\n- **clientId** (UUID): Filter by client\n- **supplierId** (UUID): Filter by supplier\n- **remarks** (String): LIKE search on remarks\n- **status** (Enum): CREATED, SENT, ANSWERED, COMPLETE, REJECTED\n- **salesRepId** (UUID): Filter by sales rep\n- **date** (Enum): DAY, MONTH, YEAR, ALL\n- **initDate** / **endDate** (DateTime): Custom range (requires date=ALL)\n- **productDescription** (String): LIKE on product description (3-join)\n- **clientRef** (String): LIKE on product client reference (3-join)\n- **supplierRef** (String): LIKE on product MFR reference (3-join)\n\n### Examples\n\nBasic:\nGET /ip/po?page=0\u0026size=10\n\nBy status \u0026 client:\nGET /ip/po?page=0\u0026size=25\u0026status=CREATED\u0026clientId=3c0229b7-...\n\nBy product description:\nGET /ip/po?page=0\u0026size=10\u0026productDescription=widget\n\nSorted by number ASC:\nGET /ip/po?page=0\u0026size=10\u0026shortBy=number\u0026shortOrder=1\n\n### Response (200)\nReturns Page\u003cListPurchaseOrderResponse\u003e with content, pageable, totalElements, totalPages.",
+                                                                       "header":  [
+
+                                                                                  ]
+                                                                   },
+                                                       "name":  "List Purchase Orders",
+                                                       "response":  [
+
+                                                                    ]
                                                    }
                                                ]
                                   }

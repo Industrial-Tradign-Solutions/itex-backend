@@ -3,6 +3,7 @@ package com.itradingsolutions.itex.api.ip.po.models.mapper;
 import com.itradingsolutions.itex.api.ip.po.models.dto.PurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.entities.PurchaseOrderEntity;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreatePurchaseOrderRequest;
+import com.itradingsolutions.itex.api.ip.po.models.response.ListPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.PurchaseOrderResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -16,6 +17,8 @@ public interface PurchaseOrderMapper {
     PurchaseOrderDTO entityToDTO(PurchaseOrderEntity entity);
 
     PurchaseOrderResponse dtoToResponse(PurchaseOrderDTO dto);
+
+    ListPurchaseOrderResponse dtoToListResponse(PurchaseOrderDTO dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "number", ignore = true)

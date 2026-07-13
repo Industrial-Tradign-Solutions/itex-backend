@@ -16,6 +16,7 @@ import com.itradingsolutions.itex.api.ip.po.models.dto.PurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.entities.PurchaseOrderEntity;
 import com.itradingsolutions.itex.api.ip.po.models.entities.PurchaseOrdersClonedEntity;
 import com.itradingsolutions.itex.api.ip.po.models.enums.PurchaseOrderStatus;
+import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.PurchaseOrderMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.PurchaseOrderOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.PurchaseOrderOtherChargesQuotationMapper;
@@ -37,6 +38,10 @@ import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -183,6 +188,18 @@ public class PurchaseOrderServiceImpl extends UtilServiceAbs implements IPurchas
     public int batchUnlock(List<UUID> ids) {
         if (ids == null || ids.isEmpty()) return 0;
         return repository.batchUnlockOpenBy(ids);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PurchaseOrderDTO> listAll(Pageable pageable, FilterListPurchaseOrder filters) {
+        Specification<PurchaseOrderEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
+        Page<PurchaseOrderEntity> resp = repository.findAll(spec, pageable);
+        return new PageImpl<>(
+                resp.getContent().stream().map(mapper::entityToDTO).toList(),
+                resp.getPageable(),
+                resp.getTotalElements()
+        );
     }
 
     @Override

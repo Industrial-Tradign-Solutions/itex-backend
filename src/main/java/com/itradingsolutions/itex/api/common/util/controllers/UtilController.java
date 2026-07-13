@@ -13,6 +13,7 @@ import com.itradingsolutions.itex.api.common.util.models.enums.PhoneType;
 import com.itradingsolutions.itex.api.common.util.models.enums.UnitType;
 import com.itradingsolutions.itex.api.common.util.models.responses.EnumItem;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
+import com.itradingsolutions.itex.api.ip.po.models.enums.PurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.products.services.IIpProductService;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
@@ -63,6 +64,7 @@ public class UtilController extends CommonController {
         response.add(getItem("ip_quotation_status", getKeyValueList(IpQuotationStatus.class)));
         response.add(getItem("incoterms", getKeyValueList(Incoterms.class)));
         response.add(getItem("ip_quotation_product_condition", getKeyValueList(IpQuotationProductCondition.class)));
+        response.add(getItem("ip_purchase_order_status", getKeyValueList(PurchaseOrderStatus.class)));
         return ResponseEntity.ok(response);
     }
 

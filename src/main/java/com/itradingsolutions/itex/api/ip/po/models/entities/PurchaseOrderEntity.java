@@ -59,7 +59,7 @@ public class PurchaseOrderEntity extends BaseEntity {
     private Currency currency;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quotation_id", nullable = false)
+    @JoinColumn(name = "quotation_id")
     private IpQuotationEntity quotation;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -89,7 +89,7 @@ public class PurchaseOrderEntity extends BaseEntity {
     private UserEntity salesRep;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_terms", length = 40, nullable = false)
+    @Column(name = "payment_terms", length = 40)
     private PaymentTerms paymentTerms;
 
     @Column(name = "lead_time", nullable = false)

@@ -27,7 +27,10 @@ import com.itradingsolutions.itex.api.ip.po.repository.IPurchaseOrderRepository;
 import com.itradingsolutions.itex.api.ip.po.repository.IPurchaseOrdersClonedRepository;
 import com.itradingsolutions.itex.api.ip.po.service.IPurchaseOrderService;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
+import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.masters.location.models.entities.CityEntity;
 import com.itradingsolutions.itex.api.masters.location.services.ICityService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
@@ -67,6 +70,7 @@ public class PurchaseOrderServiceImpl extends UtilServiceAbs implements IPurchas
     private final ISupplierService supplierService;
     private final ICityService cityService;
     private final IpQuotationRepository quotationRepository;
+    private final IIpQuoteRequestService qrService;
     private final IPurchaseOrdersClonedRepository clonedRepository;
     private final PurchaseOrderProductMapper productMapper;
     private final PurchaseOrderOtherChargeMapper otherChargeMapper;
@@ -106,6 +110,11 @@ public class PurchaseOrderServiceImpl extends UtilServiceAbs implements IPurchas
         entity.setNumber(generateConsecutive(client.getCode()));
 
         var saved = repository.save(entity);
+
+        if (quotation != null) {
+            completeQuoteRequestsLinkedToQuotation(quotation);
+        }
+
         consecutiveService.saveConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, saved.getNumber());
         return mapper.entityToDTO(saved);
     }
@@ -327,8 +336,8 @@ public class PurchaseOrderServiceImpl extends UtilServiceAbs implements IPurchas
     }
 
     private static <T extends BaseEntity> void cloneChildren(List<T> source, List<T> target,
-                                                             Function<T, T> cloner,
-                                                             Consumer<T> linker, ZonedDateTime now) {
+                                                              Function<T, T> cloner,
+                                                              Consumer<T> linker, ZonedDateTime now) {
         if (source == null) return;
         source.forEach(item -> {
             var cloneItem = cloner.apply(item);
@@ -336,5 +345,15 @@ public class PurchaseOrderServiceImpl extends UtilServiceAbs implements IPurchas
             cloneItem.setCreatedAt(now);
             target.add(cloneItem);
         });
+    }
+
+    private void completeQuoteRequestsLinkedToQuotation(IpQuotationEntity quotation) {
+        var qrList = quotation.getQuoteRequestsQuotations();
+        if (qrList == null || qrList.isEmpty()) return;
+
+        qrList.stream()
+                .map(IpQuotationsQuoteRequestEntity::getQuoteRequest)
+                .filter(qr -> qr != null && qr.getStatus() == IpQuoteRequestStatus.ANSWERED)
+                .forEach(qr -> qrService.changeStatusQuoteRequest(qr.getId(), IpQuoteRequestStatus.COMPLETE));
     }
 }

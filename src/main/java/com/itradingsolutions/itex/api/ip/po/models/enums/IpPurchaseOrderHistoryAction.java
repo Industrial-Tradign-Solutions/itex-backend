@@ -1,0 +1,19 @@
+package com.itradingsolutions.itex.api.ip.po.models.enums;
+
+public enum IpPurchaseOrderHistoryAction {
+    CREATE,
+    UPDATE,
+    CLONE,
+    REJECTED,
+    STATUS_CHANGE,
+    ADD_PRODUCT,
+    REMOVE_PRODUCT,
+    UPDATE_PRODUCT,
+    ADD_OTHER_CHARGE,
+    REMOVE_OTHER_CHARGE,
+    UPDATE_OTHER_CHARGE,
+    ADD_IMPORTED_Q_CHARGE,
+    REMOVE_IMPORTED_Q_CHARGE,
+    ADD_IMPORTED_QR_CHARGE,
+    REMOVE_IMPORTED_QR_CHARGE
+}

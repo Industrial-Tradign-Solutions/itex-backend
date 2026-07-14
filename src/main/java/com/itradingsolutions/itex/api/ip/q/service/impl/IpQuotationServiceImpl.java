@@ -33,6 +33,7 @@ import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
+import com.itradingsolutions.itex.api.ip.q.models.response.AvailableForPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationClonedRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationOtherChargeRepository;
@@ -44,6 +45,10 @@ import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenQuoteRequestException;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestDTO;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
+import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
+import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
+import com.itradingsolutions.itex.api.partners.suppliers.models.responses.BasicSupplierResponse;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
@@ -85,6 +90,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
     private final IIpQuotationClonedRepository clonedRepository;
     private final JasperService jasperService;
+    private final SupplierMapper supplierMapper;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
@@ -573,6 +579,45 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional(readOnly = true)
     public IpQuotationEntity getEntityById(UUID id) {
         return findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted) {
+        var statuses = new ArrayList<IpQuotationStatus>();
+        statuses.add(IpQuotationStatus.ANSWERED);
+        if (viewCompleted) statuses.add(IpQuotationStatus.COMPLETE);
+
+        return quotationRepository.fetchByClientAndStatus(clientId, statuses)
+                .stream()
+                .map(this::toAvailableForPurchaseOrderResponse)
+                .toList();
+    }
+
+    private AvailableForPurchaseOrderResponse toAvailableForPurchaseOrderResponse(IpQuotationEntity entity) {
+        var suppliers = entity.getQuoteRequestsQuotations() == null
+                ? List.<BasicSupplierResponse>of()
+                : entity.getQuoteRequestsQuotations().stream()
+                        .filter(qqr -> qqr.getQuotationProducts() != null)
+                        .flatMap(qqr -> qqr.getQuotationProducts().stream())
+                        .map(IpQuotationProductEntity::getQuoteRequestProduct)
+                        .filter(qrp -> qrp != null)
+                        .map(IpQuoteRequestProductEntity::getIpQuoteRequest)
+                        .filter(qr -> qr != null)
+                        .map(IpQuoteRequestEntity::getSupplier)
+                        .filter(s -> s != null)
+                        .distinct()
+                        .map(supplierMapper::entityToDto)
+                        .map(supplierMapper::dtoToBasicResponse)
+                        .toList();
+
+        return new AvailableForPurchaseOrderResponse(
+                entity.getId(),
+                entity.getNumber(),
+                entity.getNumber(),
+                entity.getStatus(),
+                suppliers
+        );
     }
 
     @Override

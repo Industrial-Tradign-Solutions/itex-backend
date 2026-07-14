@@ -21,14 +21,14 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseOrderOtherChargeEntity extends BaseEntity {
+public class IpPurchaseOrderOtherChargeEntity extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = -2023051401234567891L;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ip_po_id", nullable = false)
-    private PurchaseOrderEntity purchaseOrder;
+    private IpPurchaseOrderEntity purchaseOrder;
 
     @Column(name = "value", nullable = false, precision = 15, scale = 2)
     private BigDecimal value;

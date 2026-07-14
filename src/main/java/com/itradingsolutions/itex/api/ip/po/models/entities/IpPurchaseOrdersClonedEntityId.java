@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Embeddable
-public class PurchaseOrdersClonedEntityId implements Serializable {
+public class IpPurchaseOrdersClonedEntityId implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -5578860940340918759L;
@@ -31,7 +31,7 @@ public class PurchaseOrdersClonedEntityId implements Serializable {
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) {
             return false;
         }
-        PurchaseOrdersClonedEntityId entity = (PurchaseOrdersClonedEntityId) o;
+        IpPurchaseOrdersClonedEntityId entity = (IpPurchaseOrdersClonedEntityId) o;
         return Objects.equals(this.mainPoId, entity.mainPoId) &&
                 Objects.equals(this.clonePoId, entity.clonePoId);
     }

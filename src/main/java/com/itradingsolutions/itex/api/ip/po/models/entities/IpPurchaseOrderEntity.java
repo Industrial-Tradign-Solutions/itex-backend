@@ -6,7 +6,7 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
 import com.itradingsolutions.itex.api.common.util.models.enums.UniqueDB;
-import com.itradingsolutions.itex.api.ip.po.models.enums.PurchaseOrderStatus;
+import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.masters.location.models.entities.CityEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientContactEntity;
@@ -42,7 +42,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PurchaseOrderEntity extends BaseEntity {
+public class IpPurchaseOrderEntity extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1007449746510820200L;
@@ -52,7 +52,7 @@ public class PurchaseOrderEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private PurchaseOrderStatus status;
+    private IpPurchaseOrderStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "currency", length = 20, nullable = false)
@@ -153,14 +153,14 @@ public class PurchaseOrderEntity extends BaseEntity {
     private ZonedDateTime rejectAt;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PurchaseOrderProductEntity> products;
+    private List<IpPurchaseOrderProductEntity> products;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PurchaseOrderOtherChargeEntity> otherCharges;
+    private List<IpPurchaseOrderOtherChargeEntity> otherCharges;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PurchaseOrderOtherChargesQuotationEntity> importedQuotationCharges;
+    private List<IpPurchaseOrderOtherChargesQuotationEntity> importedQuotationCharges;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PurchaseOrderOtherChargesQuotationQrEntity> importedQuoteRequestCharges;
+    private List<IpPurchaseOrderOtherChargesQuotationQrEntity> importedQuoteRequestCharges;
 }

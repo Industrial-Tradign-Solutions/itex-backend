@@ -1,7 +1,7 @@
 package com.itradingsolutions.itex.api.ip.po.models.entities;
 
 import com.itradingsolutions.itex.api.common.models.entities.HistoryEntity;
-import com.itradingsolutions.itex.api.ip.po.models.enums.PurchaseOrderHistoryAction;
+import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderHistoryAction;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseOrderHistoryEntity extends HistoryEntity {
+public class IpPurchaseOrderHistoryEntity extends HistoryEntity {
 
     @Serial
     private static final long serialVersionUID = 9087654321234567891L;
@@ -31,5 +31,5 @@ public class PurchaseOrderHistoryEntity extends HistoryEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false, length = 50)
-    private PurchaseOrderHistoryAction action;
+    private IpPurchaseOrderHistoryAction action;
 }

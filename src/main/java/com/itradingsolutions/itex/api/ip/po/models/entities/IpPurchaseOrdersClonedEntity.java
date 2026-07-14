@@ -22,31 +22,31 @@ import java.util.UUID;
 @Table(name = "t_ip_purchase_orders_cloned")
 @AllArgsConstructor
 @NoArgsConstructor
-public class PurchaseOrdersClonedEntity implements Serializable {
+public class IpPurchaseOrdersClonedEntity implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -1456680831293465445L;
 
     @EmbeddedId
-    private PurchaseOrdersClonedEntityId id;
+    private IpPurchaseOrdersClonedEntityId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("mainPoId")
     @JoinColumn(name = "main_po_id")
-    private PurchaseOrderEntity mainPurchaseOrder;
+    private IpPurchaseOrderEntity mainPurchaseOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("clonePoId")
     @JoinColumn(name = "clone_po_id")
-    private PurchaseOrderEntity clonedPurchaseOrder;
+    private IpPurchaseOrderEntity clonedPurchaseOrder;
 
     public void setId(UUID originalId, UUID clonedId) {
-        this.id = new PurchaseOrdersClonedEntityId();
+        this.id = new IpPurchaseOrdersClonedEntityId();
         this.id.setClonePoId(clonedId);
         this.id.setMainPoId(originalId);
     }
 
-    public void setId(PurchaseOrdersClonedEntityId id) {
+    public void setId(IpPurchaseOrdersClonedEntityId id) {
         this.id = id;
     }
 }

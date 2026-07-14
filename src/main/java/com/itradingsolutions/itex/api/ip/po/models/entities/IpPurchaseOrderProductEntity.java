@@ -21,14 +21,14 @@ import java.io.Serial;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseOrderProductEntity extends BaseEntity {
+public class IpPurchaseOrderProductEntity extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 4785147161350122007L;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ip_po_id", nullable = false)
-    private PurchaseOrderEntity purchaseOrder;
+    private IpPurchaseOrderEntity purchaseOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quotation_product_id")

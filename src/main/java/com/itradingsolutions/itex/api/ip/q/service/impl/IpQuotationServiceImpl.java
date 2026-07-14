@@ -310,8 +310,6 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     private void validateStatusRequirements(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
-        if (newStatus == IpQuotationStatus.SENT)
-            throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-sent"));
         if (newStatus == IpQuotationStatus.ANSWERED && (!quotation.isValidAnswered() || quotation.getSentAt() == null))
             throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-answered"));
         if (newStatus == IpQuotationStatus.COMPLETE && quotation.getAnsweredAt() == null)
@@ -617,6 +615,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 entity.getNumber(),
                 entity.getNumber(),
                 entity.getStatus(),
+                entity.getApplicationAt(),
                 suppliers
         );
     }

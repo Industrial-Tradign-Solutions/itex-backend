@@ -27,7 +27,7 @@ public interface IpQuotationRepository extends JpaRepository<IpQuotationEntity, 
     @Query("""
             SELECT DISTINCT q FROM IpQuotationEntity q
             LEFT JOIN FETCH q.quoteRequestsQuotations qqr
-            LEFT JOIN FETCH qqr.quotationProducts qp
+            LEFT JOIN qqr.quotationProducts qp
             LEFT JOIN FETCH qp.quoteRequestProduct qrp
             LEFT JOIN FETCH qrp.ipQuoteRequest qr
             LEFT JOIN FETCH qr.supplier

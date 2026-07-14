@@ -5173,7 +5173,7 @@
                                                                                                 },
                                                                                     "mode":  "raw"
                                                                                 },
-                                                                       "description":  "Creates a new Purchase Order.\n\n### Request Body\n- **clientId** (UUID, required): Client identifier\n- **quotationId** (UUID, optional): Quotation ID to base the PO on\n- **supplierId** (UUID, optional): Supplier ID (required if quotationId provided)\n\n### Business Rules\n- If quotationId provided, supplier must be valid for that quotation\u0027s quote requests\n- Status: CREATED\n- Auto-generated PO number\n- Default shipping: ITS Corp, 1200 Anastasia Ave, Miami\n- History: CREATE action recorded\n\n### Response (201)\nReturns MessageResponse\u003cOpenLockPurchaseOrderResponse\u003e with isValidOpen=true",
+                                                                       "description":  "Creates a new Purchase Order.\n\n### Request Body\n- **clientId** (UUID, required): Client identifier\n- **quotationId** (UUID, optional): Quotation ID to base the PO on\n- **supplierId** (UUID, optional): Supplier ID (required if quotationId provided)\n\n### Business Rules\n- If quotationId provided, supplier must be valid for that quotation\u0027s quote requests\n- Status: CREATED\n- Auto-generated PO number\n- Default shipping: ITS Corp, 1200 Anastasia Ave, Miami\n- History: CREATE action recorded\n\n### Response (201)\nReturns MessageResponse\u003cOpenLockIpPurchaseOrderResponse\u003e with isValidOpen=true",
                                                                        "header":  [
                                                                                       {
                                                                                           "key":  "Content-Type",
@@ -5203,7 +5203,7 @@
                                                                                                 "{po_id}"
                                                                                             ]
                                                                                },
-                                                                       "description":  "Retrieves the history/audit trail of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response\nReturns List\u003cPurchaseOrderHistoryResponse\u003e with action, employee, createdAt, data.",
+                                                                       "description":  "Retrieves the history/audit trail of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response\nReturns List\u003cIpPurchaseOrderHistoryResponse\u003e with action, employee, createdAt, data.",
                                                                        "header":  [
 
                                                                                   ]
@@ -5230,7 +5230,7 @@
                                                                                                 "{po_id}"
                                                                                             ]
                                                                                },
-                                                                       "description":  "Creates a deep clone of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID to clone\n\n### What Gets Cloned\n- Products, otherCharges, importedQuotationCharges, importedQuoteRequestCharges\n- Status reset to CREATED, new timestamps, new consecutive number\n- Links original and clone via cloned table\n\n### Response (201)\nReturns MessageResponse\u003cPurchaseOrderResponse\u003e",
+                                                                       "description":  "Creates a deep clone of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID to clone\n\n### What Gets Cloned\n- Products, otherCharges, importedQuotationCharges, importedQuoteRequestCharges\n- Status reset to CREATED, new timestamps, new consecutive number\n- Links original and clone via cloned table\n\n### Response (201)\nReturns MessageResponse\u003cIpPurchaseOrderResponse\u003e",
                                                                        "header":  [
 
                                                                                   ]
@@ -5263,7 +5263,7 @@
                                                                                                 "{po_id}"
                                                                                             ]
                                                                                },
-                                                                       "description":  "Opens or locks a PO for editing/viewing.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Query Parameters\n- **type** (Enum, required): EDIT or VIEW\n\n### Response\nReturns OpenLockPurchaseOrderResponse with isValidOpen flag.",
+                                                                       "description":  "Opens or locks a PO for editing/viewing.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Query Parameters\n- **type** (Enum, required): EDIT or VIEW\n\n### Response\nReturns OpenLockIpPurchaseOrderResponse with isValidOpen flag.",
                                                                        "header":  [
 
                                                                                   ]
@@ -5316,7 +5316,7 @@
                                                                                                 "load-open"
                                                                                             ]
                                                                                },
-                                                                       "description":  "Retrieves all POs currently open by the authenticated user.\n\n### Response\nReturns List\u003cPurchaseOrderResponse\u003e with basic PO info.",
+                                                                       "description":  "Retrieves all POs currently open by the authenticated user.\n\n### Response\nReturns List\u003cIpPurchaseOrderResponse\u003e with basic PO info.",
                                                                        "header":  [
 
                                                                                   ]
@@ -5377,7 +5377,7 @@
                                                                                                 "po"
                                                                                             ]
                                                                                },
-                                                                       "description":  "Returns a paginated, filterable list of Purchase Orders.\n\n### Query Parameters\n- **page** (int, default=0): Zero-based page index\n- **size** (int, default=10): Page size\n- **shortBy** (String): Sort field (number, createdAt, status, etc.)\n- **shortOrder** (int): 1=ASC, else DESC\n- **number** (String): Exact match on PO number\n- **clientId** (UUID): Filter by client\n- **supplierId** (UUID): Filter by supplier\n- **remarks** (String): LIKE search on remarks\n- **status** (Enum): CREATED, SENT, ANSWERED, COMPLETE, REJECTED\n- **salesRepId** (UUID): Filter by sales rep\n- **date** (Enum): DAY, MONTH, YEAR, ALL\n- **initDate** / **endDate** (DateTime): Custom range (requires date=ALL)\n- **productDescription** (String): LIKE on product description (3-join)\n- **clientRef** (String): LIKE on product client reference (3-join)\n- **supplierRef** (String): LIKE on product MFR reference (3-join)\n\n### Examples\n\nBasic:\nGET /ip/po?page=0\u0026size=10\n\nBy status \u0026 client:\nGET /ip/po?page=0\u0026size=25\u0026status=CREATED\u0026clientId=3c0229b7-...\n\nBy product description:\nGET /ip/po?page=0\u0026size=10\u0026productDescription=widget\n\nSorted by number ASC:\nGET /ip/po?page=0\u0026size=10\u0026shortBy=number\u0026shortOrder=1\n\n### Response (200)\nReturns Page\u003cListPurchaseOrderResponse\u003e with content, pageable, totalElements, totalPages.",
+                                                                       "description":  "Returns a paginated, filterable list of Purchase Orders.\n\n### Query Parameters\n- **page** (int, default=0): Zero-based page index\n- **size** (int, default=10): Page size\n- **shortBy** (String): Sort field (number, createdAt, status, etc.)\n- **shortOrder** (int): 1=ASC, else DESC\n- **number** (String): Exact match on PO number\n- **clientId** (UUID): Filter by client\n- **supplierId** (UUID): Filter by supplier\n- **remarks** (String): LIKE search on remarks\n- **status** (Enum): CREATED, SENT, ANSWERED, COMPLETE, REJECTED\n- **salesRepId** (UUID): Filter by sales rep\n- **date** (Enum): DAY, MONTH, YEAR, ALL\n- **initDate** / **endDate** (DateTime): Custom range (requires date=ALL)\n- **productDescription** (String): LIKE on product description (3-join)\n- **clientRef** (String): LIKE on product client reference (3-join)\n- **supplierRef** (String): LIKE on product MFR reference (3-join)\n\n### Examples\n\nBasic:\nGET /ip/po?page=0\u0026size=10\n\nBy status \u0026 client:\nGET /ip/po?page=0\u0026size=25\u0026status=CREATED\u0026clientId=3c0229b7-...\n\nBy product description:\nGET /ip/po?page=0\u0026size=10\u0026productDescription=widget\n\nSorted by number ASC:\nGET /ip/po?page=0\u0026size=10\u0026shortBy=number\u0026shortOrder=1\n\n### Response (200)\nReturns Page\u003cListIpPurchaseOrderResponse\u003e with content, pageable, totalElements, totalPages.",
                                                                        "header":  [
 
                                                                                   ]

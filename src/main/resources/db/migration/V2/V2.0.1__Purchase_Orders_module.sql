@@ -41,7 +41,7 @@ CREATE TABLE t_ip_purchase_orders (
     payment_terms           VARCHAR(40),
     lead_time               INTEGER         NOT NULL    DEFAULT 0,
     lead_time_type          VARCHAR(20)     NOT NULL    DEFAULT 'WEEKS',
-    shipping_method         VARCHAR(50)     NOT NULL,
+    shipping_method         VARCHAR(50),
     remarks                 TEXT,
     internal_remarks        TEXT,
     ship_to_name            VARCHAR(300)    NOT NULL,

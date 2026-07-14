@@ -99,7 +99,7 @@ public class PurchaseOrderEntity extends BaseEntity {
     @Column(name = "lead_time_type", nullable = false, length = 20)
     private LeadTime leadTimeType;
 
-    @Column(name = "shipping_method", nullable = false, length = 50)
+    @Column(name = "shipping_method", length = 50)
     private String shippingMethod;
 
     @Column(name = "remarks", columnDefinition = "TEXT")

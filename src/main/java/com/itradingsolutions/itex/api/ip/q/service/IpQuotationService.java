@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.ip.q.service;
 
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
+import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
@@ -39,7 +40,7 @@ public interface IpQuotationService {
     void autoRejectOldCreatedQuotations();
 
     // Other Charges
-    List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted);
+    List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted, Currency currency);
 
     List<QuotationQuoteRequestOtherChargeResponse> getOtherChargesFromQuoteRequests(UUID quotationId);
 

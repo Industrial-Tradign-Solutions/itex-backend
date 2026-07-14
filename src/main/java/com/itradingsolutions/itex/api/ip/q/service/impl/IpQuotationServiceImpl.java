@@ -10,6 +10,7 @@ import com.itradingsolutions.itex.api.common.jasper.service.JasperService;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.IntegrityValidator;
+import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.q.models.dto.reports.IpQuotationReportDTO;
@@ -583,12 +584,12 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
 
     @Override
     @Transactional(readOnly = true)
-    public List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted) {
+    public List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted, Currency currency) {
         var statuses = new ArrayList<IpQuotationStatus>();
         statuses.add(IpQuotationStatus.ANSWERED);
         if (viewCompleted) statuses.add(IpQuotationStatus.COMPLETE);
 
-        return quotationRepository.fetchByClientAndStatus(clientId, statuses)
+        return quotationRepository.fetchByClientAndStatus(clientId, statuses, currency)
                 .stream()
                 .map(this::toAvailableForPurchaseOrderResponse)
                 .toList();

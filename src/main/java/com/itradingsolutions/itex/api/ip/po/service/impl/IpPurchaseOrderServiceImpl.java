@@ -8,7 +8,10 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
 import com.itradingsolutions.itex.api.ip.po.exceptions.InvalidSupplierForIpPurchaseOrderException;
+import com.itradingsolutions.itex.api.ip.po.exceptions.IpPurchaseOrderAnsweredLockedException;
+import com.itradingsolutions.itex.api.ip.po.exceptions.IpPurchaseOrderNotEditableException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.NotExistIpPurchaseOrderException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.NotOpenIpPoException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.NotOpenIpPurchaseOrderException;
@@ -23,6 +26,7 @@ import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderOtherCh
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderOtherChargesQuotationQrMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderProductMapper;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
+import com.itradingsolutions.itex.api.ip.po.models.request.UpdateIpPurchaseOrderRequest;
 import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrderRepository;
 import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrdersClonedRepository;
 import com.itradingsolutions.itex.api.ip.po.service.IIpPurchaseOrderService;
@@ -34,8 +38,10 @@ import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.masters.location.models.entities.CityEntity;
 import com.itradingsolutions.itex.api.masters.location.services.ICityService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
+import com.itradingsolutions.itex.api.partners.clients.services.IClientContactService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
+import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierContactService;
 import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierService;
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.admin.user.services.IUserService;
@@ -53,6 +59,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -67,7 +74,9 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
     private final IConsecutiveService consecutiveService;
     private final IUserService userService;
     private final IClientService clientService;
+    private final IClientContactService clientContactService;
     private final ISupplierService supplierService;
+    private final ISupplierContactService supplierContactService;
     private final ICityService cityService;
     private final IpQuotationRepository quotationRepository;
     private final IIpQuoteRequestService qrService;
@@ -116,6 +125,26 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         }
 
         consecutiveService.saveConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, saved.getNumber());
+        return mapper.entityToDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public IpPurchaseOrderDTO updateIpPurchaseOrder(UUID id, UpdateIpPurchaseOrderRequest request) {
+        var po = findEntityById(id);
+        validateOpenPO(po, userService.getUserAuthenticated());
+        validateEditable(po);
+        validateAnsweredRestrictions(po, request);
+
+        var oldNumber = po.getNumber();
+
+        applyClientFields(po, request);
+        applySupplierFields(po, request);
+        applyFreeFields(po, request);
+        applyPaymentTerms(po, request);
+
+        var saved = repository.save(po);
+        syncConsecutive(oldNumber, saved.getNumber());
         return mapper.entityToDTO(saved);
     }
 
@@ -308,6 +337,125 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         return status == IpPurchaseOrderStatus.CREATED
                 || status == IpPurchaseOrderStatus.SENT
                 || status == IpPurchaseOrderStatus.ANSWERED;
+    }
+
+    private void validateEditable(IpPurchaseOrderEntity po) {
+        Optional.of(po.getStatus())
+                .filter(status -> !isOpenStatus(status))
+                .ifPresent(status -> {
+                    throw new IpPurchaseOrderNotEditableException(simpleMessage("ip.po.not-editable"));
+                });
+    }
+
+    private void validateAnsweredRestrictions(IpPurchaseOrderEntity po, UpdateIpPurchaseOrderRequest request) {
+        Optional.of(po)
+                .filter(entity -> entity.getStatus() == IpPurchaseOrderStatus.ANSWERED)
+                .filter(entity -> isChanged(request.clientId(), safeId(entity.getClient()))
+                        || isChanged(request.supplierId(), safeId(entity.getSupplier()))
+                        || isChanged(request.paymentTerms(), entity.getPaymentTerms()))
+                .ifPresent(entity -> {
+                    throw new IpPurchaseOrderAnsweredLockedException(
+                            simpleMessage("ip.po.answered-fields-locked"));
+                });
+    }
+
+    private void applyClientFields(IpPurchaseOrderEntity po, UpdateIpPurchaseOrderRequest request) {
+        var hasQuotation = po.getQuotation() != null;
+
+        Optional.ofNullable(request.clientId())
+                .filter(clientId -> !hasQuotation)
+                .filter(clientId -> !clientId.equals(po.getClient().getId()))
+                .map(clientId -> clientService.findClientById(clientId, true))
+                .ifPresent(client -> {
+                    po.setClient(client);
+                    po.setClientContact(null);
+                    po.setNumber(generateConsecutive(client.getCode()));
+                });
+
+        Optional.ofNullable(request.currency())
+                .filter(currency -> !hasQuotation)
+                .ifPresent(po::setCurrency);
+    }
+
+    private void applySupplierFields(IpPurchaseOrderEntity po, UpdateIpPurchaseOrderRequest request) {
+        Optional.ofNullable(po.getQuotation())
+                .ifPresentOrElse(
+                        quotation -> applySupplierWithQuotation(po, quotation, request),
+                        () -> {
+                            po.setSupplier(null);
+                            po.setSupplierContact(null);
+                            po.setSupplierPoNumber(null);
+                        });
+    }
+
+    private void applySupplierWithQuotation(IpPurchaseOrderEntity po, IpQuotationEntity quotation,
+                                            UpdateIpPurchaseOrderRequest request) {
+        Optional.ofNullable(request.supplierId())
+                .filter(supplierId -> !supplierId.equals(safeId(po.getSupplier())))
+                .ifPresent(supplierId -> {
+                    validateSupplierInQuotation(quotation, supplierId);
+                    po.setSupplier(supplierService.findSupplierById(supplierId, true));
+                });
+        po.setSupplierContact(Optional.ofNullable(request.supplierContactId())
+                .flatMap(contactId -> Optional.ofNullable(po.getSupplier())
+                        .map(supplier -> supplierContactService.findById(contactId, supplier.getId())))
+                .orElse(null));
+        po.setSupplierPoNumber(Optional.ofNullable(po.getSupplier())
+                .map(supplier -> request.supplierPoNumber())
+                .orElse(null));
+    }
+
+    private void applyFreeFields(IpPurchaseOrderEntity po, UpdateIpPurchaseOrderRequest request) {
+        po.setClientContact(Optional.ofNullable(request.clientContactId())
+                .map(contactId -> clientContactService.findById(contactId, po.getClient().getId()))
+                .orElse(null));
+        po.setClientPoNumber(request.clientPoNumber());
+        po.setShippingMethod(request.shippingMethod());
+        Optional.ofNullable(request.salesRepId())
+                .filter(salesRepId -> !salesRepId.equals(safeId(po.getSalesRep())))
+                .ifPresent(salesRepId -> po.setSalesRep(userService.findEntityById(salesRepId, true)));
+        po.setLeadTime(request.leadTime());
+        po.setLeadTimeType(request.leadTimeType());
+        po.setSalesTax(request.salesTax());
+        po.setShipToName(request.shipToName());
+        po.setShipToAddress(request.shipToAddress());
+        Optional.ofNullable(request.shipToCityId())
+                .filter(cityId -> !cityId.equals(po.getShipToCity().getId()))
+                .ifPresent(cityId -> po.setShipToCity(cityService.findEntityById(cityId)));
+        po.setShipToPhone(request.shipToPhone());
+        po.setShipToContactName(request.shipToContactName());
+        po.setShipToEmail(request.shipToEmail());
+    }
+
+    private void applyPaymentTerms(IpPurchaseOrderEntity po, UpdateIpPurchaseOrderRequest request) {
+        Optional.of(po)
+                .filter(entity -> entity.getStatus() != IpPurchaseOrderStatus.ANSWERED)
+                .ifPresent(entity -> {
+                    entity.setPaymentTerms(Optional.ofNullable(entity.getSupplier())
+                            .map(SupplierEntity::getPaymentTerms)
+                            .orElse(null));
+                    Optional.ofNullable(request.paymentTerms())
+                            .filter(terms -> validateAction(userService.getUserAuthenticated(),
+                                    ModuleAction.EDIT_PAYMENT_TERMS_PURCHASE_ORDER))
+                            .ifPresent(entity::setPaymentTerms);
+                });
+    }
+
+    private void syncConsecutive(String oldNumber, String newNumber) {
+        Optional.of(newNumber)
+                .filter(number -> !number.equalsIgnoreCase(oldNumber))
+                .ifPresent(number -> {
+                    consecutiveService.saveConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, number);
+                    consecutiveService.deleteConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, oldNumber);
+                });
+    }
+
+    private static <T> boolean isChanged(T requested, T current) {
+        return requested != null && !requested.equals(current);
+    }
+
+    private static UUID safeId(BaseEntity entity) {
+        return entity != null ? entity.getId() : null;
     }
 
     private void validateSupplierInQuotation(IpQuotationEntity quotation, UUID supplierId) {

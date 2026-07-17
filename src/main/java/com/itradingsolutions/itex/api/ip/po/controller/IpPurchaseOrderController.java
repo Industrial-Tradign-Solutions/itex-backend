@@ -10,6 +10,7 @@ import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseO
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderHistoryMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderMapper;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
+import com.itradingsolutions.itex.api.ip.po.models.request.UpdateIpPurchaseOrderRequest;
 import com.itradingsolutions.itex.api.ip.po.models.response.ListIpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.OpenLockIpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderHistoryResponse;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -65,6 +67,23 @@ public class IpPurchaseOrderController extends CommonController {
                         simpleMessage("ip.po.created"),
                         new OpenLockIpPurchaseOrderResponse(poMapper.dtoToResponse(dto), true)
                 ));
+    }
+
+    @PutMapping("/{po_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_PURCHASE_ORDER)
+    public ResponseEntity<MessageResponse<IpPurchaseOrderResponse>> updateIpPurchaseOrder(
+            @PathVariable("po_id") UUID poId,
+            @RequestBody @Valid UpdateIpPurchaseOrderRequest request
+    ) {
+        var oldPo = purchaseOrderService.findById(poId);
+        var resp = purchaseOrderService.updateIpPurchaseOrder(poId, request);
+        purchaseOrderHistoryService.addHistory(IpPurchaseOrderHistoryAction.UPDATE, oldPo, resp);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.po.updated"),
+                poMapper.dtoToResponse(resp)
+        ));
     }
 
     @GetMapping("/history/{po_id}")

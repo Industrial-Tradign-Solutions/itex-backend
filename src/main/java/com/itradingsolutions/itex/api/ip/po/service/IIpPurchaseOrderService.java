@@ -4,6 +4,7 @@ import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
+import com.itradingsolutions.itex.api.ip.po.models.request.UpdateIpPurchaseOrderRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -13,6 +14,8 @@ import java.util.UUID;
 public interface IIpPurchaseOrderService {
 
     IpPurchaseOrderDTO createIpPurchaseOrder(CreateIpPurchaseOrderRequest request);
+
+    IpPurchaseOrderDTO updateIpPurchaseOrder(UUID id, UpdateIpPurchaseOrderRequest request);
 
     IpPurchaseOrderDTO findById(UUID id);
 

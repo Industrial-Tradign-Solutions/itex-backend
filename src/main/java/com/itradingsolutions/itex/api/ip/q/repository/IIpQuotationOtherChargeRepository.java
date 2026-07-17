@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -60,4 +61,12 @@ public interface IIpQuotationOtherChargeRepository extends JpaRepository<IpQuota
     @Modifying
     @Query("DELETE FROM IpQuotationOtherChargeEntity oc WHERE oc.ipQuotation.id = ?1 AND oc.id = ?2")
     void deleteById(UUID quotationId, UUID otherChargeId);
+
+    /**
+     * Fetches every own other charge belonging to a quotation.
+     *
+     * @param quotationId the quotation ID
+     * @return the list of charges
+     */
+    List<IpQuotationOtherChargeEntity> findByIpQuotation_Id(UUID quotationId);
 }

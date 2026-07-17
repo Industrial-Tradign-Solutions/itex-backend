@@ -81,6 +81,10 @@ create table t_ip_purchase_orders_other_charges (
     created_at              timestamp       not null
 );
 
+alter table t_ip_purchase_orders_other_charges
+    add constraint t_ip_po_other_charges_unique_description
+        unique (ip_po_id, description);
+
 create table t_ip_purchase_order_other_charges_quotation (
     id                      uuid            not null    primary key,
     ip_po_id                uuid            not null    references t_ip_purchase_orders(id),

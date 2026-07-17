@@ -36,6 +36,9 @@ public interface IpPurchaseOrderMapper {
     @Mapping(target = "otherCharges", expression = "java(mapOtherChargesResponse(dto))")
     @Mapping(target = "importedQuotationCharges", expression = "java(mapImportedQCharges(dto))")
     @Mapping(target = "importedQuoteRequestCharges", expression = "java(mapImportedQrCharges(dto))")
+    @Mapping(target = "subTotal", expression = "java(dto.getSubTotal())")
+    @Mapping(target = "totalOtherCharges", expression = "java(dto.getTotalOtherCharges())")
+    @Mapping(target = "total", expression = "java(dto.getTotal())")
     IpPurchaseOrderResponse dtoToResponse(IpPurchaseOrderDTO dto);
 
     ListIpPurchaseOrderResponse dtoToListResponse(IpPurchaseOrderDTO dto);

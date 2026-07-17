@@ -18,9 +18,14 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Getter
 @Setter
@@ -66,6 +71,46 @@ public class IpPurchaseOrderDTO extends BaseDTO {
 
     public String getName() {
         return this.number;
+    }
+
+    public BigDecimal getSubTotal() {
+        return Optional.ofNullable(products)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(IpPurchaseOrderProductDTO::getExtendedPrice)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public List<OtherChargeView> getAllOtherCharges() {
+        var own = Optional.ofNullable(otherCharges).orElseGet(Collections::emptyList).stream()
+                .map(oc -> new OtherChargeView(oc.getId(), oc.getValue(), oc.getDescription(), OtherChargeView.OWN));
+        var fromQuotation = Optional.ofNullable(importedQuotationCharges).orElseGet(Collections::emptyList).stream()
+                .map(IpPurchaseOrderOtherChargesQuotationDTO::getQuotationOtherCharge)
+                .filter(Objects::nonNull)
+                .map(oc -> new OtherChargeView(oc.getId(), oc.getValue(), oc.getDescription(), OtherChargeView.QUOTATION));
+        var fromQuotationQr = Optional.ofNullable(importedQuoteRequestCharges).orElseGet(Collections::emptyList).stream()
+                .map(IpPurchaseOrderOtherChargesQuotationQrDTO::getQuotationQrOtherCharge)
+                .filter(Objects::nonNull)
+                .map(link -> link.getQrOtherCharge())
+                .filter(Objects::nonNull)
+                .map(oc -> new OtherChargeView(oc.getId(), oc.getValue(), oc.getDescription(), OtherChargeView.QUOTATION_QR));
+        return Stream.of(own, fromQuotation, fromQuotationQr).flatMap(s -> s).toList();
+    }
+
+    public BigDecimal getTotalOtherCharges() {
+        return getAllOtherCharges().stream()
+                .map(OtherChargeView::value)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal getTotal() {
+        return Stream.of(getSubTotal(), getTotalOtherCharges(), Optional.ofNullable(salesTax).orElse(BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public void setNumber(String number) {

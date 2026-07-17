@@ -57,6 +57,9 @@ public class IpPurchaseOrderResponse extends BaseResponse {
     private String shipToContactName;
     private String shipToEmail;
     private BigDecimal salesTax;
+    private BigDecimal subTotal;
+    private BigDecimal totalOtherCharges;
+    private BigDecimal total;
     private String pdfUrl;
     private ZonedDateTime openAt;
     private ZonedDateTime sentAt;

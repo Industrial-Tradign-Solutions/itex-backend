@@ -1,4 +1,4 @@
-﻿{
+{
     "info":  {
                  "_postman_id":  "db0a6098-32a6-40c7-b7e2-b55effa365db",
                  "name":  "ITEX Software",
@@ -5150,12 +5150,29 @@
                                       "name":  "Purchase Order Management",
                                       "item":  [
                                                    {
+                                                       "name":  "Create Purchase Order",
                                                        "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"clientId\": \"3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8\",\n  \"quotationId\": \"\",\n  \"supplierId\": \"\"\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
                                                                        "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po",
                                                                                    "host":  [
                                                                                                 "{{API_URL}}"
                                                                                             ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po",
                                                                                    "path":  [
                                                                                                 "itex",
                                                                                                 "api",
@@ -5163,199 +5180,30 @@
                                                                                                 "po"
                                                                                             ]
                                                                                },
-                                                                       "method":  "POST",
-                                                                       "body":  {
-                                                                                    "raw":  "{\n  \"clientId\": \"3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8\",\n  \"quotationId\": \"\",\n  \"supplierId\": \"\"\n}",
-                                                                                    "options":  {
-                                                                                                    "raw":  {
-                                                                                                                "language":  "json"
-                                                                                                            }
-                                                                                                },
-                                                                                    "mode":  "raw"
-                                                                                },
-                                                                       "description":  "Creates a new Purchase Order.\n\n### Request Body\n- **clientId** (UUID, required): Client identifier\n- **quotationId** (UUID, optional): Quotation ID to base the PO on\n- **supplierId** (UUID, optional): Supplier ID (required if quotationId provided)\n\n### Business Rules\n- If quotationId provided, supplier must be valid for that quotation\u0027s quote requests\n- Status: CREATED\n- Auto-generated PO number\n- Default shipping: ITS Corp, 1200 Anastasia Ave, Miami\n- History: CREATE action recorded\n\n### Response (201)\nReturns MessageResponse\u003cOpenLockIpPurchaseOrderResponse\u003e with isValidOpen=true",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ]
+                                                                       "description":  "Creates a new Purchase Order.\n\n### Request Body\n- **clientId** (UUID, required): Client identifier\n- **quotationId** (UUID, optional): Quotation ID to base the PO on\n- **supplierId** (UUID, optional): Supplier ID (required if quotationId provided)\n\n### Business Rules\n- If quotationId provided, supplier must be valid for that quotation's quote requests\n- Status: CREATED\n- Auto-generated PO number (e.g., PO-IP-000001)\n- Default shipping: ITS Corp, 1200 Anastasia Ave, Miami\n- History: CREATE action recorded\n\n### Response (201 Created)\nReturns MessageResponse<OpenLockIpPurchaseOrderResponse> with isValidOpen=true"
                                                                    },
-                                                       "name":  "Create Purchase Order",
                                                        "response":  [
 
                                                                     ]
                                                    },
                                                    {
+                                                       "name":  "List Purchase Orders",
                                                        "request":  {
                                                                        "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
                                                                        "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po?page=0&size=10",
                                                                                    "host":  [
                                                                                                 "{{API_URL}}"
                                                                                             ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/history/{po_id}",
                                                                                    "path":  [
                                                                                                 "itex",
                                                                                                 "api",
                                                                                                 "ip",
-                                                                                                "po",
-                                                                                                "history",
-                                                                                                "{po_id}"
-                                                                                            ]
-                                                                               },
-                                                                       "description":  "Retrieves the history/audit trail of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response\nReturns List\u003cIpPurchaseOrderHistoryResponse\u003e with action, employee, createdAt, data.",
-                                                                       "header":  [
-
-                                                                                  ]
-                                                                   },
-                                                       "name":  "Get PO History",
-                                                       "response":  [
-
-                                                                    ]
-                                                   },
-                                                   {
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "url":  {
-                                                                                   "host":  [
-                                                                                                "{{API_URL}}"
+                                                                                                "po"
                                                                                             ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/clone/{po_id}",
-                                                                                   "path":  [
-                                                                                                "itex",
-                                                                                                "api",
-                                                                                                "ip",
-                                                                                                "po",
-                                                                                                "clone",
-                                                                                                "{po_id}"
-                                                                                            ]
-                                                                               },
-                                                                       "description":  "Creates a deep clone of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID to clone\n\n### What Gets Cloned\n- Products, otherCharges, importedQuotationCharges, importedQuoteRequestCharges\n- Status reset to CREATED, new timestamps, new consecutive number\n- Links original and clone via cloned table\n\n### Response (201)\nReturns MessageResponse\u003cIpPurchaseOrderResponse\u003e",
-                                                                       "header":  [
-
-                                                                                  ]
-                                                                   },
-                                                       "name":  "Clone PO",
-                                                       "response":  [
-
-                                                                    ]
-                                                   },
-                                                   {
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "url":  {
-                                                                                   "query":  [
-                                                                                                 {
-                                                                                                     "key":  "type",
-                                                                                                     "value":  "EDIT"
-                                                                                                 }
-                                                                                             ],
-                                                                                   "host":  [
-                                                                                                "{{API_URL}}"
-                                                                                            ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/open-lock/{po_id}?type=EDIT",
-                                                                                   "path":  [
-                                                                                                "itex",
-                                                                                                "api",
-                                                                                                "ip",
-                                                                                                "po",
-                                                                                                "open-lock",
-                                                                                                "{po_id}"
-                                                                                            ]
-                                                                               },
-                                                                       "description":  "Opens or locks a PO for editing/viewing.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Query Parameters\n- **type** (Enum, required): EDIT or VIEW\n\n### Response\nReturns OpenLockIpPurchaseOrderResponse with isValidOpen flag.",
-                                                                       "header":  [
-
-                                                                                  ]
-                                                                   },
-                                                       "name":  "Open/Lock PO",
-                                                       "response":  [
-
-                                                                    ]
-                                                   },
-                                                   {
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "url":  {
-                                                                                   "host":  [
-                                                                                                "{{API_URL}}"
-                                                                                            ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/close/{po_id}",
-                                                                                   "path":  [
-                                                                                                "itex",
-                                                                                                "api",
-                                                                                                "ip",
-                                                                                                "po",
-                                                                                                "close",
-                                                                                                "{po_id}"
-                                                                                            ]
-                                                                               },
-                                                                       "description":  "Closes/unlocks a PO.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response\nReturns MessageResponse\u003cUUID\u003e with the PO ID.",
-                                                                       "header":  [
-
-                                                                                  ]
-                                                                   },
-                                                       "name":  "Close PO",
-                                                       "response":  [
-
-                                                                    ]
-                                                   },
-                                                   {
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "url":  {
-                                                                                   "host":  [
-                                                                                                "{{API_URL}}"
-                                                                                            ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/load-open",
-                                                                                   "path":  [
-                                                                                                "itex",
-                                                                                                "api",
-                                                                                                "ip",
-                                                                                                "po",
-                                                                                                "load-open"
-                                                                                            ]
-                                                                               },
-                                                                       "description":  "Retrieves all POs currently open by the authenticated user.\n\n### Response\nReturns List\u003cIpPurchaseOrderResponse\u003e with basic PO info.",
-                                                                       "header":  [
-
-                                                                                  ]
-                                                                   },
-                                                       "name":  "Load Open POs",
-                                                       "response":  [
-
-                                                                    ]
-                                                   },
-                                                   {
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "url":  {
-                                                                                   "host":  [
-                                                                                                "{{API_URL}}"
-                                                                                            ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/close-list",
-                                                                                   "path":  [
-                                                                                                "itex",
-                                                                                                "api",
-                                                                                                "ip",
-                                                                                                "po",
-                                                                                                "close-list"
-                                                                                            ]
-                                                                               },
-                                                                       "description":  "Closes/unlocks all POs open by the authenticated user.\n\n### Response\nReturns MessageResponse\u003cList\u003cUUID\u003e\u003e with closed PO IDs.",
-                                                                       "header":  [
-
-                                                                                  ]
-                                                                   },
-                                                       "name":  "Close All Open POs",
-                                                       "response":  [
-
-                                                                    ]
-                                                   },
-                                                   {
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "url":  {
                                                                                    "query":  [
                                                                                                  {
                                                                                                      "key":  "page",
@@ -5365,24 +5213,803 @@
                                                                                                      "key":  "size",
                                                                                                      "value":  "10"
                                                                                                  }
-                                                                                             ],
+                                                                                             ]
+                                                                               },
+                                                                       "description":  "Returns a paginated, filterable list of Purchase Orders.\n\n### Query Parameters\n- **page** (int, default=0): Zero-based page index\n- **size** (int, default=10): Page size\n- **shortBy** (String): Sort field (number, createdAt, status, etc.)\n- **shortOrder** (int): 1=ASC, else DESC\n- **number** (String): Exact match on PO number\n- **clientId** (UUID): Filter by client\n- **supplierId** (UUID): Filter by supplier\n- **remarks** (String): LIKE search on remarks\n- **status** (Enum): CREATED, SENT, ANSWERED, COMPLETE, REJECTED\n- **salesRepId** (UUID): Filter by sales rep\n- **date** (Enum): DAY, MONTH, YEAR, ALL\n- **initDate** / **endDate** (DateTime): Custom range (requires date=ALL)\n- **productDescription** (String): LIKE on product description (3-join)\n- **clientRef** (String): LIKE on product client reference (3-join)\n- **supplierRef** (String): LIKE on product MFR reference (3-join)\n\n### Response (200 OK)\nReturns Page<ListIpPurchaseOrderResponse> with content, pageable, totalElements, totalPages."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Open/Lock PO",
+                                                       "request":  {
+                                                                       "method":  "PATCH",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/open-lock/{po_id}?type=EDIT",
                                                                                    "host":  [
                                                                                                 "{{API_URL}}"
                                                                                             ],
-                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po?page=0\u0026size=10",
                                                                                    "path":  [
                                                                                                 "itex",
                                                                                                 "api",
                                                                                                 "ip",
-                                                                                                "po"
-                                                                                            ]
+                                                                                                "po",
+                                                                                                "open-lock",
+                                                                                                "{po_id}"
+                                                                                            ],
+                                                                                   "query":  [
+                                                                                                 {
+                                                                                                     "key":  "type",
+                                                                                                     "value":  "EDIT"
+                                                                                                 }
+                                                                                             ]
                                                                                },
-                                                                       "description":  "Returns a paginated, filterable list of Purchase Orders.\n\n### Query Parameters\n- **page** (int, default=0): Zero-based page index\n- **size** (int, default=10): Page size\n- **shortBy** (String): Sort field (number, createdAt, status, etc.)\n- **shortOrder** (int): 1=ASC, else DESC\n- **number** (String): Exact match on PO number\n- **clientId** (UUID): Filter by client\n- **supplierId** (UUID): Filter by supplier\n- **remarks** (String): LIKE search on remarks\n- **status** (Enum): CREATED, SENT, ANSWERED, COMPLETE, REJECTED\n- **salesRepId** (UUID): Filter by sales rep\n- **date** (Enum): DAY, MONTH, YEAR, ALL\n- **initDate** / **endDate** (DateTime): Custom range (requires date=ALL)\n- **productDescription** (String): LIKE on product description (3-join)\n- **clientRef** (String): LIKE on product client reference (3-join)\n- **supplierRef** (String): LIKE on product MFR reference (3-join)\n\n### Examples\n\nBasic:\nGET /ip/po?page=0\u0026size=10\n\nBy status \u0026 client:\nGET /ip/po?page=0\u0026size=25\u0026status=CREATED\u0026clientId=3c0229b7-...\n\nBy product description:\nGET /ip/po?page=0\u0026size=10\u0026productDescription=widget\n\nSorted by number ASC:\nGET /ip/po?page=0\u0026size=10\u0026shortBy=number\u0026shortOrder=1\n\n### Response (200)\nReturns Page\u003cListIpPurchaseOrderResponse\u003e with content, pageable, totalElements, totalPages.",
+                                                                       "description":  "Opens or locks a PO for editing/viewing. Returns full PO details.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Query Parameters\n- **type** (Enum, required): EDIT or VIEW\n\n### Response (200 OK)\nReturns OpenLockIpPurchaseOrderResponse with isValidOpen flag.\n- isValidOpen=true: lock acquired successfully\n- isValidOpen=false: another user has it locked"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Close PO",
+                                                       "request":  {
+                                                                       "method":  "PATCH",
                                                                        "header":  [
 
-                                                                                  ]
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/close/{po_id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "close",
+                                                                                                "{po_id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Closes/unlocks a PO.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns MessageResponse<UUID> with the closed PO ID."
                                                                    },
-                                                       "name":  "List Purchase Orders",
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Load Open POs",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/load-open",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "load-open"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Retrieves all POs currently open/locked by the authenticated user.\n\n### Response (200 OK)\nReturns List<IpPurchaseOrderResponse> with full PO details."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Close All Open POs",
+                                                       "request":  {
+                                                                       "method":  "PATCH",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/close-list",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "close-list"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Closes/unlocks all POs open by the authenticated user.\n\n### Response (200 OK)\nReturns MessageResponse<List<UUID>> with closed PO IDs."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Update Purchase Order",
+                                                       "request":  {
+                                                                       "method":  "PUT",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"clientId\": \"3c0229b7-1a7b-4671-ae1a-8c3d0ca0b5c8\",\n  \"clientContactId\": \"\",\n  \"clientPoNumber\": \"CLI-PO-2026-001\",\n  \"currency\": \"USD\",\n  \"supplierId\": \"dd4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a\",\n  \"supplierContactId\": \"\",\n  \"supplierPoNumber\": \"SUP-PO-2026-001\",\n  \"paymentTerms\": \"NET_30\",\n  \"shippingMethod\": \"Sea Freight\",\n  \"salesRepId\": \"\",\n  \"leadTime\": 15,\n  \"leadTimeType\": \"DAYS_15_30\",\n  \"salesTax\": 7.50,\n  \"shipToName\": \"Acme Corp Warehouse\",\n  \"shipToAddress\": \"1234 Industrial Blvd, Miami FL 33101\",\n  \"shipToCityId\": \"\",\n  \"shipToPhone\": \"+1-305-555-0100\",\n  \"shipToContactName\": \"John Smith\",\n  \"shipToEmail\": \"john@acme.com\"\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{po_id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{po_id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Updates a Purchase Order. Only allowed in CREATED status for some fields.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Request Body (all fields optional, only included fields are updated)\n- **clientId** (UUID): Client reference\n- **clientContactId** (UUID): Client contact\n- **clientPoNumber** (String, max 50): Client PO number\n- **currency** (Enum): USD, EUR, GBP, CAD, MXN\n- **supplierId** (UUID): Supplier reference\n- **supplierContactId** (UUID): Supplier contact\n- **supplierPoNumber** (String, max 50): Supplier PO number\n- **paymentTerms** (Enum): NET_30, NET_45, NET_60, NET_90, IMMEDIATE\n- **shippingMethod** (String, max 50): Shipping method\n- **salesRepId** (UUID): Sales rep user\n- **leadTime** (Integer, @NotNull @Min(0)): Lead time value\n- **leadTimeType** (LeadTime, @NotNull): DAYS_1_3, DAYS_4_7, DAYS_8_14, DAYS_15_30, DAYS_31_PLUS\n- **salesTax** (BigDecimal, @NotNull @Min(0)): Sales tax\n- **shipToName** (String, @NotBlank max 300): Ship-to name\n- **shipToAddress** (String, @NotBlank max 500): Ship-to address\n- **shipToCityId** (UUID, @NotNull): Ship-to city ID\n- **shipToPhone** (String, @NotBlank max 20): Ship-to phone\n- **shipToContactName** (String, @NotBlank max 50): Ship-to contact name\n- **shipToEmail** (String, @NotBlank @Email max 100): Ship-to email\n\n### Response (200 OK)\nReturns MessageResponse<IpPurchaseOrderResponse>.\n\n### Business Rules\n- History: UPDATE action recorded\n- Removed products logged as REMOVE_PRODUCT"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Change Quotation of PO",
+                                                       "request":  {
+                                                                       "method":  "PATCH",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"quotationId\": \"bb2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e\"\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{po_id}/quotation",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{po_id}",
+                                                                                                "quotation"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Changes the linked quotation of a PO. Purges products and imported charges from the old quotation.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Request Body\n- **quotationId** (UUID, required): New quotation to attach\n\n### Response (200 OK)\nReturns MessageResponse<IpPurchaseOrderResponse>.\n\n### Business Rules\n- Replaces current quotation link\n- Purges products and imported charges from old quotation\n- History: CHANGE_QUOTATION action recorded"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Remove Quotation from PO",
+                                                       "request":  {
+                                                                       "method":  "DELETE",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{po_id}/quotation",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{po_id}",
+                                                                                                "quotation"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Removes the linked quotation from a PO. Purges products and imported charges.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns MessageResponse<IpPurchaseOrderResponse>.\n\n### Business Rules\n- Purges products, imported quotation charges, imported QR charges\n- History: REMOVE_QUOTATION action recorded"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Change PO Status",
+                                                       "request":  {
+                                                                       "method":  "PATCH",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{po_id}/change-status?status=SENT",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{po_id}",
+                                                                                                "change-status"
+                                                                                            ],
+                                                                                   "query":  [
+                                                                                                 {
+                                                                                                     "key":  "status",
+                                                                                                     "value":  "SENT"
+                                                                                                 }
+                                                                                             ]
+                                                                               },
+                                                                       "description":  "Changes the PO status.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Query Parameters\n- **status** (Enum, required): New status\n\n### Valid Transitions\n- CREATED \u2192 SENT\n- SENT \u2192 ANSWERED, COMPLETE\n- ANSWERED \u2192 COMPLETE\n\n### Note\nCannot change to REJECTED using this endpoint - use the Reject endpoint.\n\n### Response (200 OK)\nReturns MessageResponse<IpPurchaseOrderResponse> with new status."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Reject Purchase Order",
+                                                       "request":  {
+                                                                       "method":  "DELETE",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{po_id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{po_id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Rejects a Purchase Order. Changes status to REJECTED.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns MessageResponse<IpPurchaseOrderResponse> with status=REJECTED.\n\n### Business Rules\n- Status changes to REJECTED\n- History: REJECTED action recorded"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Clone PO",
+                                                       "request":  {
+                                                                       "method":  "PATCH",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/clone/{po_id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "clone",
+                                                                                                "{po_id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Creates a deep clone of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID to clone\n\n### What Gets Cloned\n- Client, currency, payment terms, supplier, shipping info\n- All products (linked to original quotation products)\n- All other charges (own, imported quotation, imported QR)\n\n### What Gets Reset\n- Status \u2192 CREATED\n- New auto-generated PO number\n- New timestamps, openBy/openAt = null\n- Links original and clone via cloned table\n\n### Response (201 Created)\nReturns MessageResponse<IpPurchaseOrderResponse>."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Get PO History",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/history/{po_id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "history",
+                                                                                                "{po_id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Retrieves the history/audit trail of a Purchase Order.\n\n### Path Parameters\n- **po_id** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns List<IpPurchaseOrderHistoryResponse> with action, employee, createdAt, data."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   }
+                                               ]
+                                  },
+                                  {
+                                      "name":  "Purchase Order Products",
+                                      "item":  [
+                                                   {
+                                                       "name":  "Get Eligible Products",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/product/available",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "product",
+                                                                                                "available"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Returns products from the linked quotation that can be added to this PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns List<EligibleIpPurchaseOrderProductResponse> with:\n- **quotationProductId** (UUID): Quotation product reference\n- **description** (String): Product description\n- **mfrReference** (String): Manufacturer reference\n- **quantity** (BigDecimal): Product quantity\n- **sellingUnitPrice** (BigDecimal): Selling unit price\n- **sellingExtendedPrice** (BigDecimal): Selling extended price\n- **qrNumber** (String): Quote request number"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Add Products to PO",
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"quotationProductIds\": [\n    \"aa1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\",\n    \"bb2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e\"\n  ]\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/product",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "product"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Adds products from the linked quotation to the PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Request Body\n- **quotationProductIds** (List<UUID>, required): Quotation product IDs to add\n\n### Validation\n- At least one quotationProductId required\n- Products must come from the linked quotation\n\n### Response (201 Created)\nReturns MessageResponse<List<IpPurchaseOrderProductResponse>>.\n\n### Business Rules\n- Products linked from quotation\n- Each product gets sequential line number\n- History: ADD_PRODUCT recorded for each product"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   }
+                                               ]
+                                  },
+                                  {
+                                      "name":  "Purchase Order Other Charges",
+                                      "item":  [
+                                                   {
+                                                       "name":  "Add Other Charge",
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"description\": \"Freight Charges\",\n  \"value\": 250.00\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Adds an other charge to a Purchase Order.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Request Body\n- **description** (String, required): Charge description\n- **value** (BigDecimal, required): Amount (>= 0)\n\n### Response (201 Created)\nReturns MessageResponse<IpPurchaseOrderOtherChargeResponse>."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Update Other Charge",
+                                                       "request":  {
+                                                                       "method":  "PUT",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"description\": \"International Freight\",\n  \"value\": 350.00\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/{id_other_charge}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "{id_other_charge}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Updates an other charge in the PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id_other_charge** (UUID, required): Other Charge ID\n\n### Request Body\n- **description** (String, required): New description\n- **value** (BigDecimal, required): New value\n\n### Response (200 OK)\nReturns MessageResponse<IpPurchaseOrderOtherChargeResponse>."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Get Other Charge",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/{id_other_charge}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "{id_other_charge}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Retrieves a specific other charge.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id_other_charge** (UUID, required): Other Charge ID\n\n### Response (200 OK)\nReturns IpPurchaseOrderOtherChargeResponse."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Remove Other Charge",
+                                                       "request":  {
+                                                                       "method":  "DELETE",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/{id_other_charge}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "{id_other_charge}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Removes an other charge from the PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id_other_charge** (UUID, required): Other Charge ID to remove\n\n### Response (200 OK)\nReturns MessageResponse<UUID> with the removed charge ID."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Import from Quotation",
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"chargeIds\": [\n    \"aa1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\",\n    \"bb2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e\"\n  ]\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/import-from-quotation",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "import-from-quotation"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Imports other charges from the linked IP Quotation into the PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Request Body\n- **chargeIds** (List<UUID>, required): Quotation other charge IDs to import\n\n### Validation\n- Duplicate chargeIds in same request \u2192 error\n- Already imported chargeIds \u2192 silently skipped\n\n### Response (201 Created)\nReturns MessageResponse<List<IpPurchaseOrderOtherChargesQuotationResponse>>.\n\n### Business Rules\n- History: ADD_IMPORTED_Q_CHARGE recorded for each imported charge"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Get Available from Quotation",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/available-from-quotation",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "available-from-quotation"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Returns quotation other charges that have NOT yet been imported.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns List<AvailableIpPurchaseOrderOtherChargeResponse> with:\n- **id** (UUID): Charge ID\n- **value** (BigDecimal): Amount\n- **description** (String): Charge description\n- **sourceNumber** (String): Source quotation number"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Get Imported from Quotation",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/imported-from-quotation/{id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "imported-from-quotation",
+                                                                                                "{id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Retrieves a specific imported quotation charge.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id** (UUID, required): Imported charge link ID\n\n### Response (200 OK)\nReturns IpPurchaseOrderOtherChargesQuotationResponse."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Remove Imported from Quotation",
+                                                       "request":  {
+                                                                       "method":  "DELETE",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/imported-from-quotation/{id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "imported-from-quotation",
+                                                                                                "{id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Removes an imported quotation charge from the PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id** (UUID, required): Imported charge link ID to remove\n\n### Response (200 OK)\nReturns MessageResponse<UUID>."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Import from Quotation QR",
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\n  \"chargeIds\": [\n    \"aa1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\"\n  ]\n}",
+                                                                                    "options":  {
+                                                                                                    "raw":  {
+                                                                                                                "language":  "json"
+                                                                                                            }
+                                                                                                }
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/import-from-quotation-qr",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "import-from-quotation-qr"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Imports other charges from Quote Requests associated with the linked quotation.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Request Body\n- **chargeIds** (List<UUID>, required): QR other charge IDs to import\n\n### Response (201 Created)\nReturns MessageResponse<List<IpPurchaseOrderOtherChargesQuotationQrResponse>>.\n\n### Business Rules\n- History: ADD_IMPORTED_QR_CHARGE recorded for each imported charge"
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Get Available from Quotation QR",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/available-from-quotation-qr",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "available-from-quotation-qr"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Returns QR other charges that have NOT yet been imported.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n\n### Response (200 OK)\nReturns List<AvailableIpPurchaseOrderOtherChargeResponse>."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Get Imported from Quotation QR",
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/imported-from-quotation-qr/{id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "imported-from-quotation-qr",
+                                                                                                "{id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Retrieves a specific imported QR charge.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id** (UUID, required): Imported QR charge link ID\n\n### Response (200 OK)\nReturns IpPurchaseOrderOtherChargesQuotationQrResponse."
+                                                                   },
+                                                       "response":  [
+
+                                                                    ]
+                                                   },
+                                                   {
+                                                       "name":  "Remove Imported from Quotation QR",
+                                                       "request":  {
+                                                                       "method":  "DELETE",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{API_URL}}/itex/api/ip/po/{id_po}/other_charges/imported-from-quotation-qr/{id}",
+                                                                                   "host":  [
+                                                                                                "{{API_URL}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "itex",
+                                                                                                "api",
+                                                                                                "ip",
+                                                                                                "po",
+                                                                                                "{id_po}",
+                                                                                                "other_charges",
+                                                                                                "imported-from-quotation-qr",
+                                                                                                "{id}"
+                                                                                            ]
+                                                                               },
+                                                                       "description":  "Removes an imported QR charge from the PO.\n\n### Path Parameters\n- **id_po** (UUID, required): PO ID\n- **id** (UUID, required): Imported QR charge link ID to remove\n\n### Response (200 OK)\nReturns MessageResponse<UUID>."
+                                                                   },
                                                        "response":  [
 
                                                                     ]

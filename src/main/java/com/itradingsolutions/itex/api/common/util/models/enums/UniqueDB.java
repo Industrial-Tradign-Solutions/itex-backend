@@ -38,6 +38,7 @@ public class UniqueDB {
     public static final String IP_PO_NUMBER = "ip_po_unique_number";
     public static final String IP_PO_OTHER_CHARGES_Q_UNIQUE = "t_ip_po_other_charges_q_unique";
     public static final String IP_PO_OTHER_CHARGES_Q_QR_UNIQUE = "t_ip_po_other_charges_q_qr_unique";
+    public static final String IP_PO_PRODUCT_UNIQUE = "t_ip_po_products_unique_product";
 
 
     public static List<String> getListErrors() {
@@ -71,7 +72,8 @@ public class UniqueDB {
                 IP_Q_QR_OTHER_CHARGES_UNIQUE,
                 IP_PO_NUMBER,
                 IP_PO_OTHER_CHARGES_Q_UNIQUE,
-                IP_PO_OTHER_CHARGES_Q_QR_UNIQUE
+                IP_PO_OTHER_CHARGES_Q_QR_UNIQUE,
+                IP_PO_PRODUCT_UNIQUE
         );
     }
 }

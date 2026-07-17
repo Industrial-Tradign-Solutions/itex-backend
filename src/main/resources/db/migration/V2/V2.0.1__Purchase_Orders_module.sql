@@ -69,6 +69,10 @@ create table t_ip_purchase_order_products (
     created_at              TIMESTAMP       NOT NULL
 );
 
+alter table t_ip_purchase_order_products
+    add constraint t_ip_po_products_unique_product
+        unique (ip_po_id, quotation_product_id);
+
 create table t_ip_purchase_orders_other_charges (
     id                      uuid            not null    primary key,
     ip_po_id                uuid            not null    references t_ip_purchase_orders,

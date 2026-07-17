@@ -3,9 +3,11 @@ package com.itradingsolutions.itex.api.ip.po.controller;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleOption;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
+import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderHistoryAction;
+import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderHistoryMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderMapper;
@@ -26,6 +28,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -98,6 +101,41 @@ public class IpPurchaseOrderController extends CommonController {
         );
     }
 
+    @PatchMapping("/{po_id}/change-status")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToModule(option = ModuleOption.IP_PURCHASE_ORDERS)
+    public ResponseEntity<MessageResponse<IpPurchaseOrderResponse>> changeStatusIpPurchaseOrder(
+            @PathVariable("po_id") UUID poId,
+            @RequestParam IpPurchaseOrderStatus status
+    ) {
+        if (status.equals(IpPurchaseOrderStatus.REJECTED))
+            throw new IllegalArgumentException("Cannot change status to REJECTED");
+        var oldPo = purchaseOrderService.findById(poId);
+        var resp = purchaseOrderService.changeStatusIpPurchaseOrder(poId, status);
+        purchaseOrderHistoryService.addHistory(IpPurchaseOrderHistoryAction.STATUS_CHANGE, oldPo, resp);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.po.change-status"),
+                poMapper.dtoToResponse(resp)
+        ));
+    }
+
+    @DeleteMapping("/{po_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.REJECT_PURCHASE_ORDER)
+    public ResponseEntity<MessageResponse<IpPurchaseOrderResponse>> rejectIpPurchaseOrder(
+            @PathVariable("po_id") UUID poId
+    ) {
+        var oldPo = purchaseOrderService.findById(poId);
+        var resp = purchaseOrderService.rejectIpPurchaseOrder(poId);
+        purchaseOrderHistoryService.addHistory(IpPurchaseOrderHistoryAction.REJECTED, oldPo, resp);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.po.rejected"),
+                poMapper.dtoToResponse(resp)
+        ));
+    }
+
     @PatchMapping("/clone/{po_id}")
     @ResponseStatus(HttpStatus.CREATED)
     @AccessToAction(action = ModuleAction.CLONE_PURCHASE_ORDER)
@@ -158,7 +196,7 @@ public class IpPurchaseOrderController extends CommonController {
     @AccessToModule(option = ModuleOption.IP_PURCHASE_ORDERS)
     public ResponseEntity<MessageResponse<List<UUID>>> closeListIpPurchaseOrders() {
         var list = purchaseOrderService.listAllOpenByUser(getUserAuthenticated());
-        var ids = list.stream().map(item -> item.getId()).toList();
+        var ids = list.stream().map(BaseDTO::getId).toList();
         purchaseOrderService.batchUnlock(ids);
         return ResponseEntity
                 .ok(new MessageResponse<>(SUCCESS_TITLE, simpleMessage("ip.po.all-closed"), ids));

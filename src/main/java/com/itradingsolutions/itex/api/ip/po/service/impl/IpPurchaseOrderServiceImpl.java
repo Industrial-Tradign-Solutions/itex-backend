@@ -6,6 +6,8 @@ import com.itradingsolutions.itex.api.common.consecutive.models.enums.Consecutiv
 import com.itradingsolutions.itex.api.common.consecutive.services.IConsecutiveService;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
+import com.itradingsolutions.itex.api.common.util.models.StatusTransition;
+import com.itradingsolutions.itex.api.common.util.models.TransitionKey;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
@@ -33,6 +35,7 @@ import com.itradingsolutions.itex.api.ip.po.service.IIpPurchaseOrderService;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
+import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.masters.location.models.entities.CityEntity;
@@ -59,11 +62,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +100,44 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
     private static final String SHIP_TO_PHONE = "305-507-8496";
     private static final String SHIP_TO_CONTACT_NAME = "Juan Restrepo";
     private static final String SHIP_TO_EMAIL = "juan@itradingsolutions.com";
+
+    private static final Predicate<IpPurchaseOrderEntity> HAS_PRODUCTS =
+            po -> Optional.ofNullable(po.getProducts()).filter(products -> !products.isEmpty()).isPresent();
+
+    private static final Consumer<IpPurchaseOrderEntity> STAMP_REJECT =
+            po -> po.setRejectAt(ZonedDateTime.now());
+
+    private static final Map<TransitionKey<IpPurchaseOrderStatus>, StatusTransition<IpPurchaseOrderEntity>> TRANSITIONS = Map.ofEntries(
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.CREATED, IpPurchaseOrderStatus.SENT),
+                    new StatusTransition<>(HAS_PRODUCTS.and(po -> po.getQuotation() != null),
+                            "ip.po.not-valid-sent", po -> po.setSentAt(ZonedDateTime.now()))),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.SENT, IpPurchaseOrderStatus.ANSWERED),
+                    new StatusTransition<>(HAS_PRODUCTS.and(po -> po.getSentAt() != null),
+                            "ip.po.not-valid-answered", po -> po.setAnsweredAt(ZonedDateTime.now()))),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.ANSWERED, IpPurchaseOrderStatus.COMPLETE),
+                    new StatusTransition<>(HAS_PRODUCTS.and(po -> po.getAnsweredAt() != null),
+                            "ip.po.not-valid-complete", po -> po.setCompleteAt(ZonedDateTime.now()))),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.ANSWERED, IpPurchaseOrderStatus.SENT),
+                    StatusTransition.unrestricted(po -> po.setAnsweredAt(null))),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.ANSWERED, IpPurchaseOrderStatus.CREATED),
+                    StatusTransition.unrestricted(po -> {
+                        po.setAnsweredAt(null);
+                        po.setSentAt(null);
+                    })),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.SENT, IpPurchaseOrderStatus.CREATED),
+                    StatusTransition.unrestricted(po -> po.setSentAt(null))),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.CREATED, IpPurchaseOrderStatus.REJECTED),
+                    StatusTransition.unrestricted(STAMP_REJECT)),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.SENT, IpPurchaseOrderStatus.REJECTED),
+                    StatusTransition.unrestricted(STAMP_REJECT)),
+            Map.entry(new TransitionKey<>(IpPurchaseOrderStatus.ANSWERED, IpPurchaseOrderStatus.REJECTED),
+                    StatusTransition.unrestricted(STAMP_REJECT))
+    );
+
+    private static final Map<IpPurchaseOrderStatus, String> TERMINAL_STATUS_KEYS = Map.of(
+            IpPurchaseOrderStatus.COMPLETE, "ip.po.cannot-change-complete-status",
+            IpPurchaseOrderStatus.REJECTED, "ip.po.cannot-change-rejected-status"
+    );
 
     private CityEntity shipToCity;
 
@@ -146,6 +189,89 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         var saved = repository.save(po);
         syncConsecutive(oldNumber, saved.getNumber());
         return mapper.entityToDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public IpPurchaseOrderDTO changeStatusIpPurchaseOrder(UUID id, IpPurchaseOrderStatus newStatus) {
+        return changeStatus(id, newStatus);
+    }
+
+    @Override
+    @Transactional
+    public IpPurchaseOrderDTO rejectIpPurchaseOrder(UUID id) {
+        return changeStatus(id, IpPurchaseOrderStatus.REJECTED);
+    }
+
+    @Override
+    @Transactional
+    public void unlockAllOpenIpPurchaseOrders() {
+        var ids = repository.fetchAllOpen().stream()
+                .map(BaseEntity::getId)
+                .toList();
+        batchUnlock(ids);
+    }
+
+    @Override
+    @Transactional
+    public void autoRejectOldCreatedIpPurchaseOrders() {
+        var cutoffDate = ZonedDateTime.now().minusDays(45);
+
+        var oldPurchaseOrders = repository.findAll().stream()
+                .filter(po -> po.getStatus() == IpPurchaseOrderStatus.CREATED)
+                .filter(po -> po.getCreatedAt().isBefore(cutoffDate))
+                .toList();
+
+        oldPurchaseOrders.forEach(po -> {
+            po.setStatus(IpPurchaseOrderStatus.REJECTED);
+            po.setRejectAt(ZonedDateTime.now());
+            repository.save(po);
+        });
+    }
+
+    private IpPurchaseOrderDTO changeStatus(UUID id, IpPurchaseOrderStatus newStatus) {
+        var po = findEntityById(id);
+        validateOpenPO(po, userService.getUserAuthenticated());
+        validateNotSameStatus(po.getStatus(), newStatus);
+        validateTerminalStatus(po.getStatus());
+
+        var transition = resolveTransition(po.getStatus(), newStatus);
+        validateRequirement(transition, po);
+        transition.sideEffect().accept(po);
+        po.setStatus(newStatus);
+
+        return mapper.entityToDTO(repository.save(po));
+    }
+
+    private void validateNotSameStatus(IpPurchaseOrderStatus currentStatus, IpPurchaseOrderStatus newStatus) {
+        Optional.of(newStatus)
+                .filter(status -> status == currentStatus)
+                .ifPresent(status -> {
+                    throw new NotChangeStatusException(simpleMessage("ip.po.equal-status"));
+                });
+    }
+
+    private void validateTerminalStatus(IpPurchaseOrderStatus currentStatus) {
+        Optional.ofNullable(TERMINAL_STATUS_KEYS.get(currentStatus))
+                .ifPresent(messageKey -> {
+                    throw new NotChangeStatusException(simpleMessage(messageKey));
+                });
+    }
+
+    private StatusTransition<IpPurchaseOrderEntity> resolveTransition(IpPurchaseOrderStatus currentStatus,
+                                                                      IpPurchaseOrderStatus newStatus) {
+        return Optional.ofNullable(TRANSITIONS.get(new TransitionKey<>(currentStatus, newStatus)))
+                .orElseThrow(() -> new NotChangeStatusException(
+                        compositeMessage("ip.po.invalid-transition",
+                                new String[]{currentStatus.name(), newStatus.name()})));
+    }
+
+    private void validateRequirement(StatusTransition<IpPurchaseOrderEntity> transition, IpPurchaseOrderEntity po) {
+        Optional.of(transition)
+                .filter(item -> !item.requirement().test(po))
+                .ifPresent(item -> {
+                    throw new NotChangeStatusException(simpleMessage(item.requirementErrorKey()));
+                });
     }
 
     @Override

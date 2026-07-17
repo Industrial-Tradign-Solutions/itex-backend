@@ -13,7 +13,9 @@ import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
 import com.itradingsolutions.itex.api.ip.po.exceptions.InvalidSupplierForIpPurchaseOrderException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.IpPurchaseOrderAnsweredLockedException;
+import com.itradingsolutions.itex.api.ip.po.exceptions.IpPurchaseOrderInvalidQuotationException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.IpPurchaseOrderNotEditableException;
+import com.itradingsolutions.itex.api.ip.po.exceptions.IpPurchaseOrderQuotationNotAssignedException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.NotExistIpPurchaseOrderException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.NotOpenIpPoException;
 import com.itradingsolutions.itex.api.ip.po.exceptions.NotOpenIpPurchaseOrderException;
@@ -34,6 +36,7 @@ import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrdersClonedRe
 import com.itradingsolutions.itex.api.ip.po.service.IIpPurchaseOrderService;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
@@ -189,6 +192,42 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         var saved = repository.save(po);
         syncConsecutive(oldNumber, saved.getNumber());
         return mapper.entityToDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public IpPurchaseOrderDTO removeQuotationFromPurchaseOrder(UUID id) {
+        var po = findEntityById(id);
+        validateOpenPO(po, userService.getUserAuthenticated());
+        validateEditable(po);
+        Optional.ofNullable(po.getQuotation())
+                .orElseThrow(() -> new IpPurchaseOrderQuotationNotAssignedException(
+                        simpleMessage("ip.po.quotation.not-assigned")));
+        purgeQuotationAssociations(po);
+        return mapper.entityToDTO(repository.save(po));
+    }
+
+    @Override
+    @Transactional
+    public IpPurchaseOrderDTO changeQuotationOfPurchaseOrder(UUID id, UUID newQuotationId) {
+        var po = findEntityById(id);
+        validateOpenPO(po, userService.getUserAuthenticated());
+        validateEditable(po);
+
+        var newQuotation = quotationRepository.fetchByIdAndClient(newQuotationId, po.getClient().getId())
+                .orElseThrow(() -> new IpPurchaseOrderInvalidQuotationException(
+                        simpleMessage("ip.po.quotation.client-mismatch")));
+
+        var validNewStatus = Predicate.isEqual(IpQuotationStatus.ANSWERED)
+                .or(Predicate.isEqual(IpQuotationStatus.COMPLETE));
+        Optional.of(newQuotation.getStatus())
+                .filter(validNewStatus)
+                .orElseThrow(() -> new IpPurchaseOrderInvalidQuotationException(
+                        simpleMessage("ip.po.quotation.invalid-status-for-change")));
+
+        purgeQuotationAssociations(po);
+        setQuotationFields(po, newQuotation);
+        return mapper.entityToDTO(repository.save(po));
     }
 
     @Override
@@ -521,6 +560,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
                 .ifPresent(supplierId -> {
                     validateSupplierInQuotation(quotation, supplierId);
                     po.setSupplier(supplierService.findSupplierById(supplierId, true));
+                    Optional.ofNullable(po.getProducts()).ifPresent(List::clear);
                 });
         po.setSupplierContact(Optional.ofNullable(request.supplierContactId())
                 .flatMap(contactId -> Optional.ofNullable(po.getSupplier())
@@ -574,6 +614,16 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
                     consecutiveService.saveConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, number);
                     consecutiveService.deleteConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, oldNumber);
                 });
+    }
+
+    private static void purgeQuotationAssociations(IpPurchaseOrderEntity po) {
+        Optional.ofNullable(po.getProducts()).ifPresent(List::clear);
+        Optional.ofNullable(po.getImportedQuotationCharges()).ifPresent(List::clear);
+        Optional.ofNullable(po.getImportedQuoteRequestCharges()).ifPresent(List::clear);
+        po.setSupplier(null);
+        po.setSupplierContact(null);
+        po.setSupplierPoNumber(null);
+        po.setQuotation(null);
     }
 
     private static <T> boolean isChanged(T requested, T current) {

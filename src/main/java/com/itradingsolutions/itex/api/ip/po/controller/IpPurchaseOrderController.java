@@ -6,11 +6,13 @@ import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
+import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderHistoryAction;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderHistoryMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderMapper;
+import com.itradingsolutions.itex.api.ip.po.models.request.ChangeIpPurchaseOrderQuotationRequest;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
 import com.itradingsolutions.itex.api.ip.po.models.request.UpdateIpPurchaseOrderRequest;
 import com.itradingsolutions.itex.api.ip.po.models.response.ListIpPurchaseOrderResponse;
@@ -42,7 +44,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/ip/po")
@@ -82,11 +86,77 @@ public class IpPurchaseOrderController extends CommonController {
         var oldPo = purchaseOrderService.findById(poId);
         var resp = purchaseOrderService.updateIpPurchaseOrder(poId, request);
         purchaseOrderHistoryService.addHistory(IpPurchaseOrderHistoryAction.UPDATE, oldPo, resp);
+        logRemovedProducts(oldPo, resp, poId);
         return ResponseEntity.ok(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.po.updated"),
                 poMapper.dtoToResponse(resp)
         ));
+    }
+
+    @DeleteMapping("/{po_id}/quotation")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_PURCHASE_ORDER)
+    public ResponseEntity<MessageResponse<IpPurchaseOrderResponse>> removeQuotationFromPurchaseOrder(
+            @PathVariable("po_id") UUID poId
+    ) {
+        var oldPo = purchaseOrderService.findById(poId);
+        var resp = purchaseOrderService.removeQuotationFromPurchaseOrder(poId);
+        purchaseOrderHistoryService.addHistory(IpPurchaseOrderHistoryAction.REMOVE_QUOTATION, oldPo, resp);
+        logPurgedQuotationAssociations(oldPo, resp, poId);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.po.quotation.removed"),
+                poMapper.dtoToResponse(resp)
+        ));
+    }
+
+    @PatchMapping("/{po_id}/quotation")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_PURCHASE_ORDER)
+    public ResponseEntity<MessageResponse<IpPurchaseOrderResponse>> changeQuotationOfPurchaseOrder(
+            @PathVariable("po_id") UUID poId,
+            @RequestBody @Valid ChangeIpPurchaseOrderQuotationRequest request
+    ) {
+        var oldPo = purchaseOrderService.findById(poId);
+        var resp = purchaseOrderService.changeQuotationOfPurchaseOrder(poId, request.quotationId());
+        purchaseOrderHistoryService.addHistory(IpPurchaseOrderHistoryAction.CHANGE_QUOTATION, oldPo, resp);
+        logPurgedQuotationAssociations(oldPo, resp, poId);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("ip.po.quotation.changed"),
+                poMapper.dtoToResponse(resp)
+        ));
+    }
+
+    private void logRemovedProducts(IpPurchaseOrderDTO oldPo, IpPurchaseOrderDTO newPo, UUID poId) {
+        var remainingIds = Optional.ofNullable(newPo.getProducts()).orElseGet(List::of).stream()
+                .map(BaseDTO::getId)
+                .collect(Collectors.toSet());
+        Optional.ofNullable(oldPo.getProducts()).orElseGet(List::of).stream()
+                .filter(product -> !remainingIds.contains(product.getId()))
+                .forEach(product -> purchaseOrderHistoryService.addHistoryProduct(
+                        IpPurchaseOrderHistoryAction.REMOVE_PRODUCT, product, null, poId));
+    }
+
+    private void logPurgedQuotationAssociations(IpPurchaseOrderDTO oldPo, IpPurchaseOrderDTO newPo, UUID poId) {
+        logRemovedProducts(oldPo, newPo, poId);
+
+        var remainingQChargeIds = Optional.ofNullable(newPo.getImportedQuotationCharges()).orElseGet(List::of).stream()
+                .map(BaseDTO::getId)
+                .collect(Collectors.toSet());
+        Optional.ofNullable(oldPo.getImportedQuotationCharges()).orElseGet(List::of).stream()
+                .filter(charge -> !remainingQChargeIds.contains(charge.getId()))
+                .forEach(charge -> purchaseOrderHistoryService.addHistoryImportedQCharge(
+                        IpPurchaseOrderHistoryAction.REMOVE_IMPORTED_Q_CHARGE, charge, null, poId));
+
+        var remainingQrChargeIds = Optional.ofNullable(newPo.getImportedQuoteRequestCharges()).orElseGet(List::of).stream()
+                .map(BaseDTO::getId)
+                .collect(Collectors.toSet());
+        Optional.ofNullable(oldPo.getImportedQuoteRequestCharges()).orElseGet(List::of).stream()
+                .filter(charge -> !remainingQrChargeIds.contains(charge.getId()))
+                .forEach(charge -> purchaseOrderHistoryService.addHistoryImportedQrCharge(
+                        IpPurchaseOrderHistoryAction.REMOVE_IMPORTED_QR_CHARGE, charge, null, poId));
     }
 
     @GetMapping("/history/{po_id}")

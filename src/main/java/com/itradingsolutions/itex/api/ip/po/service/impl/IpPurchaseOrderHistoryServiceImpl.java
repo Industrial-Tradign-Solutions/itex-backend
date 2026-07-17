@@ -114,14 +114,16 @@ public class IpPurchaseOrderHistoryServiceImpl extends HistoryServiceImpl implem
         return action == IpPurchaseOrderHistoryAction.UPDATE
             || action == IpPurchaseOrderHistoryAction.UPDATE_PRODUCT
             || action == IpPurchaseOrderHistoryAction.UPDATE_OTHER_CHARGE
-            || action == IpPurchaseOrderHistoryAction.STATUS_CHANGE;
+            || action == IpPurchaseOrderHistoryAction.STATUS_CHANGE
+            || action == IpPurchaseOrderHistoryAction.REMOVE_QUOTATION
+            || action == IpPurchaseOrderHistoryAction.CHANGE_QUOTATION;
     }
 
     private Map<String, Object> resolveHistoryData(IpPurchaseOrderHistoryAction action, IpPurchaseOrderDTO oldDto, IpPurchaseOrderDTO newDto) {
         return switch (action) {
             case CREATE, REJECTED -> convertToMap(newDto, true, true);
-            case UPDATE -> {
-                validateNotNull(oldDto, "oldDto must not be null for UPDATE");
+            case UPDATE, REMOVE_QUOTATION, CHANGE_QUOTATION -> {
+                validateNotNull(oldDto, "oldDto must not be null for " + action);
                 yield getValidateChanges(oldDto, newDto);
             }
             case CLONE -> {

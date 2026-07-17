@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -23,6 +24,9 @@ public interface IpQuotationRepository extends JpaRepository<IpQuotationEntity, 
 
     @Query("SELECT COUNT(c.id) FROM IpQuotationEntity c WHERE c.openBy.id = ?1")
     int countByOpenUserId(UUID userOpenById);
+
+    @Query("SELECT q FROM IpQuotationEntity q WHERE q.id = ?1 AND q.client.id = ?2")
+    Optional<IpQuotationEntity> fetchByIdAndClient(UUID id, UUID clientId);
 
     @Query("""
             SELECT DISTINCT q FROM IpQuotationEntity q

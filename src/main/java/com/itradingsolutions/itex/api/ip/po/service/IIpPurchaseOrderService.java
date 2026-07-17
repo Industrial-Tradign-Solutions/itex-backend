@@ -18,6 +18,10 @@ public interface IIpPurchaseOrderService {
 
     IpPurchaseOrderDTO updateIpPurchaseOrder(UUID id, UpdateIpPurchaseOrderRequest request);
 
+    IpPurchaseOrderDTO removeQuotationFromPurchaseOrder(UUID id);
+
+    IpPurchaseOrderDTO changeQuotationOfPurchaseOrder(UUID id, UUID newQuotationId);
+
     IpPurchaseOrderDTO changeStatusIpPurchaseOrder(UUID id, IpPurchaseOrderStatus newStatus);
 
     IpPurchaseOrderDTO rejectIpPurchaseOrder(UUID id);

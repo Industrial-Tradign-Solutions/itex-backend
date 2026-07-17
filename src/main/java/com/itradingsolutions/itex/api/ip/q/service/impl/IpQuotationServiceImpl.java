@@ -10,6 +10,8 @@ import com.itradingsolutions.itex.api.common.jasper.service.JasperService;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.IntegrityValidator;
+import com.itradingsolutions.itex.api.common.util.models.StatusTransition;
+import com.itradingsolutions.itex.api.common.util.models.TransitionKey;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
@@ -70,8 +72,12 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +101,56 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
+
+    private static final Predicate<IpQuotationEntity> HAS_QUOTE_REQUESTS =
+            quotation -> Optional.ofNullable(quotation.getQuoteRequestsQuotations())
+                    .filter(quoteRequests -> !quoteRequests.isEmpty())
+                    .isPresent();
+
+    private static final Predicate<IpQuotationEntity> HAS_PRODUCTS =
+            quotation -> Optional.ofNullable(quotation.getQuoteRequestsQuotations())
+                    .stream()
+                    .flatMap(List::stream)
+                    .map(IpQuotationsQuoteRequestEntity::getQuotationProducts)
+                    .filter(Objects::nonNull)
+                    .flatMap(List::stream)
+                    .findAny()
+                    .isPresent();
+
+    private static final Consumer<IpQuotationEntity> STAMP_REJECT =
+            quotation -> quotation.setRejectAt(ZonedDateTime.now());
+
+    private static final Map<TransitionKey<IpQuotationStatus>, StatusTransition<IpQuotationEntity>> TRANSITIONS = Map.ofEntries(
+            Map.entry(new TransitionKey<>(IpQuotationStatus.CREATED, IpQuotationStatus.SENT),
+                    new StatusTransition<>(HAS_QUOTE_REQUESTS.and(HAS_PRODUCTS),
+                            "ip.q.not-valid-sent", quotation -> quotation.setSentAt(ZonedDateTime.now()))),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.SENT, IpQuotationStatus.ANSWERED),
+                    new StatusTransition<>(HAS_PRODUCTS.and(quotation -> quotation.getSentAt() != null),
+                            "ip.q.not-valid-answered", quotation -> quotation.setAnsweredAt(ZonedDateTime.now()))),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.COMPLETE),
+                    new StatusTransition<>(HAS_PRODUCTS.and(quotation -> quotation.getAnsweredAt() != null),
+                            "ip.q.not-valid-complete", quotation -> quotation.setCompleteAt(ZonedDateTime.now()))),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.SENT),
+                    StatusTransition.unrestricted(quotation -> quotation.setAnsweredAt(null))),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.CREATED),
+                    StatusTransition.unrestricted(quotation -> {
+                        quotation.setAnsweredAt(null);
+                        quotation.setSentAt(null);
+                    })),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.SENT, IpQuotationStatus.CREATED),
+                    StatusTransition.unrestricted(quotation -> quotation.setSentAt(null))),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.CREATED, IpQuotationStatus.REJECTED),
+                    StatusTransition.unrestricted(STAMP_REJECT)),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.SENT, IpQuotationStatus.REJECTED),
+                    StatusTransition.unrestricted(STAMP_REJECT)),
+            Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.REJECTED),
+                    StatusTransition.unrestricted(STAMP_REJECT))
+    );
+
+    private static final Map<IpQuotationStatus, String> TERMINAL_STATUS_KEYS = Map.of(
+            IpQuotationStatus.COMPLETE, "ip.q.cannot-change-complete-status",
+            IpQuotationStatus.REJECTED, "ip.q.cannot-change-rejected-status"
+    );
 
     @Override
     @Transactional
@@ -290,13 +346,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var currentStatus = quotation.getStatus();
 
         validateNotSameStatus(quotation, newStatus);
-        validateStatusRequirements(quotation, newStatus);
-        validateNotFromComplete(currentStatus);
+        validateTerminalStatus(currentStatus);
         validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
         validatePurchaseOrderForReject(quotation, newStatus);
 
-        clearAllTimestamps(quotation, newStatus);
-        setStatusTimestamp(quotation, newStatus);
+        var transition = resolveTransition(currentStatus, newStatus);
+        validateRequirement(transition, quotation);
+        transition.sideEffect().accept(quotation);
         quotation.setStatus(newStatus);
 
         var newQuotation = quotationMapper.entityToDTO(quotationRepository.save(quotation));
@@ -305,20 +361,34 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     private void validateNotSameStatus(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
-        if (newStatus.equals(quotation.getStatus()))
-            throw new NotChangeStatusException(simpleMessage("ip.q.equal-status"));
+        Optional.of(newStatus)
+                .filter(status -> status == quotation.getStatus())
+                .ifPresent(status -> {
+                    throw new NotChangeStatusException(simpleMessage("ip.q.equal-status"));
+                });
     }
 
-    private void validateStatusRequirements(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
-        if (newStatus == IpQuotationStatus.ANSWERED && (!quotation.isValidAnswered() || quotation.getSentAt() == null))
-            throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-answered"));
-        if (newStatus == IpQuotationStatus.COMPLETE && quotation.getAnsweredAt() == null)
-            throw new NotChangeStatusException(simpleMessage("ip.q.not-valid-complete"));
+    private void validateTerminalStatus(IpQuotationStatus currentStatus) {
+        Optional.ofNullable(TERMINAL_STATUS_KEYS.get(currentStatus))
+                .ifPresent(messageKey -> {
+                    throw new NotChangeStatusException(simpleMessage(messageKey));
+                });
     }
 
-    private void validateNotFromComplete(IpQuotationStatus currentStatus) {
-        if (currentStatus == IpQuotationStatus.COMPLETE)
-            throw new NotChangeStatusException(simpleMessage("ip.q.cannot-change-complete-status"));
+    private StatusTransition<IpQuotationEntity> resolveTransition(IpQuotationStatus currentStatus,
+                                                                  IpQuotationStatus newStatus) {
+        return Optional.ofNullable(TRANSITIONS.get(new TransitionKey<>(currentStatus, newStatus)))
+                .orElseThrow(() -> new NotChangeStatusException(
+                        compositeMessage("ip.q.invalid-transition",
+                                new String[]{currentStatus.name(), newStatus.name()})));
+    }
+
+    private void validateRequirement(StatusTransition<IpQuotationEntity> transition, IpQuotationEntity quotation) {
+        Optional.of(transition)
+                .filter(item -> !item.requirement().test(quotation))
+                .ifPresent(item -> {
+                    throw new NotChangeStatusException(simpleMessage(item.requirementErrorKey()));
+                });
     }
 
     private void validatePurchaseOrderDependency(IpQuotationEntity quotation, IpQuotationStatus currentStatus, IpQuotationStatus newStatus) {
@@ -358,30 +428,6 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 });
          */
     }
-
-    private void clearAllTimestamps(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
-        switch (newStatus) {
-            case CREATED -> {
-                quotation.setSentAt(null);
-                quotation.setAnsweredAt(null);
-            }
-            case SENT ->
-                quotation.setAnsweredAt(null);
-
-        }
-    }
-
-    private void setStatusTimestamp(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
-        var now = ZonedDateTime.now();
-        switch (newStatus) {
-            case ANSWERED -> quotation.setAnsweredAt(now);
-            case SENT -> quotation.setSentAt(now);
-            case COMPLETE -> quotation.setCompleteAt(now);
-            case REJECTED -> quotation.setRejectAt(now);
-            case CREATED -> { /* no timestamp */ }
-        }
-    }
-
 
     @Override
     @Transactional

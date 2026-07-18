@@ -171,7 +171,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         }
 
         consecutiveService.saveConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, saved.getNumber());
-        return mapper.entityToDTO(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -191,7 +191,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
 
         var saved = repository.save(po);
         syncConsecutive(oldNumber, saved.getNumber());
-        return mapper.entityToDTO(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
                 .orElseThrow(() -> new IpPurchaseOrderQuotationNotAssignedException(
                         simpleMessage("ip.po.quotation.not-assigned")));
         purgeQuotationAssociations(po);
-        return mapper.entityToDTO(repository.save(po));
+        return toDto(repository.save(po));
     }
 
     @Override
@@ -227,7 +227,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
 
         purgeQuotationAssociations(po);
         setQuotationFields(po, newQuotation);
-        return mapper.entityToDTO(repository.save(po));
+        return toDto(repository.save(po));
     }
 
     @Override
@@ -279,7 +279,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         transition.sideEffect().accept(po);
         po.setStatus(newStatus);
 
-        return mapper.entityToDTO(repository.save(po));
+        return toDto(repository.save(po));
     }
 
     private void validateNotSameStatus(IpPurchaseOrderStatus currentStatus, IpPurchaseOrderStatus newStatus) {
@@ -316,7 +316,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
     @Override
     @Transactional(readOnly = true)
     public IpPurchaseOrderDTO findById(UUID id) {
-        return mapper.entityToDTO(findEntityById(id));
+        return toDto(findEntityById(id));
     }
 
     @Override
@@ -361,7 +361,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         clonedItem.setClonedPurchaseOrder(savedClone);
         clonedRepository.save(clonedItem);
 
-        return mapper.entityToDTO(savedClone);
+        return toDto(savedClone);
     }
 
     @Override
@@ -377,7 +377,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
                 po = repository.save(po);
             }
         }
-        return mapper.entityToDTO(po);
+        return toDto(po);
     }
 
     @Override
@@ -614,6 +614,25 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
                     consecutiveService.saveConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, number);
                     consecutiveService.deleteConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, oldNumber);
                 });
+    }
+
+    private IpPurchaseOrderDTO toDto(IpPurchaseOrderEntity entity) {
+        var dto = mapper.entityToDTO(entity);
+        loadClonedByPO(entity, dto);
+        loadClonedPOs(entity, dto);
+        return dto;
+    }
+
+    private void loadClonedByPO(IpPurchaseOrderEntity entity, IpPurchaseOrderDTO dto) {
+        clonedRepository.fetchByClonedId(entity.getId())
+                .ifPresent(cloned -> dto.setClonedByPO(mapper.entityToDTO(cloned.getMainPurchaseOrder())));
+    }
+
+    private void loadClonedPOs(IpPurchaseOrderEntity entity, IpPurchaseOrderDTO dto) {
+        var children = entity.getClonedPurchaseOrders();
+        if (!children.isEmpty()) {
+            dto.setClonedPOs(children.stream().map(mapper::entityToDTO).toList());
+        }
     }
 
     private static void purgeQuotationAssociations(IpPurchaseOrderEntity po) {

@@ -68,6 +68,8 @@ public class IpPurchaseOrderDTO extends BaseDTO {
     private List<IpPurchaseOrderOtherChargeDTO> otherCharges;
     private List<IpPurchaseOrderOtherChargesQuotationDTO> importedQuotationCharges;
     private List<IpPurchaseOrderOtherChargesQuotationQrDTO> importedQuoteRequestCharges;
+    private List<IpPurchaseOrderDTO> clonedPOs;
+    private IpPurchaseOrderDTO clonedByPO;
 
     public String getName() {
         return this.number;

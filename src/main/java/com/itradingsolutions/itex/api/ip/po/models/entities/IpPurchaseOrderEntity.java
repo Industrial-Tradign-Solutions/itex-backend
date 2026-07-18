@@ -33,6 +33,7 @@ import java.io.Serial;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(name = "t_ip_purchase_orders", uniqueConstraints = {
@@ -163,4 +164,15 @@ public class IpPurchaseOrderEntity extends BaseEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IpPurchaseOrderOtherChargesQuotationQrEntity> importedQuoteRequestCharges;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "mainPurchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IpPurchaseOrdersClonedEntity> clonedPurchaseOrders;
+
+    public List<IpPurchaseOrderEntity> getClonedPurchaseOrders() {
+        return Optional.ofNullable(clonedPurchaseOrders)
+                .orElseGet(List::of)
+                .stream()
+                .map(IpPurchaseOrdersClonedEntity::getClonedPurchaseOrder)
+                .toList();
+    }
 }

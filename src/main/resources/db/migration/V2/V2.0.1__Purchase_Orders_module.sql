@@ -113,6 +113,10 @@ create table t_ip_purchase_orders_cloned (
     primary key (main_po_id, clone_po_id)
 );
 
+alter table t_ip_purchase_orders_cloned
+    add constraint t_ip_purchase_orders_cloned_clone_po_id_unique
+        unique (clone_po_id);
+
 create table t_ip_purchase_orders_history (
     id                      uuid            not null    primary key,
     ip_po_id                uuid            not null    references t_ip_purchase_orders(id),

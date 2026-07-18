@@ -7,6 +7,7 @@ import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderOtherCharg
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderProductDTO;
 import com.itradingsolutions.itex.api.ip.po.models.entities.IpPurchaseOrderEntity;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
+import com.itradingsolutions.itex.api.ip.po.models.response.BasicIpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderOtherChargesQuotationResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderOtherChargesQuotationQrResponse;
@@ -39,7 +40,21 @@ public interface IpPurchaseOrderMapper {
     @Mapping(target = "subTotal", expression = "java(dto.getSubTotal())")
     @Mapping(target = "totalOtherCharges", expression = "java(dto.getTotalOtherCharges())")
     @Mapping(target = "total", expression = "java(dto.getTotal())")
+    @Mapping(target = "clonedPOs", expression = "java(mapClonedPOs(dto))")
+    @Mapping(target = "clonedByPO", expression = "java(mapClonedByPO(dto))")
     IpPurchaseOrderResponse dtoToResponse(IpPurchaseOrderDTO dto);
+
+    default List<ListIpPurchaseOrderResponse> mapClonedPOs(IpPurchaseOrderDTO dto) {
+        if (dto.getClonedPOs() == null) return Collections.emptyList();
+        return dto.getClonedPOs().stream()
+                .map(this::dtoToListResponse)
+                .toList();
+    }
+
+    default BasicIpPurchaseOrderResponse mapClonedByPO(IpPurchaseOrderDTO dto) {
+        if (dto.getClonedByPO() == null) return null;
+        return new BasicIpPurchaseOrderResponse(dto.getClonedByPO().getId(), dto.getClonedByPO().getNumber());
+    }
 
     ListIpPurchaseOrderResponse dtoToListResponse(IpPurchaseOrderDTO dto);
 
@@ -87,6 +102,7 @@ public interface IpPurchaseOrderMapper {
     @Mapping(target = "otherCharges", ignore = true)
     @Mapping(target = "importedQuotationCharges", ignore = true)
     @Mapping(target = "importedQuoteRequestCharges", ignore = true)
+    @Mapping(target = "clonedPurchaseOrders", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "pdfUrl", ignore = true)
     @Mapping(target = "openBy", ignore = true)

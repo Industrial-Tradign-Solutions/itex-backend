@@ -71,4 +71,6 @@ public class IpPurchaseOrderResponse extends BaseResponse {
     private List<IpPurchaseOrderOtherChargeResponse> otherCharges;
     private List<IpPurchaseOrderOtherChargesQuotationResponse> importedQuotationCharges;
     private List<IpPurchaseOrderOtherChargesQuotationQrResponse> importedQuoteRequestCharges;
+    private List<ListIpPurchaseOrderResponse> clonedPOs;
+    private BasicIpPurchaseOrderResponse clonedByPO;
 }

@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.ip.po.models.dto;
 
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
+import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -17,9 +18,16 @@ public class IpPurchaseOrderProductDTO extends BaseDTO {
     private IpQuotationProductDTO quotationProduct;
     private Integer number;
 
-    public BigDecimal getExtendedPrice() {
+    public BigDecimal getSellingExtendedPrice() {
         return Optional.ofNullable(quotationProduct)
                 .map(IpQuotationProductDTO::getSellingExtendedPrice)
+                .orElse(BigDecimal.ZERO);
+    }
+
+    public BigDecimal getExtendedPrice() {
+        return Optional.ofNullable(quotationProduct)
+                .map(IpQuotationProductDTO::getQuoteRequestProduct)
+                .map(IpQuoteRequestProductDTO::getExtendedPrice)
                 .orElse(BigDecimal.ZERO);
     }
 }

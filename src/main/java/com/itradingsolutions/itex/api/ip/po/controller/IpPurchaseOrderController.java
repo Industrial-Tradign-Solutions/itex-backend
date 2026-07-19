@@ -27,7 +27,9 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -270,6 +272,18 @@ public class IpPurchaseOrderController extends CommonController {
         purchaseOrderService.batchUnlock(ids);
         return ResponseEntity
                 .ok(new MessageResponse<>(SUCCESS_TITLE, simpleMessage("ip.po.all-closed"), ids));
+    }
+
+    @GetMapping("/print/{po_id}")
+    @AccessToModule(option = ModuleOption.IP_PURCHASE_ORDERS)
+    public ResponseEntity<byte[]> printIpPurchaseOrder(
+            @PathVariable("po_id") UUID poId
+    ) {
+        byte[] pdfBytes = purchaseOrderService.printPurchaseOrder(poId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", "purchase_order_" + poId + ".pdf");
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     @GetMapping

@@ -4,7 +4,11 @@ import com.itradingsolutions.itex.api.common.models.entities.BaseEntity;
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveModule;
 import com.itradingsolutions.itex.api.common.consecutive.services.IConsecutiveService;
+import com.itradingsolutions.itex.api.common.jasper.exceptions.NotGenerateReportException;
+import com.itradingsolutions.itex.api.common.jasper.model.enums.JasperReport;
+import com.itradingsolutions.itex.api.common.jasper.service.JasperService;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
+import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.StatusTransition;
 import com.itradingsolutions.itex.api.common.util.models.TransitionKey;
@@ -23,6 +27,7 @@ import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.entities.IpPurchaseOrderEntity;
 import com.itradingsolutions.itex.api.ip.po.models.entities.IpPurchaseOrdersClonedEntity;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
+import com.itradingsolutions.itex.api.ip.po.models.dto.reports.IpPurchaseOrderReportDTO;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderOtherChargeMapper;
@@ -53,6 +58,7 @@ import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import net.sf.jasperreports.engine.JRException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -60,6 +66,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -93,6 +100,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
     private final IpPurchaseOrderOtherChargeMapper otherChargeMapper;
     private final IpPurchaseOrderOtherChargesQuotationMapper importedQChargeMapper;
     private final IpPurchaseOrderOtherChargesQuotationQrMapper importedQrChargeMapper;
+    private final JasperService jasperService;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_MODULE = ConsecutiveModule.PO;
@@ -317,6 +325,56 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
     @Transactional(readOnly = true)
     public IpPurchaseOrderDTO findById(UUID id) {
         return toDto(findEntityById(id));
+    }
+
+    @Override
+    @Transactional
+    public byte[] printPurchaseOrder(UUID id) {
+        IpPurchaseOrderEntity po = findEntityById(id);
+        IpPurchaseOrderStatus status = po.getStatus();
+
+        if (isOpenStatus(status))
+            validateOpenPO(po, userService.getUserAuthenticated());
+
+        if (po.getProducts() == null || po.getProducts().isEmpty())
+            throw new NotGenerateReportException(simpleMessage("ip.po.not-generate-doc"));
+
+        try {
+            String pdfPath = po.getPdfUrl();
+            if (isFinalStatus(status) && pdfPath != null)
+                return jasperService.getPdfBytes(pdfPath);
+
+            JasperReport reportTemplate = getReportTemplateFor(po);
+            IpPurchaseOrderReportDTO model = new IpPurchaseOrderReportDTO(toDto(po));
+            int totalPages = jasperService.getTotalPages(reportTemplate, model);
+            pdfPath = jasperService.generatePDF(
+                    reportTemplate,
+                    new IpPurchaseOrderReportDTO(toDto(po)),
+                    po.getNumber(),
+                    po.getCreatedAt(),
+                    CONSECUTIVE_DEPARTMENT,
+                    CONSECUTIVE_MODULE,
+                    totalPages
+            );
+            po.setPdfUrl(pdfPath);
+            repository.save(po);
+            return jasperService.getPdfBytes(pdfPath);
+
+        } catch (JRException | IOException ex) {
+            throw new NotGenerateReportException(ex);
+        }
+    }
+
+    private boolean isFinalStatus(IpPurchaseOrderStatus status) {
+        return status == IpPurchaseOrderStatus.COMPLETE
+                || status == IpPurchaseOrderStatus.REJECTED;
+    }
+
+    private JasperReport getReportTemplateFor(IpPurchaseOrderEntity po) {
+        Language language = po.getSupplier() != null ? po.getSupplier().getLanguage() : null;
+        return Language.ENGLISH.equals(language)
+                ? JasperReport.IP_PO_EN
+                : JasperReport.IP_PO_ES;
     }
 
     @Override

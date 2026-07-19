@@ -43,4 +43,6 @@ public interface IIpPurchaseOrderService {
     Page<IpPurchaseOrderDTO> listAll(Pageable pageable, FilterListIpPurchaseOrder filters);
 
     List<IpPurchaseOrderDTO> listAllOpenByUser(String username);
+
+    byte[] printPurchaseOrder(UUID id);
 }

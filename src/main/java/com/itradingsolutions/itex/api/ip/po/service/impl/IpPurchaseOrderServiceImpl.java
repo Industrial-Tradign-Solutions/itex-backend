@@ -635,6 +635,8 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
                 .orElse(null));
         po.setClientPoNumber(request.clientPoNumber());
         po.setShippingMethod(request.shippingMethod());
+        po.setRemarks(request.remarks());
+        po.setInternalRemarks(request.internalRemarks());
         Optional.ofNullable(request.salesRepId())
                 .filter(salesRepId -> !salesRepId.equals(safeId(po.getSalesRep())))
                 .ifPresent(salesRepId -> po.setSalesRep(userService.findEntityById(salesRepId, true)));

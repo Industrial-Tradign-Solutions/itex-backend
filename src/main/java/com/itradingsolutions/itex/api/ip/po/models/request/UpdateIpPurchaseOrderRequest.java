@@ -36,6 +36,10 @@ public record UpdateIpPurchaseOrderRequest(
         @Size(max = 50, message = "The shipping method cannot exceed 50 characters")
         String shippingMethod,
 
+        String remarks,
+
+        String internalRemarks,
+
         UUID salesRepId,
 
         @NotNull(message = "Lead time is required")

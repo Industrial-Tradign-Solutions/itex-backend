@@ -25,6 +25,7 @@ public class IpPurchaseOrderReportDTO {
     private String shippingMethod;
     private String leadTime;
     private String paymentTerms;
+    private String notes;
 
     private String supplierName;
     private String supplierCity;
@@ -60,6 +61,7 @@ public class IpPurchaseOrderReportDTO {
                 ? po.getQuotation().getNumber() : "";
         this.shippingMethod = po.getShippingMethod() != null ? po.getShippingMethod() : "";
         this.paymentTerms = po.getPaymentTerms() != null ? po.getPaymentTerms().getName() : "";
+        this.notes = po.getRemarks() != null ? po.getRemarks() : "";
 
         configLeadTime(po);
         configSupplier(po.getSupplier());

@@ -15,6 +15,7 @@ import com.itradingsolutions.itex.api.common.util.models.TransitionKey;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrderRepository;
 import com.itradingsolutions.itex.api.ip.q.models.dto.reports.IpQuotationReportDTO;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationClientMismatchException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
@@ -98,6 +99,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationClonedRepository clonedRepository;
     private final JasperService jasperService;
     private final SupplierMapper supplierMapper;
+    private final IIpPurchaseOrderRepository purchaseOrderRepository;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
@@ -229,10 +231,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 quotation = quotationRepository.save(quotation);
             }
         }
-        var dto = quotationMapper.entityToDTO(quotation);
-        loadClonedByQuotation(quotation, dto);
-        loadClonedQuotations(quotation, dto);
-        return dto;
+        return toDto(quotation);
     }
 
 @Override
@@ -321,8 +320,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
             consecutiveService.deleteConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, oldConsecutive);
         }
         
-        var newDto = quotationMapper.entityToDTO(saved);
-        
+        var newDto = toDto(saved);
+
         historyService.addHistory(IpQuotationHistoryAction.UPDATE, oldDto, newDto);
         
         return newDto;
@@ -355,7 +354,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         transition.sideEffect().accept(quotation);
         quotation.setStatus(newStatus);
 
-        var newQuotation = quotationMapper.entityToDTO(quotationRepository.save(quotation));
+        var newQuotation = toDto(quotationRepository.save(quotation));
         historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldQuotation, newQuotation);
         return newQuotation;
     }
@@ -479,7 +478,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         });
 
         var saved = quotationRepository.save(quotation);
-        return quotationMapper.entityToDTO(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -779,6 +778,18 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         } catch (JRException | IOException ex) {
             throw new NotGenerateReportException(ex);
         }
+    }
+
+    private IpQuotationDTO toDto(IpQuotationEntity entity) {
+        var dto = quotationMapper.entityToDTO(entity);
+        loadClonedByQuotation(entity, dto);
+        loadClonedQuotations(entity, dto);
+        loadPurchaseOrders(entity, dto);
+        return dto;
+    }
+
+    private void loadPurchaseOrders(IpQuotationEntity entity, IpQuotationDTO dto) {
+        dto.setListPurchaseOrders(purchaseOrderRepository.fetchSummaryByQuotationId(entity.getId()));
     }
 
     private void loadClonedByQuotation(IpQuotationEntity entity, IpQuotationDTO dto) {

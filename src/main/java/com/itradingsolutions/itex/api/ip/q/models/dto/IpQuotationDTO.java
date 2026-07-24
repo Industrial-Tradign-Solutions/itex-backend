@@ -60,6 +60,7 @@ public class IpQuotationDTO extends BaseDTO {
     private List<IpQuotationOtherChargesQuoteRequestDTO> qrOtherCharges;
     private IpQuotationDTO clonedByQuotation;
     private List<IpQuotationDTO> clonedQuotations;
+    private List<BasicPurchaseOrderDTO> listPurchaseOrders;
 
 
     public String getName() {

@@ -85,6 +85,14 @@ public enum ModuleAction {
     CLONE_IP_QUOTATIONS (4003004L, ModuleOption.IP_QUOTATIONS, "Clone Q"),
     REJECT_IP_QUOTATIONS (4003005L, ModuleOption.IP_QUOTATIONS, "Reject Q"),
     EDIT_PAYMENT_TERMS_IP_QUOTATIONS (4003006L, ModuleOption.IP_QUOTATIONS, "Edit Payment Terms from Q"),
+
+    /*IP PURCHASE ORDERS MODULE ACTIONS*/
+    CREATE_PURCHASE_ORDER (4004001L, ModuleOption.IP_PURCHASE_ORDERS, "Create Purchase Order"),
+    UPDATE_PURCHASE_ORDER (4004002L, ModuleOption.IP_PURCHASE_ORDERS, "Update Purchase Order"),
+    VIEW_HISTORY_PURCHASE_ORDER (4004003L, ModuleOption.IP_PURCHASE_ORDERS, "View History Purchase Order"),
+    REJECT_PURCHASE_ORDER (4004004L, ModuleOption.IP_PURCHASE_ORDERS, "Reject Purchase Order"),
+    EDIT_PAYMENT_TERMS_PURCHASE_ORDER (4004005L, ModuleOption.IP_PURCHASE_ORDERS, "Edit Payment Terms Purchase Order"),
+    CLONE_PURCHASE_ORDER (4004006L, ModuleOption.IP_PURCHASE_ORDERS, "Clone Purchase Order"),
     ;
     private final Long id;
     private final ModuleOption moduleOption;

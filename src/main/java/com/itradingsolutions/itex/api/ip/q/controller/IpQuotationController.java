@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.controller;
 
+import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleOption;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
@@ -15,6 +16,7 @@ import com.itradingsolutions.itex.api.ip.q.models.requests.AddQuoteRequestsToQuo
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.OpenLockIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
+import com.itradingsolutions.itex.api.ip.q.models.response.AvailableForPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationHistoryResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.IpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
@@ -286,6 +288,18 @@ public class IpQuotationController extends CommonController {
                 simpleMessage("ip.q.qr.removed"),
                 idQqr
         ));
+    }
+
+    @GetMapping("/available-for-purchase-order/{client_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.CREATE_PURCHASE_ORDER)
+    public ResponseEntity<List<AvailableForPurchaseOrderResponse>> getAvailableForPurchaseOrder(
+            @PathVariable("client_id") UUID clientId,
+            @RequestParam(name = "viewCompleted", defaultValue = "false") boolean viewCompleted,
+            @RequestParam(name = "currency", defaultValue = "USD") Currency currency
+    ) {
+        var list = quotationService.getAvailableForPurchaseOrder(clientId, viewCompleted, currency);
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping("/{id_quotation}/quote-requests/other-charges")

@@ -28,8 +28,6 @@ public class ConsecutiveEntity implements Serializable {
     private ConsecutiveId id;
 
     public ConsecutiveEntity(ConsecutiveModule module, ConsecutiveDepartment department, String consecutive) {
-        if (module == ConsecutiveModule.INV) return;
-
         if (consecutive == null || module == null) throw new IllegalArgumentException("Consecutive and module cannot be null");
 
         String moduleSuffix = module.name();

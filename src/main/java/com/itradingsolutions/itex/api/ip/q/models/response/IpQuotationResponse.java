@@ -6,6 +6,7 @@ import com.itradingsolutions.itex.api.common.models.responses.BaseResponse;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
+import com.itradingsolutions.itex.api.ip.po.models.response.BasicIpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.qr.models.responses.BasicIpQuoteRequestResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientContactResponse;
@@ -59,6 +60,8 @@ public class IpQuotationResponse extends BaseResponse {
     private IpQuotationResponse clonedByQuotation;
 
     private List<ListIpQuotationResponse> clonedQuotations;
+
+    private List<BasicIpPurchaseOrderResponse> listPurchaseOrders;
 
 
     private BigDecimal grossWeightLbs;

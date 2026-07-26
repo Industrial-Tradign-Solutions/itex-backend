@@ -2,12 +2,14 @@ package com.itradingsolutions.itex.api.ip.q.service;
 
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
+import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
+import com.itradingsolutions.itex.api.ip.q.models.response.AvailableForPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +40,8 @@ public interface IpQuotationService {
     void autoRejectOldCreatedQuotations();
 
     // Other Charges
+    List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted, Currency currency);
+
     List<QuotationQuoteRequestOtherChargeResponse> getOtherChargesFromQuoteRequests(UUID quotationId);
 
     // Integrity Validation

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -33,4 +34,7 @@ public interface IIpQuotationProductRepository extends JpaRepository<IpQuotation
            WHERE qqr.quotation.id = :quotationId
            """)
     Set<UUID> findExistingProductIdsByQuotationId(@Param("quotationId") UUID quotationId);
+
+    List<IpQuotationProductEntity> findByQuotationsQuoteRequest_Quotation_IdAndQuotationsQuoteRequest_QuoteRequest_Supplier_Id(
+            UUID quotationId, UUID supplierId);
 }

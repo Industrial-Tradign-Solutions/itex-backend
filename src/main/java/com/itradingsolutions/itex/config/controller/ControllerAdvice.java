@@ -16,9 +16,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -91,6 +93,20 @@ public class ControllerAdvice {
     @ResponseStatus(BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handlerIllegalArgumentException(final IllegalArgumentException t) {
         return buildErrorResponse(t, t.getMessage(), BAD_REQUEST, null);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handlerMethodArgumentTypeMismatch(final MethodArgumentTypeMismatchException t) {
+        String message = "Invalid value for parameter '" + t.getName() + "': " + t.getValue();
+        return buildErrorResponse(t, message, BAD_REQUEST, null);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handlerMissingParameter(final MissingServletRequestParameterException t) {
+        String message = "Missing required parameter: " + t.getParameterName();
+        return buildErrorResponse(t, message, BAD_REQUEST, null);
     }
 
     @ExceptionHandler(BadRequestException.class)

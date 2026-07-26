@@ -4,6 +4,13 @@ DELETE FROM t_menus WHERE id = 5001;
 DELETE FROM t_menus WHERE id = 5000;
 DELETE FROM itex_consecutive WHERE module = 'INV' AND department = 'IP';
 
-DROP TABLE IF EXISTS t_invoices_ip_products;
-DROP TABLE IF EXISTS t_invoices_charges;
+DROP TABLE IF EXISTS t_invoice_cloned;
+DROP TABLE IF EXISTS t_invoice_consecutive_free;
+DROP TABLE IF EXISTS t_invoice_consecutive_sequence;
+DROP TABLE IF EXISTS t_invoice_history;
+DROP TABLE IF EXISTS t_invoice_ip_products;
+DROP TABLE IF EXISTS t_invoice_payments;
+DROP TABLE IF EXISTS t_invoice_taxes;
+DROP TABLE IF EXISTS t_invoice_charges;
+DROP TABLE IF EXISTS t_invoice_ip_po;
 DROP TABLE IF EXISTS t_invoices;

@@ -41,14 +41,29 @@ VALUES (5001003, 'View History Invoices', 'Allows you to view history a Invoices
 INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
 VALUES (5001004, 'Clone Invoices', 'Clone a Invoices', 5001, true, now());
 INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
-VALUES (5001005, 'Reject Invoices', 'Reject a Invoices', 5001, true, now());
+VALUES (5001005, 'Cancel Invoices', 'Allows you to cancel an Invoice', 5001, true, now());
 INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
 VALUES (5001006, 'Edit Payment Terms Invoices', 'Allows you to edit payment terms and not use those of the Client', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001007, 'View Invoices', 'Allows you to view/list Invoices', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001008, 'Issue Invoices', 'Allows you to issue a Draft Invoice, assigning its final number', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001009, 'Register Payment Invoices', 'Allows you to register a payment on an Invoice', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001010, 'Delete Invoices', 'Allows you to delete a Draft Invoice', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001011, 'Revert Invoice to Draft', 'Allows you to revert an Issued Invoice back to Draft status, keeping its assigned number reserved', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001012, 'Void Payment Invoices', 'Allows you to void a registered payment on an Invoice', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001013, 'View All Invoices', 'Allows you to view and edit all Invoices, regardless of assigned sales rep', 5001, true, now());
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 
 CREATE TABLE t_invoices (
     id                      UUID            NOT NULL    PRIMARY KEY,
-    number                  VARCHAR(20)     NOT NULL    CONSTRAINT ip_invoice_unique_number UNIQUE,
+    draft_number            BIGINT          NOT NULL    CONSTRAINT ip_invoice_unique_draft_number UNIQUE,
+    number                  BIGINT                      CONSTRAINT ip_invoice_unique_number UNIQUE,
     department              VARCHAR(3)      NOT NULL    DEFAULT 'IP',
     status                  VARCHAR(20)     NOT NULL    DEFAULT 'DRAFT',
     currency                VARCHAR(20)     NOT NULL,
@@ -70,14 +85,12 @@ CREATE TABLE t_invoices (
     internal_remarks        TEXT,
     packing_list            VARCHAR(100),
 
-    --freight_to_miami        NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
-    --international_freight   NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
-    --wire_transfer_fee       NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
-    --insurance               NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
-    --tax_us                  NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    total_amount            NUMERIC(15, 5)  NOT NULL    DEFAULT 0,
+    paid_amount             NUMERIC(15, 5)  NOT NULL    DEFAULT 0,
 
-    total_amount            NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
-    paid_amount             NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    due_at                  TIMESTAMP,
+    is_overdue              BOOLEAN         NOT NULL    DEFAULT false,
+    overdue_notified_at     TIMESTAMP,
 
     issued_at               TIMESTAMP,
     partial_paid_at         TIMESTAMP,
@@ -91,18 +104,108 @@ CREATE TABLE t_invoices (
     open_by_user_id         UUID                        REFERENCES t_users(id)
 );
 
-CREATE TABLE t_invoices_charges (
+CREATE TABLE t_invoice_charges (
     id                      UUID            NOT NULL    PRIMARY KEY,
     invoice_id              UUID            NOT NULL    REFERENCES t_invoices,
     description             VARCHAR(100)    NOT NULL,
     type                    VARCHAR(100)    NOT NULL,
-    value                   NUMERIC(15, 2)  NOT NULL,
+    value                   NUMERIC(15, 5)  NOT NULL,
     created_at              TIMESTAMP       NOT NULL
 );
 
-CREATE TABLE t_invoices_ip_products(
+CREATE TABLE t_invoice_taxes (
+    id                  UUID            NOT NULL    PRIMARY KEY,
+    invoice_id          UUID            NOT NULL    REFERENCES t_invoices,
+    description         VARCHAR(100)    NOT NULL,   -- ej. "Colombia VAT", "US Sales Tax NY"
+    rate                NUMERIC(5, 4)   NOT NULL,   -- ej. 0.1900 para 19%
+    taxable_base        NUMERIC(15, 5)  NOT NULL,   -- monto sobre el que se calculó (subtotal, u otro)
+    value               NUMERIC(15, 5)  NOT NULL,   -- rate * taxable_base, persistido
+    created_at          TIMESTAMP       NOT NULL
+);
+
+CREATE TABLE t_invoice_payments (
+    id                      UUID            NOT NULL    PRIMARY KEY,
+    invoice_id              UUID            NOT NULL    REFERENCES t_invoices(id),
+    amount                  NUMERIC(15, 5)  NOT NULL,
+    payment_date            DATE            NOT NULL,
+    payment_method          varchar(40)     not null,
+    receipt_path            VARCHAR(1000)   NOT NULL,
+    receipt_original_name   VARCHAR(255)    NOT NULL,
+    notes                   TEXT,
+    is_voided               BOOLEAN         NOT NULL    DEFAULT false,
+    voided_reason           TEXT,
+    voided_at               TIMESTAMP,
+    voided_by_user_id       UUID                        REFERENCES t_users(id),
+    registered_by_user_id   UUID            NOT NULL    REFERENCES t_users(id),
+    created_at              TIMESTAMP       NOT NULL
+);
+
+CREATE TABLE t_invoice_ip_products(
     id                      UUID            NOT NULL    PRIMARY KEY,
     invoice_id              UUID            NOT NULL    REFERENCES t_invoices,
-    product_id              uuid            NOT NULL    REFERENCES t_ip_products
-
+    product_id              uuid            NOT NULL    REFERENCES t_ip_products,
+    number                  int             not null    DEFAULT 1,
+    quantity                NUMERIC(15, 5)  NOT NULL    DEFAULT 0,
+    unit_type               VARCHAR(50)     NOT NULL,
+    lead_time               INT             NOT NULL    DEFAULT 0,
+    lead_time_type          VARCHAR(10)     NOT NULL    DEFAULT 'WEEKS',
+    unit_price              NUMERIC(15,5)   NOT NULL    DEFAULT 0,
+    profit_margin           NUMERIC(3,2)    NOT NULL    DEFAULT 0,
+    condition               VARCHAR(20)     NOT NULL,
+    created_at              TIMESTAMP       NOT NULL
 );
+
+alter table t_invoice_ip_products
+    add constraint inv_product_unique
+        unique (invoice_id, product_id);
+
+create table t_invoice_ip_po (
+    invoice_id              UUID            NOT NULL    REFERENCES t_invoices,
+    ip_po_id                UUID            NOT NULL    REFERENCES t_ip_purchase_orders,
+    primary key (invoice_id, ip_po_id)
+);
+
+create table t_invoice_cloned (
+    main_invoice_id              uuid            not null    references t_invoices,
+    clone_invoice_id             uuid            not null    references t_invoices,
+    primary key (main_invoice_id, clone_invoice_id)
+);
+
+alter table t_invoice_cloned
+    add constraint invoice_clone_unique_id
+        unique (clone_invoice_id);
+
+create table t_invoice_history (
+    id uuid not null primary key,
+    invoice_id uuid not null references t_invoices,
+    user_id uuid not null references t_users,
+    action varchar(50) not null,
+    created_at timestamp not null,
+    data json
+);
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Consecutivos de factura (mecanismo dedicado e independiente de itex_consecutive).                                     */
+/* DRAFT: secuencia global que reutiliza el menor hueco liberado. FINAL: secuencia global max+1 sin reuso.              */
+/* Los numeros usan BIGINT para un margen amplio.                                                                        */
+/*----------------------------------------------------------------------------------------------------------------------*/
+
+-- Contador high-water por tipo de consecutivo de factura
+CREATE TABLE t_invoice_consecutive_sequence (
+    type                    VARCHAR(10)     NOT NULL    PRIMARY KEY,    -- 'DRAFT' | 'FINAL'
+    current_value           BIGINT          NOT NULL                    -- ultimo numero asignado (high-water)
+);
+
+-- Free list: numeros de DRAFT liberados (al borrar una factura en draft), disponibles para reuso.
+-- FINAL nunca se libera porque las facturas emitidas no se borran.
+CREATE TABLE t_invoice_consecutive_free (
+    number                  BIGINT          NOT NULL    PRIMARY KEY,
+    created_at              TIMESTAMP       NOT NULL
+);
+
+-- Semillas: DRAFT arranca en 1 (0 + 1). FINAL arranca en el valor que se indique al iniciar el
+-- modulo de facturacion: current_value = (valor_inicial - 1). Ej. 999 -> primera factura 1000.
+-- Este valor se ajusta con un UPDATE simple cuando se defina, sin recompilar.
+INSERT INTO t_invoice_consecutive_sequence (type, current_value) VALUES ('DRAFT', 0);
+INSERT INTO t_invoice_consecutive_sequence (type, current_value) VALUES ('FINAL', 999);
+

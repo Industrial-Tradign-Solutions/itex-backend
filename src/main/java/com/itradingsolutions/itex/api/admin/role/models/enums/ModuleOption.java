@@ -6,6 +6,7 @@ import lombok.Getter;
 public enum ModuleOption {
 
     NOT_MODULE(0L, "Not Module", null),
+    
     /*----------Admin Category---------*/
     CATEGORY_ADMINISTRATION(1000L, "Administration", NOT_MODULE),
     USERS(1001L, "Users", CATEGORY_ADMINISTRATION),
@@ -32,6 +33,11 @@ public enum ModuleOption {
     IP_QUOTE_REQUESTS(4002L, "IP Quote Requests", CATEGORY_IP),
     IP_QUOTATIONS(4003L, "IP Quotations", CATEGORY_IP),
     IP_PURCHASE_ORDERS(4004L, "IP Purchase Orders", CATEGORY_IP),
+    /*----------------------------------*/
+
+    /*----------Sales Category---------*/
+    CATEGORY_SALES(5000L, "Sales", NOT_MODULE),
+    INVOICES(5001L, "Invoices", CATEGORY_SALES),
     /*----------------------------------*/
 
     ;

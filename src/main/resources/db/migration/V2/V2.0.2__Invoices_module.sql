@@ -49,27 +49,60 @@ VALUES (5001006, 'Edit Payment Terms Invoices', 'Allows you to edit payment term
 CREATE TABLE t_invoices (
     id                      UUID            NOT NULL    PRIMARY KEY,
     number                  VARCHAR(20)     NOT NULL    CONSTRAINT ip_invoice_unique_number UNIQUE,
-    status                  VARCHAR(20)     NOT NULL,
+    department              VARCHAR(3)      NOT NULL    DEFAULT 'IP',
+    status                  VARCHAR(20)     NOT NULL    DEFAULT 'DRAFT',
     currency                VARCHAR(20)     NOT NULL,
     client_id               UUID            NOT NULL    REFERENCES t_clients(id),
     client_contact_id       UUID                        REFERENCES t_clients_contacts(id),
-    sales_rep_id            uuid            not null    references t_users,
-    payment_terms           VARCHAR(40),
-    remarks                 TEXT,
-    internal_remarks        TEXT,
     ship_to_name            VARCHAR(300)    NOT NULL,
     ship_to_address         VARCHAR(500)    NOT NULL,
     ship_to_city            UUID            NOT NULL    REFERENCES t_cities(id),
     ship_to_phone           VARCHAR(20)     NOT NULL,
     ship_to_contact_name    VARCHAR(50)     NOT NULL,
     ship_to_email           VARCHAR(100)    NOT NULL,
-    sales_tax               NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    order_number            VARCHAR(100),
+    via                     VARCHAR(10),
+    incoterms               VARCHAR(20)     NOT NULL,
+    payment_terms           VARCHAR(40),
+    awb_bl                  VARCHAR(100),
+    sales_rep_id            uuid            not null    references t_users,
+    remarks                 TEXT,
+    internal_remarks        TEXT,
+    packing_list            VARCHAR(100),
+
+    --freight_to_miami        NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    --international_freight   NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    --wire_transfer_fee       NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    --insurance               NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    --tax_us                  NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+
+    total_amount            NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    paid_amount             NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+
+    issued_at               TIMESTAMP,
+    partial_paid_at         TIMESTAMP,
+    paid_at                 TIMESTAMP,
+    cancelled_at            TIMESTAMP,
+    cancel_reason           TEXT,
+
     created_at              TIMESTAMP       NOT NULL,
-    sent_at                 TIMESTAMP,
-    answered_at             TIMESTAMP,
-    complete_at             TIMESTAMP,
-    reject_at               TIMESTAMP,
     path_pdf                VARCHAR(1000),
     open_at                 TIMESTAMP,
     open_by_user_id         UUID                        REFERENCES t_users(id)
+);
+
+CREATE TABLE t_invoices_charges (
+    id                      UUID            NOT NULL    PRIMARY KEY,
+    invoice_id              UUID            NOT NULL    REFERENCES t_invoices,
+    description             VARCHAR(100)    NOT NULL,
+    type                    VARCHAR(100)    NOT NULL,
+    value                   NUMERIC(15, 2)  NOT NULL,
+    created_at              TIMESTAMP       NOT NULL
+);
+
+CREATE TABLE t_invoices_ip_products(
+    id                      UUID            NOT NULL    PRIMARY KEY,
+    invoice_id              UUID            NOT NULL    REFERENCES t_invoices,
+    product_id              uuid            NOT NULL    REFERENCES t_ip_products
+
 );

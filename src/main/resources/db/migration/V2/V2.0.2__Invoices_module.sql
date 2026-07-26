@@ -45,3 +45,31 @@ VALUES (5001005, 'Reject Invoices', 'Reject a Invoices', 5001, true, now());
 INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
 VALUES (5001006, 'Edit Payment Terms Invoices', 'Allows you to edit payment terms and not use those of the Client', 5001, true, now());
 /*--------------------------------------------------------------------------------------------------------------------------------*/
+
+CREATE TABLE t_invoices (
+    id                      UUID            NOT NULL    PRIMARY KEY,
+    number                  VARCHAR(20)     NOT NULL    CONSTRAINT ip_invoice_unique_number UNIQUE,
+    status                  VARCHAR(20)     NOT NULL,
+    currency                VARCHAR(20)     NOT NULL,
+    client_id               UUID            NOT NULL    REFERENCES t_clients(id),
+    client_contact_id       UUID                        REFERENCES t_clients_contacts(id),
+    sales_rep_id            uuid            not null    references t_users,
+    payment_terms           VARCHAR(40),
+    remarks                 TEXT,
+    internal_remarks        TEXT,
+    ship_to_name            VARCHAR(300)    NOT NULL,
+    ship_to_address         VARCHAR(500)    NOT NULL,
+    ship_to_city            UUID            NOT NULL    REFERENCES t_cities(id),
+    ship_to_phone           VARCHAR(20)     NOT NULL,
+    ship_to_contact_name    VARCHAR(50)     NOT NULL,
+    ship_to_email           VARCHAR(100)    NOT NULL,
+    sales_tax               NUMERIC(15, 2)  NOT NULL    DEFAULT 0,
+    created_at              TIMESTAMP       NOT NULL,
+    sent_at                 TIMESTAMP,
+    answered_at             TIMESTAMP,
+    complete_at             TIMESTAMP,
+    reject_at               TIMESTAMP,
+    path_pdf                VARCHAR(1000),
+    open_at                 TIMESTAMP,
+    open_by_user_id         UUID                        REFERENCES t_users(id)
+);

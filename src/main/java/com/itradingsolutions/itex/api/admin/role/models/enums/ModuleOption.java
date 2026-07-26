@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum ModuleOption {
 
     NOT_MODULE(0L, "Not Module", null),
-    
+
     /*----------Admin Category---------*/
     CATEGORY_ADMINISTRATION(1000L, "Administration", NOT_MODULE),
     USERS(1001L, "Users", CATEGORY_ADMINISTRATION),

@@ -20,6 +20,6 @@ package com.itradingsolutions.itex.api.common.salesconsecutive.models.enums;
 public enum SalesConsecutiveType {
     DRAFT_INV,
     INV,
-    DRAFT_MEMO, 
+    DRAFT_MEMO,
     MEMO
 }

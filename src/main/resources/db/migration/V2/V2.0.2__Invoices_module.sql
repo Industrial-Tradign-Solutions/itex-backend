@@ -191,21 +191,22 @@ create table t_invoice_history (
 /*----------------------------------------------------------------------------------------------------------------------*/
 
 -- Contador high-water por tipo de consecutivo de factura
-CREATE TABLE t_invoice_consecutive_sequence (
-    type                    VARCHAR(10)     NOT NULL    PRIMARY KEY,    -- 'DRAFT' | 'FINAL'
+CREATE TABLE t_sales_consecutive_sequence (
+    type                    VARCHAR(15)     NOT NULL    PRIMARY KEY,    -- 'DRAFT' | 'FINAL'
     current_value           BIGINT          NOT NULL                    -- ultimo numero asignado (high-water)
 );
 
 -- Free list: numeros de DRAFT liberados (al borrar una factura en draft), disponibles para reuso.
 -- FINAL nunca se libera porque las facturas emitidas no se borran.
-CREATE TABLE t_invoice_consecutive_free (
-    number                  BIGINT          NOT NULL    PRIMARY KEY,
-    created_at              TIMESTAMP       NOT NULL
+CREATE TABLE t_sales_consecutive_free (
+    type                    VARCHAR(15)     NOT NULL,
+    number                  BIGINT          NOT NULL,
+    created_at              TIMESTAMP       NOT NULL,
+    PRIMARY KEY (type, number)
 );
 
 -- Semillas: DRAFT arranca en 1 (0 + 1). FINAL arranca en el valor que se indique al iniciar el
 -- modulo de facturacion: current_value = (valor_inicial - 1). Ej. 999 -> primera factura 1000.
 -- Este valor se ajusta con un UPDATE simple cuando se defina, sin recompilar.
-INSERT INTO t_invoice_consecutive_sequence (type, current_value) VALUES ('DRAFT', 0);
-INSERT INTO t_invoice_consecutive_sequence (type, current_value) VALUES ('FINAL', 999);
-
+INSERT INTO t_sales_consecutive_sequence (type, current_value) VALUES ('DRAFT_INV', 0);
+INSERT INTO t_sales_consecutive_sequence (type, current_value) VALUES ('INV', 999);

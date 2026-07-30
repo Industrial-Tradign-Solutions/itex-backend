@@ -93,6 +93,21 @@ public enum ModuleAction {
     REJECT_PURCHASE_ORDER (4004004L, ModuleOption.IP_PURCHASE_ORDERS, "Reject Purchase Order"),
     EDIT_PAYMENT_TERMS_PURCHASE_ORDER (4004005L, ModuleOption.IP_PURCHASE_ORDERS, "Edit Payment Terms Purchase Order"),
     CLONE_PURCHASE_ORDER (4004006L, ModuleOption.IP_PURCHASE_ORDERS, "Clone Purchase Order"),
+
+    /*INVOICES MODULE ACTIONS*/
+    CREATE_INVOICE (5001001L, ModuleOption.INVOICES, "Create Invoices"),
+    UPDATE_INVOICE (5001002L, ModuleOption.INVOICES, "Update Invoices"),
+    VIEW_HISTORY_INVOICE (5001003L, ModuleOption.INVOICES, "View History Invoices"),
+    CLONE_INVOICE (5001004L, ModuleOption.INVOICES, "Clone Invoices"),
+    CANCEL_INVOICE (5001005L, ModuleOption.INVOICES, "Cancel Invoices"),
+    EDIT_PAYMENT_TERMS_INVOICE (5001006L, ModuleOption.INVOICES, "Edit Payment Terms Invoices"),
+    VIEW_INVOICE (5001007L, ModuleOption.INVOICES, "View Invoices"),
+    ISSUE_INVOICE (5001008L, ModuleOption.INVOICES, "Issue Invoices"),
+    REGISTER_PAYMENT_INVOICE (5001009L, ModuleOption.INVOICES, "Register Payment Invoices"),
+    DELETE_INVOICE (5001010L, ModuleOption.INVOICES, "Delete Invoices"),
+    REVERT_INVOICE_TO_DRAFT (5001011L, ModuleOption.INVOICES, "Revert Invoice to Draft"),
+    VOID_PAYMENT_INVOICE (5001012L, ModuleOption.INVOICES, "Void Payment Invoices"),
+    VIEW_ALL_INVOICE (5001013L, ModuleOption.INVOICES, "View All Invoices"),
     ;
     private final Long id;
     private final ModuleOption moduleOption;

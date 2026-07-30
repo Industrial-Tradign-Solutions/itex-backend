@@ -116,6 +116,7 @@ CREATE TABLE t_invoice_charges (
 CREATE TABLE t_invoice_taxes (
     id                  UUID            NOT NULL    PRIMARY KEY,
     invoice_id          UUID            NOT NULL    REFERENCES t_invoices,
+    type                VARCHAR(30)     NOT NULL,   -- ver enum InvoiceTaxType
     description         VARCHAR(100)    NOT NULL,   -- ej. "Colombia VAT", "US Sales Tax NY"
     rate                NUMERIC(5, 4)   NOT NULL,   -- ej. 0.1900 para 19%
     taxable_base        NUMERIC(15, 5)  NOT NULL,   -- monto sobre el que se calculó (subtotal, u otro)

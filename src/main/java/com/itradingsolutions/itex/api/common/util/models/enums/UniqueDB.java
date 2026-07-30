@@ -41,6 +41,10 @@ public class UniqueDB {
     public static final String IP_PO_PRODUCT_UNIQUE = "t_ip_po_products_unique_product";
     public static final String IP_PO_OTHER_CHARGES_UNIQUE = "t_ip_po_other_charges_unique_description";
     public static final String IP_PO_CLONED_ID = "t_ip_purchase_orders_cloned_clone_po_id_unique";
+    public static final String INVOICE_DRAFT_NUMBER = "ip_invoice_unique_draft_number";
+    public static final String INVOICE_NUMBER = "ip_invoice_unique_number";
+    public static final String INVOICE_PRODUCT_UNIQUE = "inv_product_unique";
+    public static final String INVOICE_CLONED_ID = "invoice_clone_unique_id";
 
 
     public static List<String> getListErrors() {
@@ -77,7 +81,11 @@ public class UniqueDB {
                 IP_PO_OTHER_CHARGES_Q_QR_UNIQUE,
                 IP_PO_PRODUCT_UNIQUE,
                 IP_PO_OTHER_CHARGES_UNIQUE,
-                IP_PO_CLONED_ID
+                IP_PO_CLONED_ID,
+                INVOICE_DRAFT_NUMBER,
+                INVOICE_NUMBER,
+                INVOICE_PRODUCT_UNIQUE,
+                INVOICE_CLONED_ID
         );
     }
 }

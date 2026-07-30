@@ -16,7 +16,7 @@ import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.products.services.IIpProductService;
-import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
+import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
@@ -63,7 +63,7 @@ public class UtilController extends CommonController {
         response.add(getItem("lead_time", getKeyValueList(LeadTime.class)));
         response.add(getItem("ip_quotation_status", getKeyValueList(IpQuotationStatus.class)));
         response.add(getItem("incoterms", getKeyValueList(Incoterms.class)));
-        response.add(getItem("ip_quotation_product_condition", getKeyValueList(IpQuotationProductCondition.class)));
+        response.add(getItem("ip_quotation_product_condition", getKeyValueList(ProductCondition.class)));
         response.add(getItem("ip_purchase_order_status", getKeyValueList(IpPurchaseOrderStatus.class)));
         return ResponseEntity.ok(response);
     }

@@ -1,7 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.models.dto;
 
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
-import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
+import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +20,7 @@ public class IpQuotationProductDTO extends BaseDTO {
     private IpQuoteRequestProductDTO quoteRequestProduct;
     private Integer number;
     private BigDecimal profitMargin;
-    private IpQuotationProductCondition condition;
+    private ProductCondition condition;
     private String qrNumber;
     private String supplierName;
 

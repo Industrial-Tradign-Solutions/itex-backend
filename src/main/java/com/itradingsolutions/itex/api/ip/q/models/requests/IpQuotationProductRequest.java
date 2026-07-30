@@ -1,6 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.models.requests;
 
-import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
+import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
@@ -18,6 +18,6 @@ public record IpQuotationProductRequest(
         BigDecimal profitMargin,
 
         @NotNull(message = "Condition is required")
-        IpQuotationProductCondition condition
+        ProductCondition condition
 ) {
 }

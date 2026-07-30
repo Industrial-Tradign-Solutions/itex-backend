@@ -1,6 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.models.response;
 
-import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
+import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
 import com.itradingsolutions.itex.api.ip.qr.models.responses.IpQuoteRequestProductResponse;
 
 import java.math.BigDecimal;
@@ -12,7 +12,7 @@ public record IpQuotationProductResponse(
         IpQuoteRequestProductResponse quoteRequestProduct,
         Integer number,
         BigDecimal profitMargin,
-        IpQuotationProductCondition condition,
+        ProductCondition condition,
         BigDecimal sellingUnitPrice,
         BigDecimal sellingExtendedPrice,
         BigDecimal grossWeightLbs,

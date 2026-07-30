@@ -1,7 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.models.entities;
 
 import com.itradingsolutions.itex.api.common.models.entities.BaseEntity;
-import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
+import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,7 +47,7 @@ public class IpQuotationProductEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "condition", nullable = false, length = 20)
-    private IpQuotationProductCondition condition;
+    private ProductCondition condition;
 
     public void setProfitMargin(BigDecimal profitMargin) {
         if (profitMargin.compareTo(BigDecimal.ZERO) < 0 || profitMargin.compareTo(BigDecimal.ONE) > 0) {

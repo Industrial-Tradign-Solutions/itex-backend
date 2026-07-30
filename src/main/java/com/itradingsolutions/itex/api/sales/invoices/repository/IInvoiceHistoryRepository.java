@@ -2,10 +2,15 @@ package com.itradingsolutions.itex.api.sales.invoices.repository;
 
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceHistoryEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface IInvoiceHistoryRepository extends JpaRepository<InvoiceHistoryEntity, UUID> {
+
+    @Query("SELECT h FROM InvoiceHistoryEntity h WHERE h.invoice = ?1 ORDER BY h.createdAt DESC")
+    List<InvoiceHistoryEntity> fetchByInvoiceId(UUID invoiceId);
 }

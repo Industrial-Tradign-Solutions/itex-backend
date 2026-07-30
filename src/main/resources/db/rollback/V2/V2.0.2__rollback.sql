@@ -6,6 +6,7 @@ DELETE FROM t_menus WHERE id = 5000;
 DROP TABLE IF EXISTS t_sales_consecutive_sequence;
 DROP TABLE IF EXISTS t_sales_consecutive_free;
 DROP TABLE IF EXISTS t_invoice_cloned;
+DROP INDEX IF EXISTS idx_invoice_history_invoice_created;
 DROP TABLE IF EXISTS t_invoice_history;
 DROP TABLE IF EXISTS t_invoice_ip_products;
 DROP TABLE IF EXISTS t_invoice_payments;

@@ -185,6 +185,8 @@ create table t_invoice_history (
     data json
 );
 
+CREATE INDEX idx_invoice_history_invoice_created ON t_invoice_history (invoice_id, created_at DESC);
+
 /*----------------------------------------------------------------------------------------------------------------------*/
 /* Consecutivos de factura (mecanismo dedicado e independiente de itex_consecutive).                                     */
 /* DRAFT: secuencia global que reutiliza el menor hueco liberado. FINAL: secuencia global max+1 sin reuso.              */

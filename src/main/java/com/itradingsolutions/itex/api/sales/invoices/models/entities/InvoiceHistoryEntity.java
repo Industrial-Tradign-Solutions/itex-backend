@@ -1,8 +1,11 @@
 package com.itradingsolutions.itex.api.sales.invoices.models.entities;
 
 import com.itradingsolutions.itex.api.common.models.entities.HistoryEntity;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceHistoryAction;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,7 +29,7 @@ public class InvoiceHistoryEntity extends HistoryEntity {
     @Column(name = "invoice_id", nullable = false)
     private UUID invoice;
 
-    // TODO: reemplazar por InvoiceHistoryAction (enum) cuando se implemente el servicio de historial.
+    @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false, length = 50)
-    private String action;
+    private InvoiceHistoryAction action;
 }

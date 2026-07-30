@@ -25,6 +25,12 @@ public class ClientSchedule {
     private final IClientService clientService;
     private final IMailService mailService;
 
+    @Value("${itex.notifications.client.email}")
+    private String sentEmail;
+
+    @Value("${itex.notifications.client.name}")
+    private String sentName;
+
     @Scheduled(cron = "30 50 23 * * *")
     private void cronUnlockClients() {
         var listClients = clientService.listAllOpenClients(null);
@@ -56,7 +62,7 @@ public class ClientSchedule {
             }
         }
         if (!clients.isEmpty())
-            sendMail(clients, "Notification of clients not assigned to a account rep", "The following clients do not have an assigned account rep:", "sara@itradingsolutions.com", "Sara Garcia");
+            sendMail(clients, "Notification of clients not assigned to a account rep", "The following clients do not have an assigned account rep:", sentEmail, sentName);
     }
 
     @Scheduled(cron = "0 10 5 * * 3")

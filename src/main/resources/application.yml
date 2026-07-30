@@ -52,6 +52,10 @@ itex:
       jasper: ${FOLDER_ROUTE_JASPER:../reports/src/}
   tabs:
     max-tabs-open: ${MAX_TABS_OPEN:30}
+  notifications:
+    client:
+      email: ${SENT_CLIENT_NOTIFICATION_EMAIL:info@itradingsolutions.com}
+      name: ${SENT_CLIENT_NOTIFICATION_NAME:Info}
 
 # Configuracion del Servidor
 server:

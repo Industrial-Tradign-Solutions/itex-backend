@@ -19,7 +19,7 @@ public abstract class PartnerFilter<S, E>  extends BaseFilter<E> {
     private String taxId;
 
     protected Specification<E> filter() {
-        Specification<E> spec = Specification.where(null);
+        Specification<E> spec = Specification.unrestricted();
 
         if (getName() != null && !getName().isEmpty() && getName().length() >= 3)
             spec = spec.and(hasName());

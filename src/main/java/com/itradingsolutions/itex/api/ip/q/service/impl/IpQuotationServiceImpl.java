@@ -180,7 +180,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Override
     @Transactional(readOnly = true)
     public Page<IpQuotationDTO> listAllQuotations(Pageable pageable, FilterListIpQuotation filters) {
-        Specification<IpQuotationEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
+        Specification<IpQuotationEntity> spec = (filters == null ? Specification.unrestricted() : filters.filter());
         Page<IpQuotationEntity> resp = quotationRepository.findAll(spec, pageable);
         return new PageImpl<>(resp.getContent().stream().map(quotationMapper::entityToDTO).toList(), resp.getPageable(), resp.getTotalElements());
     }

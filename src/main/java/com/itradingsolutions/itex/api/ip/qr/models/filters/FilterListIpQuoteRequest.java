@@ -29,7 +29,7 @@ public class FilterListIpQuoteRequest extends BaseFilter<IpQuoteRequestEntity> {
     private String productDescription;
 
     public Specification<IpQuoteRequestEntity> filter() {
-        Specification<IpQuoteRequestEntity> spec = Specification.where(null);
+        Specification<IpQuoteRequestEntity> spec = Specification.unrestricted();
 
         if (getNumber() != null && !getNumber().isBlank())
             spec = spec.and(hasNumber());

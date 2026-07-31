@@ -215,7 +215,7 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
     @Override
     @Transactional(readOnly = true)
     public Page<IpProductDTO> listAllProducts(Pageable pageable, FilterListIpProducts filters) {
-        Specification<IpProductEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
+        Specification<IpProductEntity> spec = (filters == null ? Specification.unrestricted() : filters.filter());
         Page<IpProductEntity> resp = ipProductRepository.findAll(spec, pageable);
         return new PageImpl<>(resp.getContent().stream().map(ipProductMapper::entityToDTO).toList(),resp.getPageable(),resp.getTotalElements());
     }

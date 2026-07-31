@@ -21,7 +21,7 @@ public class FilterListIpQuotation extends BaseFilter<IpQuotationEntity> {
     private UUID salesRepId;
 
     public Specification<IpQuotationEntity> filter() {
-        Specification<IpQuotationEntity> spec = Specification.where(null);
+        Specification<IpQuotationEntity> spec = Specification.unrestricted();
 
         if (getNumber() != null && !getNumber().isBlank())
             spec = spec.and(hasNumber());

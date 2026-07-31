@@ -205,7 +205,7 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     @Override
     @Transactional(readOnly = true)
     public Page<IpQuoteRequestDTO> listAllQuoteRequests(Pageable pageable, FilterListIpQuoteRequest filters) {
-        Specification<IpQuoteRequestEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
+        Specification<IpQuoteRequestEntity> spec = (filters == null ? Specification.unrestricted() : filters.filter());
         Page<IpQuoteRequestEntity> resp = qrRepository.findAll(spec, pageable);
         return new PageImpl<>(resp.getContent().stream().map(qrMapper::entityToDTO).toList(),resp.getPageable(),resp.getTotalElements());
     }

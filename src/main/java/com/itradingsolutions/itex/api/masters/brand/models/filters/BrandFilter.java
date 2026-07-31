@@ -13,7 +13,7 @@ public class BrandFilter extends BaseFilter<BrandEntity> {
     private String name;
 
     public Specification<BrandEntity> filterBrand() {
-        Specification<BrandEntity> spec = Specification.where(null);
+        Specification<BrandEntity> spec = Specification.unrestricted();
 
         if (getName() != null && !getName().isEmpty())
             spec = spec.and(hasName());

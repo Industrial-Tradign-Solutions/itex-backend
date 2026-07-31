@@ -34,7 +34,7 @@ public class FilterListIpPurchaseOrder extends BaseFilter<IpPurchaseOrderEntity>
     private String productDescription;
 
     public Specification<IpPurchaseOrderEntity> filter() {
-        Specification<IpPurchaseOrderEntity> spec = Specification.where(null);
+        Specification<IpPurchaseOrderEntity> spec = Specification.unrestricted();
 
         if (getNumber() != null && !getNumber().isBlank())
             spec = spec.and(hasNumber());

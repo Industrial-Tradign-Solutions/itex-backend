@@ -24,7 +24,7 @@ public class FilterListIpProducts extends BaseFilter<IpProductEntity> {
     private IpProductStatus status;
 
     public Specification<IpProductEntity> filter() {
-        Specification<IpProductEntity> spec = Specification.where(null);
+        Specification<IpProductEntity> spec = Specification.unrestricted();
 
         if (getDescription() != null && !getDescription().isEmpty() && getDescription().length() >= 3)
             spec = spec.and(hasDescription());

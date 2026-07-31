@@ -126,7 +126,7 @@ public class ClientServiceImpl extends UtilServiceAbs implements IClientService 
     @Override
     @Transactional(readOnly = true)
     public Page<ClientDTO> listAllClients(Pageable pageable, FilterListClients filters) {
-        Specification<ClientEntity> spec = (filters == null ? Specification.where(null) : filters.filterClient());
+        Specification<ClientEntity> spec = (filters == null ? Specification.unrestricted() : filters.filterClient());
         Page<ClientEntity> resp = clientRepository.findAll(spec, pageable);
         return new PageImpl<>(resp.getContent().stream().map(clientMapper::entityToDto).toList(),resp.getPageable(),resp.getTotalElements());
     }

@@ -110,7 +110,7 @@ public class SupplierServiceImpl extends UtilServiceAbs implements ISupplierServ
     @Override
     @Transactional(readOnly = true)
     public Page<SupplierDTO> listAllSupplier(Pageable pageable, FilterListSuppliers filters) {
-        Specification<SupplierEntity> spec = (filters == null ? Specification.where(null) : filters.filterSuppliers());
+        Specification<SupplierEntity> spec = (filters == null ? Specification.unrestricted() : filters.filterSuppliers());
         Page<SupplierEntity> resp = supplierRepository.findAll(spec, pageable);
         return new PageImpl<>(resp.getContent().stream().map(supplierMapper::entityToDto).toList(),resp.getPageable(),resp.getTotalElements());
     }

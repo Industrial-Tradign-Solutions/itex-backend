@@ -81,7 +81,7 @@ public class BrandServiceImpl extends UtilServiceAbs implements IBrandService {
     @Override
     @Transactional(readOnly = true)
     public Page<BrandDTO> listAll(Pageable pageable, BrandFilter filters) {
-        Specification<BrandEntity> spec = (filters == null ? Specification.where(null) : filters.filterBrand());
+        Specification<BrandEntity> spec = (filters == null ? Specification.unrestricted() : filters.filterBrand());
         Page<BrandEntity> resp = brandRepository.findAll(spec, pageable);
         return new PageImpl<>(resp.getContent().stream().map(brandMapper::entityToDto).toList(),resp.getPageable(),resp.getTotalElements());
     }

@@ -454,7 +454,7 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
     @Override
     @Transactional(readOnly = true)
     public Page<IpPurchaseOrderDTO> listAll(Pageable pageable, FilterListIpPurchaseOrder filters) {
-        Specification<IpPurchaseOrderEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
+        Specification<IpPurchaseOrderEntity> spec = (filters == null ? Specification.unrestricted() : filters.filter());
         Page<IpPurchaseOrderEntity> resp = repository.findAll(spec, pageable);
         return new PageImpl<>(
                 resp.getContent().stream().map(mapper::entityToDTO).toList(),

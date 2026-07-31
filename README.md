@@ -33,9 +33,9 @@ El sistema permite gestionar:
 ## Tecnologías y Dependencias
 
 ### Framework y Lenguaje
-- **Java 21** - Versión del lenguaje
-- **Spring Boot 3.3.6** - Framework principal
-- **Gradle** - Gestor de dependencias y build
+- **Java 25** - Versión del lenguaje
+- **Spring Boot 4.0.7** - Framework principal
+- **Gradle 9.6.1** - Gestor de dependencias y build
 
 ### Base de Datos
 - **PostgreSQL** - Base de datos relacional
@@ -52,20 +52,20 @@ El sistema permite gestionar:
 
 ### Otras Dependencias
 - **Lombok** - Reducción de código repetitivo
-- **MapStruct 1.6.2** - Mapeo de objetos
+- **MapStruct 1.6.3** - Mapeo de objetos
 - **Apache POI 5.4.1** - Manejo de archivos Excel
 - **Spring WebSocket** - Comunicación en tiempo real
 - **Spring Mail** - Envío de correos electrónicos
-- **Jackson** - Serialización JSON (zona horaria: America/New_York)
+- **Jackson 3** - Serialización JSON (zona horaria: America/New_York)
 
 ---
 
 ## Requisitos del Sistema
 
 ### Software Necesario
-- JDK 21 o superior
+- JDK 25 o superior
 - PostgreSQL 12 o superior
-- Gradle 8.x (incluido en el proyecto)
+- Gradle 9.x (incluido en el proyecto vía wrapper)
 - Git (para control de versiones)
 
 ### Recursos Recomendados

@@ -11,6 +11,8 @@ spring:
     properties:
       hibernate:
         format_sql: ${DEVELOP_MODE:false}
+  flyway:
+    locations: classpath:db/migration
   servlet:
     multipart:
       enabled: true
@@ -70,9 +72,3 @@ logging:
           engine:
             design:
               JRJdk13Compiler: WARN
-    org:
-      springframework:
-        web:
-          servlet:
-            handler:
-              HandlerMappingIntrospector: ERROR

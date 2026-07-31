@@ -1,6 +1,5 @@
 package com.itradingsolutions.itex.config.security.jwt.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itradingsolutions.itex.api.admin.user.models.dto.UserDetailDTO;
 import com.itradingsolutions.itex.api.common.util.models.enums.HistoryActions;
 import com.itradingsolutions.itex.api.common.util.models.requests.AuthenticationRequest;
@@ -22,6 +21,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -29,6 +30,8 @@ import java.time.LocalTime;
 import java.util.Date;
 
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
     private final AuthenticationManager authManager;
     private final JWTService jwtService;
@@ -57,8 +60,11 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         AuthenticationRequest authenticationRequest;
         Authentication authResp;
         try {
-            authenticationRequest = new ObjectMapper().readValue(request.getInputStream(), AuthenticationRequest.class);
-        } catch (IOException e) {
+            authenticationRequest = MAPPER.readValue(request.getInputStream(), AuthenticationRequest.class);
+        } catch (IOException | JacksonException e) {
+            // En Jackson 3 los errores de parseo son JacksonException (unchecked),
+            // ya no subclases de IOException: hay que capturarlos de forma explicita
+            // para conservar la misma respuesta que antes ante un body invalido.
             throw new UsernameNotFoundException("Problems reading the data, check that all are correct: 'Username', 'Password'");
         }
 
@@ -84,7 +90,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
         UserDetailDTO userData = ((UserDetailDTO) authResult.getPrincipal());
         String token = jwtService.createToken(authResult);
-        response.getWriter().write(new ObjectMapper().writeValueAsString(getAuthenticationResponse(token, userData)));
+        response.getWriter().write(MAPPER.writeValueAsString(getAuthenticationResponse(token, userData)));
         response.setStatus(HttpStatus.OK.value());
         response.setContentType("application/json");
         historyService.saveHistoryNotData(HistoryActions.LOGIN, userData.getUsername());
@@ -113,7 +119,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
         response.getWriter().write(
-                new ObjectMapper().writeValueAsString(
+                MAPPER.writeValueAsString(
                         new ErrorResponse(
                                 "¡Invalid credentials! \n " + failed.getMessage(),
                                 HttpStatus.FORBIDDEN.value(), null

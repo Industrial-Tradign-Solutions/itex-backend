@@ -1,6 +1,5 @@
 package com.itradingsolutions.itex.api.common.util.services.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleOption;
 import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
@@ -12,6 +11,7 @@ import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;

@@ -1,6 +1,5 @@
 package com.itradingsolutions.itex.config.security.jwt.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itradingsolutions.itex.api.common.util.models.responses.ErrorResponse;
 import com.itradingsolutions.itex.config.security.jwt.service.JWTService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -17,11 +16,15 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
 @Slf4j
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
+
+    private static final JsonMapper MAPPER = JsonMapper.builder().build();
+
     private final JWTService jwtService;
 
     public JWTAuthorizationFilter(AuthenticationManager authenticationManager, JWTService jwtService) {
@@ -56,10 +59,10 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
         }catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException |  IllegalArgumentException ex ) {
             log.error(ex.getMessage());
             if (ex instanceof ExpiredJwtException) {
-                response.getWriter().write(new ObjectMapper().writeValueAsString(new ErrorResponse("Token has expired", HttpStatus.UNAUTHORIZED.value(), null)));
+                response.getWriter().write(MAPPER.writeValueAsString(new ErrorResponse("Token has expired", HttpStatus.UNAUTHORIZED.value(), null)));
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
             } else {
-                response.getWriter().write(new ObjectMapper().writeValueAsString(new ErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED.value(), null)));
+                response.getWriter().write(MAPPER.writeValueAsString(new ErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED.value(), null)));
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
             }
             response.setContentType("application/json");

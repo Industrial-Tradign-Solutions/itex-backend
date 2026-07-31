@@ -1,6 +1,5 @@
 package com.itradingsolutions.itex.config.security.jwt.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itradingsolutions.itex.api.admin.user.models.dto.UserDetailDTO;
 import com.itradingsolutions.itex.config.security.SimpleGrantedAuthorityMixin;
 import com.itradingsolutions.itex.config.security.jwt.service.JWTService;
@@ -11,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -24,6 +24,11 @@ import java.util.function.Function;
 
 @Service
 public class JWTServiceImpl implements JWTService {
+
+    private static final JsonMapper MAPPER = JsonMapper.builder().build();
+    private static final JsonMapper AUTHORITIES_MAPPER = JsonMapper.builder()
+            .addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityMixin.class)
+            .build();
 
     @Value("${itex.jwt.secret-key}")
     private String secretKey;
@@ -41,7 +46,7 @@ public class JWTServiceImpl implements JWTService {
 
         return Jwts
                 .builder()
-                .claim("authorities", new ObjectMapper().writeValueAsString(auth.getAuthorities()))
+                .claim("authorities", MAPPER.writeValueAsString(auth.getAuthorities()))
                 .claim("sub", ((UserDetailDTO) auth.getPrincipal()).getUsername())
                 .claim("iat", new Date(System.currentTimeMillis()))
                 .claim("exp", new Date(getExpirationTokenMillis()))
@@ -67,7 +72,7 @@ public class JWTServiceImpl implements JWTService {
     @Override
     public Collection<SimpleGrantedAuthority> getRoles(String token) throws IOException {
         Object roles = getClaimsToken(token, claims -> claims.get("authorities"));
-        return Arrays.asList(new ObjectMapper().addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityMixin.class)
+        return Arrays.asList(AUTHORITIES_MAPPER
                 .readValue(roles.toString().getBytes(), SimpleGrantedAuthority[].class));
     }
 

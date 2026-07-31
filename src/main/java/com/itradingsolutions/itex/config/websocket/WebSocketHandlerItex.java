@@ -1,18 +1,15 @@
 package com.itradingsolutions.itex.config.websocket;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.itradingsolutions.itex.config.security.jwt.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,12 +25,13 @@ import java.util.UUID;
 public class WebSocketHandlerItex extends TextWebSocketHandler {
     private static final Set<WebSocketSession> sessions = new HashSet<>();
     private final JWTService jwtService;
-    private final ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    // Jackson 3 trae soporte nativo de java.time y WRITE_DATES_AS_TIMESTAMPS
+    // deshabilitado por defecto, asi que el JSON emitido es identico al de
+    // Jackson 2 con JavaTimeModule + disable(WRITE_DATES_AS_TIMESTAMPS).
+    private final JsonMapper mapper = JsonMapper.builder().build();
 
     @Override
-    public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         WebSocketMessage<String> data = new WebSocketMessage<>("Error al ingresar al socket", WebSocketMessageValue.ERROR_SOCKET);
         data.setSessionId(session.getId());
         String jsonData = mapper.writeValueAsString(data);
@@ -51,7 +49,7 @@ public class WebSocketHandlerItex extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(@NonNull WebSocketSession session,@NonNull CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessions.remove(session);
         session.close(status);
     }
@@ -64,7 +62,7 @@ public class WebSocketHandlerItex extends TextWebSocketHandler {
                 TextMessage message = new TextMessage(jsonData);
                 sendOneMessage(session, message);
             }
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
           log.error("Error when mapping the object", ex);
         }
     }

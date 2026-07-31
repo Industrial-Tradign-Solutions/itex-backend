@@ -25,6 +25,9 @@ import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
 import com.itradingsolutions.itex.api.partners.suppliers.models.enums.SupplierStatus;
 import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierService;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceChargeType;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceTaxType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -65,6 +68,9 @@ public class UtilController extends CommonController {
         response.add(getItem("incoterms", getKeyValueList(Incoterms.class)));
         response.add(getItem("ip_quotation_product_condition", getKeyValueList(ProductCondition.class)));
         response.add(getItem("ip_purchase_order_status", getKeyValueList(IpPurchaseOrderStatus.class)));
+        response.add(getItem("invoice_status", getKeyValueList(InvoiceStatus.class)));
+        response.add(getItem("invoice_tax_type", getKeyValueList(InvoiceTaxType.class)));
+        response.add(getItem("invoice_charge_type", getKeyValueList(InvoiceChargeType.class)));
         return ResponseEntity.ok(response);
     }
 

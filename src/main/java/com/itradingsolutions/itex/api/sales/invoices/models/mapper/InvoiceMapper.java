@@ -2,6 +2,8 @@ package com.itradingsolutions.itex.api.sales.invoices.models.mapper;
 
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
+import com.itradingsolutions.itex.api.sales.invoices.models.request.CreateInvoiceRequest;
+import com.itradingsolutions.itex.api.sales.invoices.models.request.UpdateInvoiceRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.ListInvoiceResponse;
 import org.mapstruct.Mapper;
@@ -16,6 +18,10 @@ public interface InvoiceMapper {
     int NUMBER_PAD = 6;
 
     InvoiceDTO entityToDTO(InvoiceEntity entity);
+
+    InvoiceDTO createRequestToDTO(CreateInvoiceRequest request);
+
+    InvoiceDTO updateRequestToDTO(UpdateInvoiceRequest request);
 
     @Mapping(target = "draftNumber", source = "draftNumber", qualifiedByName = "formatNumber")
     @Mapping(target = "number", source = "number", qualifiedByName = "formatNumber")

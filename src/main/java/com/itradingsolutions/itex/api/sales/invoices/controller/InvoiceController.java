@@ -7,13 +7,18 @@ import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.filters.FilterListInvoice;
 import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceMapper;
+import com.itradingsolutions.itex.api.sales.invoices.models.request.CreateInvoiceRequest;
+import com.itradingsolutions.itex.api.sales.invoices.models.request.UpdateInvoiceRequest;
+import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.ListInvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.OpenLockInvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceCloneService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceLockService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceQueryService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceSaveService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -22,6 +27,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -38,7 +46,39 @@ public class InvoiceController extends CommonController {
     private final IInvoiceQueryService invoiceQueryService;
     private final IInvoiceLockService invoiceLockService;
     private final IInvoiceCloneService invoiceCloneService;
+    private final IInvoiceSaveService invoiceSaveService;
     private final InvoiceMapper invoiceMapper;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @AccessToAction(action = ModuleAction.CREATE_INVOICE)
+    public ResponseEntity<MessageResponse<OpenLockInvoiceResponse>> createInvoice(
+            @RequestBody @Valid CreateInvoiceRequest request
+    ) {
+        var dto = invoiceSaveService.create(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new MessageResponse<>(
+                        SUCCESS_TITLE,
+                        simpleMessage("sales.invoice.created"),
+                        new OpenLockInvoiceResponse(invoiceMapper.dtoToResponse(dto), true)
+                ));
+    }
+
+    @PutMapping("/{invoice_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.UPDATE_INVOICE)
+    public ResponseEntity<MessageResponse<InvoiceResponse>> updateInvoice(
+            @PathVariable("invoice_id") UUID invoiceId,
+            @RequestBody @Valid UpdateInvoiceRequest request
+    ) {
+        var dto = invoiceSaveService.update(invoiceId, request);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("sales.invoice.updated"),
+                invoiceMapper.dtoToResponse(dto)
+        ));
+    }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)

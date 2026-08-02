@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.common.util.controllers;
 
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
+import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.util.models.enums.BaseEnum;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
@@ -15,6 +16,7 @@ import com.itradingsolutions.itex.api.common.util.models.enums.UnitType;
 import com.itradingsolutions.itex.api.common.util.models.responses.EnumItem;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
+import com.itradingsolutions.itex.api.ip.po.service.IIpPurchaseOrderService;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.products.services.IIpProductService;
 import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
@@ -30,6 +32,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceChargeT
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceTaxType;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceLockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -83,6 +86,8 @@ public class UtilController extends CommonController {
     private final IIpProductService ipProductService;
     private final IIpQuoteRequestService quoteRequestService;
     private final IpQuotationService quotationService;
+    private final IIpPurchaseOrderService purchaseOrderService;
+    private final IInvoiceLockService invoiceLockService;
 
     @DeleteMapping("/action/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -109,6 +114,13 @@ public class UtilController extends CommonController {
             log.info("Unlocking IP Quotations by {}", auth.getName());
             var listQuotations = quotationService.listAllOpenIpQuotation(auth.getName());
             listQuotations.forEach(q -> quotationService.unlockIpQuotation(q.getId()));
+
+            log.info("Unlocking IP Purchase Orders by {}", auth.getName());
+            var listPurchaseOrders = purchaseOrderService.listAllOpenByUser(auth.getName());
+            purchaseOrderService.batchUnlock(listPurchaseOrders.stream().map(BaseDTO::getId).toList());
+
+            log.info("Unlocking Invoices by {}", auth.getName());
+            invoiceLockService.closeAllOpenByUser(auth.getName());
 
             log.info("Unlocking all items end.");
         }).start();

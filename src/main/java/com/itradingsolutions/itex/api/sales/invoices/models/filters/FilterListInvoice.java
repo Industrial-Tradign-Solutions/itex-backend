@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.sales.invoices.models.filters;
 
+import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.models.enums.FilterDate;
 import com.itradingsolutions.itex.api.common.util.models.filter.BaseFilter;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
@@ -28,7 +29,7 @@ public class FilterListInvoice extends BaseFilter<InvoiceEntity> {
     private String remarks;
     private InvoiceStatus status;
     private UUID salesRepId;
-    private String department;
+    private ConsecutiveDepartment department;
     private Boolean overdue;
     private ZonedDateTime initDueAt;
     private ZonedDateTime endDueAt;
@@ -63,7 +64,7 @@ public class FilterListInvoice extends BaseFilter<InvoiceEntity> {
         if (getSalesRepId() != null)
             spec = spec.and(hasSalesRepId());
 
-        if (getDepartment() != null && !getDepartment().isBlank())
+        if (getDepartment() != null)
             spec = spec.and(hasDepartment());
 
         if (getOverdue() != null)

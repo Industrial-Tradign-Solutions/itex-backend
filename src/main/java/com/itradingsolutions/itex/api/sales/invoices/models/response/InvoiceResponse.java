@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.sales.invoices.models.response;
 
 import com.itradingsolutions.itex.api.admin.user.models.responses.BasicUserResponse;
+import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.models.responses.BaseResponse;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
@@ -9,6 +10,7 @@ import com.itradingsolutions.itex.api.masters.location.models.responses.CityResp
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientContactResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,7 +32,7 @@ public class InvoiceResponse extends BaseResponse {
     private String draftNumber;
     private String number;
     private String name;
-    private String department;
+    private ConsecutiveDepartment department;
     private InvoiceStatus status;
     private Currency currency;
     private ClientResponse client;
@@ -42,7 +44,7 @@ public class InvoiceResponse extends BaseResponse {
     private String shipToContactName;
     private String shipToEmail;
     private String orderNumber;
-    private String via;
+    private InvoiceVia via;
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
     private String awbBl;

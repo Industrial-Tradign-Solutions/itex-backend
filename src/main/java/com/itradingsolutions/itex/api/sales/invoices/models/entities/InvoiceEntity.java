@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.sales.invoices.models.entities;
 
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
+import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.models.entities.BaseEntity;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
@@ -10,6 +11,7 @@ import com.itradingsolutions.itex.api.masters.location.models.entities.CityEntit
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientContactEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,8 +53,9 @@ public class InvoiceEntity extends BaseEntity {
     @Column(name = "number", unique = true)
     private Long number;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "department", nullable = false, length = 3)
-    private String department;
+    private ConsecutiveDepartment department;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -80,27 +83,28 @@ public class InvoiceEntity extends BaseEntity {
     @JoinColumn(name = "ship_to_city", nullable = false)
     private CityEntity shipToCity;
 
-    @Column(name = "ship_to_phone", nullable = false, length = 20)
+    @Column(name = "ship_to_phone", nullable = false, length = 50)
     private String shipToPhone;
 
-    @Column(name = "ship_to_contact_name", nullable = false, length = 50)
+    @Column(name = "ship_to_contact_name", nullable = false, length = 255)
     private String shipToContactName;
 
-    @Column(name = "ship_to_email", nullable = false, length = 100)
+    @Column(name = "ship_to_email", nullable = false, length = 150)
     private String shipToEmail;
 
     @Column(name = "order_number", length = 100)
     private String orderNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "via", length = 10)
-    private String via;
+    private InvoiceVia via;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "incoterms", nullable = false, length = 20)
     private Incoterms incoterms;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_terms", length = 40)
+    @Column(name = "payment_terms", nullable = false, length = 40)
     private PaymentTerms paymentTerms;
 
     @Column(name = "awb_bl", length = 100)

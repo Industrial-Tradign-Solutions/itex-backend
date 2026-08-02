@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.sales.invoices.models.dto;
 
 import com.itradingsolutions.itex.api.admin.user.models.dto.UserDTO;
+import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
@@ -9,6 +10,7 @@ import com.itradingsolutions.itex.api.masters.location.models.dto.CityDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,7 +28,7 @@ public class InvoiceDTO extends BaseDTO {
 
     private Long draftNumber;
     private Long number;
-    private String department;
+    private ConsecutiveDepartment department;
     private InvoiceStatus status;
     private Currency currency;
     private ClientDTO client;
@@ -38,7 +40,7 @@ public class InvoiceDTO extends BaseDTO {
     private String shipToContactName;
     private String shipToEmail;
     private String orderNumber;
-    private String via;
+    private InvoiceVia via;
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
     private String awbBl;
@@ -92,6 +94,16 @@ public class InvoiceDTO extends BaseDTO {
     public void setOrderNumber(String orderNumber) {
         if (orderNumber != null)
             this.orderNumber = orderNumber.trim();
+    }
+
+    public void setAwbBl(String awbBl) {
+        if (awbBl != null)
+            this.awbBl = awbBl.trim();
+    }
+
+    public void setPackingList(String packingList) {
+        if (packingList != null)
+            this.packingList = packingList.trim();
     }
 
     public void setRemarks(String remarks) {

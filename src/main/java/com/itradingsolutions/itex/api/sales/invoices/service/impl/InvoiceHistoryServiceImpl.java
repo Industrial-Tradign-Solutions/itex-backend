@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.sales.invoices.service.impl;
 
 import com.itradingsolutions.itex.api.admin.user.models.dto.UserDTO;
+import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.service.impl.HistoryServiceImpl;
@@ -23,6 +24,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceChargeT
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceHistoryAction;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceTaxType;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceHistoryMapper;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceHistoryRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryService;
@@ -192,7 +194,7 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
         Map<String, Object> changes = new HashMap<>();
 
         List<String> simpleFields = Arrays.asList(
-            "orderNumber", "via", "awbBl", "remarks", "internalRemarks",
+            "orderNumber", "awbBl", "remarks", "internalRemarks",
             "packingList", "shipToName", "shipToAddress", "shipToPhone",
             "shipToContactName", "shipToEmail", "pdfUrl"
         );
@@ -215,6 +217,14 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
         putIfChanged(changes, "paymentTerms",
             safeGet(oldDto.getPaymentTerms(), PaymentTerms::getName),
             safeGet(newDto.getPaymentTerms(), PaymentTerms::getName)
+        );
+        putIfChanged(changes, "via",
+            safeGet(oldDto.getVia(), InvoiceVia::getName),
+            safeGet(newDto.getVia(), InvoiceVia::getName)
+        );
+        putIfChanged(changes, "department",
+            safeGet(oldDto.getDepartment(), ConsecutiveDepartment::getName),
+            safeGet(newDto.getDepartment(), ConsecutiveDepartment::getName)
         );
 
         if (oldDto.isOverdue() != newDto.isOverdue()) {

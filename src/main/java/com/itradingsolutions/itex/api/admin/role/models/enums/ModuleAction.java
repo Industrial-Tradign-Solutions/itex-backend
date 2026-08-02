@@ -108,6 +108,7 @@ public enum ModuleAction {
     REVERT_INVOICE_TO_DRAFT (5001011L, ModuleOption.INVOICES, "Revert Invoice to Draft"),
     VOID_PAYMENT_INVOICE (5001012L, ModuleOption.INVOICES, "Void Payment Invoices"),
     VIEW_ALL_INVOICE (5001013L, ModuleOption.INVOICES, "View All Invoices"),
+    CHANGE_SALES_REP_INVOICE (5001014L, ModuleOption.INVOICES, "Change Sales Rep Invoices"),
     ;
     private final Long id;
     private final ModuleOption moduleOption;

@@ -58,6 +58,8 @@ INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_a
 VALUES (5001012, 'Void Payment Invoices', 'Allows you to void a registered payment on an Invoice', 5001, true, now());
 INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
 VALUES (5001013, 'View All Invoices', 'Allows you to view and edit all Invoices, regardless of assigned sales rep', 5001, true, now());
+INSERT INTO t_actions (id, name, description, menu_item_id, is_active, created_at)
+VALUES (5001014, 'Change Sales Rep Invoices', 'Allows you to reassign the Sales Rep of an Invoice', 5001, true, now());
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 
 CREATE TABLE t_invoices (
@@ -72,13 +74,13 @@ CREATE TABLE t_invoices (
     ship_to_name            VARCHAR(300)    NOT NULL,
     ship_to_address         VARCHAR(500)    NOT NULL,
     ship_to_city            UUID            NOT NULL    REFERENCES t_cities(id),
-    ship_to_phone           VARCHAR(20)     NOT NULL,
-    ship_to_contact_name    VARCHAR(50)     NOT NULL,
-    ship_to_email           VARCHAR(100)    NOT NULL,
+    ship_to_phone           VARCHAR(50)     NOT NULL,   -- full formatted phone: +57 (300) 123-4567 ext. 1234
+    ship_to_contact_name    VARCHAR(255)    NOT NULL,   -- matches t_clients_contacts.name
+    ship_to_email           VARCHAR(150)    NOT NULL,   -- matches t_clients_contacts.email
     order_number            VARCHAR(100),
     via                     VARCHAR(10),
     incoterms               VARCHAR(20)     NOT NULL,
-    payment_terms           VARCHAR(40),
+    payment_terms           VARCHAR(40)     NOT NULL,
     awb_bl                  VARCHAR(100),
     sales_rep_id            uuid            not null    references t_users,
     remarks                 TEXT,

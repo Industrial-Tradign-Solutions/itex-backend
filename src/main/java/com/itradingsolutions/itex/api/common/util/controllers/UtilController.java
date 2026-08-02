@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.common.util.controllers;
 
+import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.util.models.enums.BaseEnum;
@@ -28,6 +29,7 @@ import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierServi
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceChargeType;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceTaxType;
+import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -71,6 +73,8 @@ public class UtilController extends CommonController {
         response.add(getItem("invoice_status", getKeyValueList(InvoiceStatus.class)));
         response.add(getItem("invoice_tax_type", getKeyValueList(InvoiceTaxType.class)));
         response.add(getItem("invoice_charge_type", getKeyValueList(InvoiceChargeType.class)));
+        response.add(getItem("invoice_via", getKeyValueList(InvoiceVia.class)));
+        response.add(getItem("department", getKeyValueList(ConsecutiveDepartment.class)));
         return ResponseEntity.ok(response);
     }
 

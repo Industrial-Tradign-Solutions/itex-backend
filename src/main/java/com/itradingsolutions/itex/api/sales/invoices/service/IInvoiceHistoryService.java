@@ -5,6 +5,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceHistoryDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoicePaymentDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceProductDTO;
+import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoicePurchaseOrderDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceTaxDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceHistoryAction;
 
@@ -18,5 +19,6 @@ public interface IInvoiceHistoryService {
     void addHistoryCharge(InvoiceHistoryAction action, InvoiceChargeDTO oldDto, InvoiceChargeDTO newDto, UUID invoiceId);
     void addHistoryTax(InvoiceHistoryAction action, InvoiceTaxDTO oldDto, InvoiceTaxDTO newDto, UUID invoiceId);
     void addHistoryPayment(InvoiceHistoryAction action, InvoicePaymentDTO oldDto, InvoicePaymentDTO newDto, UUID invoiceId);
+    void addHistoryPurchaseOrder(InvoiceHistoryAction action, InvoicePurchaseOrderDTO oldDto, InvoicePurchaseOrderDTO newDto, UUID invoiceId);
     List<InvoiceHistoryDTO> getHistoryById(UUID invoiceId);
 }

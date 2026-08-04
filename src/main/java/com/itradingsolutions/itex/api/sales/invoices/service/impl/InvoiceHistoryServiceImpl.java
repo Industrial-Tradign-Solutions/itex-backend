@@ -18,6 +18,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceHistoryDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoicePaymentDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceProductDTO;
+import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoicePurchaseOrderDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceTaxDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceHistoryEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceChargeType;
@@ -92,6 +93,16 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
         var entity = new InvoiceHistoryEntity();
         entity.setInvoice(invoiceId);
         entity.setData(resolveHistoryPaymentData(action, oldDto, newDto));
+        addHistoryCommon(action, entity);
+    }
+
+    @Override
+    @Transactional
+    public void addHistoryPurchaseOrder(InvoiceHistoryAction action, InvoicePurchaseOrderDTO oldDto, InvoicePurchaseOrderDTO newDto, UUID invoiceId) {
+        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
+        var entity = new InvoiceHistoryEntity();
+        entity.setInvoice(invoiceId);
+        entity.setData(resolveHistoryPurchaseOrderData(action, oldDto, newDto));
         addHistoryCommon(action, entity);
     }
 
@@ -175,6 +186,14 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
                 validateNotNull(oldDto, "oldDto must not be null for UPDATE_TAX");
                 yield getValidateChangesTax(oldDto, newDto);
             }
+            default -> throw new BadRequestException("Invalid action");
+        };
+    }
+
+    private Map<String, Object> resolveHistoryPurchaseOrderData(InvoiceHistoryAction action, InvoicePurchaseOrderDTO oldDto, InvoicePurchaseOrderDTO newDto) {
+        return switch (action) {
+            case ADD_PURCHASE_ORDER -> convertToMap(newDto, true, true);
+            case REMOVE_PURCHASE_ORDER -> convertToMap(oldDto, true, true);
             default -> throw new BadRequestException("Invalid action");
         };
     }

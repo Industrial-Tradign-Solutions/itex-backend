@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.sales.invoices.models.mapper;
 
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceProductDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceIpProductEntity;
+import com.itradingsolutions.itex.api.sales.invoices.models.request.InvoiceProductRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -16,4 +17,7 @@ public interface InvoiceProductMapper {
     @Mapping(target = "product.openBy", ignore = true)
     @Mapping(target = "product.openAt", ignore = true)
     InvoiceProductDTO entityToDTO(InvoiceIpProductEntity entity);
+
+    // productId is written through InvoiceProductDTO.setProductId, which builds the stub product.
+    InvoiceProductDTO requestToDTO(InvoiceProductRequest request);
 }

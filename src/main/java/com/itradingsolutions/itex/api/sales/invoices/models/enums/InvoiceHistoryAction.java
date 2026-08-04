@@ -16,6 +16,8 @@ public enum InvoiceHistoryAction {
     ADD_TAX,
     REMOVE_TAX,
     UPDATE_TAX,
+    ADD_PURCHASE_ORDER,
+    REMOVE_PURCHASE_ORDER,
     REGISTER_PAYMENT,
     VOID_PAYMENT
 }

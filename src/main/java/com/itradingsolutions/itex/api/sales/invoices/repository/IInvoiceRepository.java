@@ -52,9 +52,10 @@ public interface IInvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, 
     // Detail read: every ManyToOne in one query, deliberately no collections (would collide with
     // salesRep/openBy user department bags via MultipleBagFetchException). Contact phones and user
     // departments resolve as a few extra selects, acceptable because this targets a single invoice.
+    @Query("SELECT i FROM InvoiceEntity i WHERE i.id = :id")
     @EntityGraph(attributePaths = {"client", "client.city", "clientContact", "shipToCity",
             "shipToCity.state", "salesRep", "openBy"})
-    Optional<InvoiceEntity> fetchDetailById(UUID id);
+    Optional<InvoiceEntity> fetchDetailById(@Param("id") UUID id);
 
     @Query("SELECT COUNT(i.id) FROM InvoiceEntity i WHERE i.openBy.id = ?1")
     int countByOpenUserId(UUID userId);

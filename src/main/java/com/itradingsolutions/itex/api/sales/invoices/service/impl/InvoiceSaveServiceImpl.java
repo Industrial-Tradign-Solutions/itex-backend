@@ -109,6 +109,7 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
     public InvoiceDTO update(UUID id, UpdateInvoiceRequest request) {
         var invoice = findById(id);
         accessGuard.assertCanAccess(invoice);
+        accessGuard.assertCanMutate(invoice);
         mutationGuard.assertEditable(invoice);
         mutationGuard.assertLockedByCurrentUser(invoice);
 

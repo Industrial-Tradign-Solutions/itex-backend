@@ -45,6 +45,10 @@ public class InvoiceLockServiceImpl extends UtilServiceAbs implements IInvoiceLo
         if (type != OpenAndLockType.EDIT)
             return new InvoiceLockResult(detailResolver.resolve(invoice), true);
 
+        // VIEW_ALL_INVOICE expands visibility but not write access: only the assigned sales rep
+        // may acquire an EDIT lock.
+        guard.assertCanMutate(invoice);
+
         if (!LOCKABLE_STATUSES.contains(invoice.getStatus()))
             return new InvoiceLockResult(detailResolver.resolve(invoice), false);
 

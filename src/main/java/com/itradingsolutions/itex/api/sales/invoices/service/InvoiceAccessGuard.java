@@ -47,4 +47,15 @@ public class InvoiceAccessGuard extends UtilServiceAbs {
         if (invoice.getSalesRep() == null || !invoice.getSalesRep().getId().equals(userId))
             throw new InvoiceAccessDeniedException(simpleMessage("sales.invoice.access-denied"));
     }
+
+    /**
+     * Mutations (open-lock EDIT, update header, child add/edit/delete) are only allowed to the
+     * assigned sales rep. {@link #assertCanAccess} already gates visibility; this narrows it further
+     * so VIEW_ALL_INVOICE does not accidentally grant write access to foreign invoices.
+     */
+    public void assertCanMutate(InvoiceEntity invoice) {
+        var userId = userService.getUserAuthenticated().getId();
+        if (invoice.getSalesRep() == null || !invoice.getSalesRep().getId().equals(userId))
+            throw new InvoiceAccessDeniedException(simpleMessage("sales.invoice.access-denied"));
+    }
 }

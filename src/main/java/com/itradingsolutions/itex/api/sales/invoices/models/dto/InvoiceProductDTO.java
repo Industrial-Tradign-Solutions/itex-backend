@@ -29,10 +29,19 @@ public class InvoiceProductDTO extends BaseDTO {
     private BigDecimal profitMargin = BigDecimal.ZERO;
     private ProductCondition condition;
 
+    /**
+     * Billed line total. {@code unitPrice} is the raw cost dragged from the Quote Request and
+     * {@code profitMargin} the margin dragged from the Quotation; the selling price is recomputed
+     * here once as {@code cost * (1 + margin)} so the margin is never applied twice — what was
+     * quoted is what gets invoiced. Mirrors {@code IpQuotationProductDTO.getSellingExtendedPrice}.
+     */
     public BigDecimal getExtendedPrice() {
         if (quantity == null || unitPrice == null)
             return BigDecimal.ZERO;
-        return quantity.multiply(unitPrice).setScale(5, RoundingMode.HALF_UP);
+        var margin = profitMargin != null ? profitMargin : BigDecimal.ZERO;
+        return quantity.multiply(unitPrice)
+                .multiply(BigDecimal.ONE.add(margin))
+                .setScale(5, RoundingMode.HALF_UP);
     }
 
     public void setUnitType(String unitType) {

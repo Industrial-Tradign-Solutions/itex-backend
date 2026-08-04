@@ -35,6 +35,14 @@ public class InvoiceAmountCalculator {
         return productsTotal(invoice).add(chargesTotal(invoice)).add(taxesTotal(invoice)).setScale(SCALE, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Single recalculation point (guide §5/§8): every product/charge/tax mutation calls this before
+     * saving, so the persisted {@code total_amount} snapshot never drifts from the line items.
+     */
+    public void applyTotals(InvoiceEntity invoice) {
+        invoice.setTotalAmount(totalAmount(invoice));
+    }
+
     public BigDecimal productsTotal(InvoiceEntity invoice) {
         return Optional.ofNullable(invoice.getProducts())
                 .orElseGet(Collections::emptyList).stream()
@@ -59,7 +67,16 @@ public class InvoiceAmountCalculator {
                 .setScale(SCALE, RoundingMode.HALF_UP);
     }
 
+    /**
+     * {@code unitPrice} is the raw cost and {@code profitMargin} the margin; the billed selling
+     * price is recomputed once as {@code cost * (1 + margin)} — the margin is never applied twice
+     * (matches {@code InvoiceProductDTO.getExtendedPrice}).
+     */
     private BigDecimal lineSubtotal(InvoiceIpProductEntity product) {
-        return product.getQuantity().multiply(product.getUnitPrice()).setScale(SCALE, RoundingMode.HALF_UP);
+        var margin = product.getProfitMargin() != null ? product.getProfitMargin() : BigDecimal.ZERO;
+        return product.getQuantity()
+                .multiply(product.getUnitPrice())
+                .multiply(BigDecimal.ONE.add(margin))
+                .setScale(SCALE, RoundingMode.HALF_UP);
     }
 }

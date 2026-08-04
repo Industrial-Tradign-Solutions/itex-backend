@@ -7,10 +7,10 @@ import com.itradingsolutions.itex.api.sales.invoices.exceptions.InvoiceMaxOpenEx
 import com.itradingsolutions.itex.api.sales.invoices.exceptions.NotExistInvoiceException;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
-import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceMapper;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceLockService;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAccessGuard;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceDetailResolver;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceLockResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class InvoiceLockServiceImpl extends UtilServiceAbs implements IInvoiceLo
     private final IInvoiceRepository repository;
     private final IUserService userService;
     private final InvoiceAccessGuard guard;
-    private final InvoiceMapper mapper;
+    private final InvoiceDetailResolver detailResolver;
 
     @Override
     @Transactional
@@ -43,10 +43,10 @@ public class InvoiceLockServiceImpl extends UtilServiceAbs implements IInvoiceLo
         guard.assertCanAccess(invoice);
 
         if (type != OpenAndLockType.EDIT)
-            return new InvoiceLockResult(mapper.entityToDTO(invoice), true);
+            return new InvoiceLockResult(detailResolver.resolve(invoice), true);
 
         if (!LOCKABLE_STATUSES.contains(invoice.getStatus()))
-            return new InvoiceLockResult(mapper.entityToDTO(invoice), false);
+            return new InvoiceLockResult(detailResolver.resolve(invoice), false);
 
         var user = userService.getUserAuthenticated();
         if (invoice.getOpenBy() == null)
@@ -58,7 +58,7 @@ public class InvoiceLockServiceImpl extends UtilServiceAbs implements IInvoiceLo
         boolean isValidOpen = acquired == 1
                 || (current.getOpenBy() != null && current.getOpenBy().getId().equals(user.getId()));
 
-        return new InvoiceLockResult(mapper.entityToDTO(current), isValidOpen);
+        return new InvoiceLockResult(detailResolver.resolve(current), isValidOpen);
     }
 
     @Override

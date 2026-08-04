@@ -17,7 +17,11 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -61,6 +65,32 @@ public class InvoiceDTO extends BaseDTO {
     private String pdfUrl;
     private ZonedDateTime openAt;
     private UserDTO openBy;
+
+    private List<InvoiceProductDTO> products;
+    private List<InvoiceChargeDTO> charges;
+    private List<InvoiceTaxDTO> taxes;
+    private List<InvoicePurchaseOrderDTO> linkedPurchaseOrders;
+
+    public BigDecimal getProductsTotal() {
+        return Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()
+                .map(InvoiceProductDTO::getExtendedPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(5, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal getChargesTotal() {
+        return Optional.ofNullable(charges).orElseGet(Collections::emptyList).stream()
+                .map(InvoiceChargeDTO::getValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(5, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal getTaxesTotal() {
+        return Optional.ofNullable(taxes).orElseGet(Collections::emptyList).stream()
+                .map(InvoiceTaxDTO::getValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(5, RoundingMode.HALF_UP);
+    }
 
     public String getName() {
         return number != null ? number.toString() : draftNumber != null ? draftNumber.toString() : null;

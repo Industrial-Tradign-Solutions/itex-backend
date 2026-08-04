@@ -29,6 +29,7 @@ import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryServ
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceSaveService;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAccessGuard;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceClientValidator;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceDetailResolver;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceMutationGuard;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceShipToResolver;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceShipToSnapshot;
@@ -53,6 +54,7 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
     private final InvoiceMutationGuard mutationGuard;
     private final InvoiceClientValidator clientValidator;
     private final InvoiceShipToResolver shipToResolver;
+    private final InvoiceDetailResolver detailResolver;
     private final ISalesConsecutiveService salesConsecutiveService;
     private final IInvoiceHistoryService invoiceHistoryService;
     private final IUserService userService;
@@ -97,7 +99,7 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
 
         applyFreeFields(invoice, mapper.createRequestToDTO(request));
 
-        var dto = mapper.entityToDTO(repository.save(invoice));
+        var dto = detailResolver.resolve(repository.save(invoice));
         invoiceHistoryService.addHistory(InvoiceHistoryAction.CREATE, null, dto);
         return dto;
     }
@@ -123,7 +125,7 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
         applyPaymentTerms(invoice, request, user);
         applySalesRep(invoice, request, user);
 
-        var newDto = mapper.entityToDTO(repository.save(invoice));
+        var newDto = detailResolver.resolve(repository.save(invoice));
         invoiceHistoryService.addHistory(InvoiceHistoryAction.UPDATE, oldDto, newDto);
         return newDto;
     }

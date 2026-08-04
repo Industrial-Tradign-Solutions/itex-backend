@@ -19,6 +19,12 @@ import java.util.Optional;
  * <p>Taxes whose taxable base should be recomputed from products/charges before the grand total
  * (guide §5, last sentence) are intentionally not implemented — guide §13 marks that rule as
  * pending definition with the business. {@code tax.getValue()} is summed as-is.</p>
+ *
+ * <p>{@link #productsTotal} sums {@code invoice.getProducts()}, which today is only ever the IP
+ * line items (department-scoped product sourcing lives in {@link InvoiceDepartmentDetailResolver}
+ * / {@code InvoiceIpDetailResolver}). Once a second department persists its lines somewhere other
+ * than {@code t_invoice_ip_products}, this method needs to go through the same per-department
+ * resolver instead of reading the entity's {@code products} association directly.</p>
  */
 @Component
 public class InvoiceAmountCalculator {

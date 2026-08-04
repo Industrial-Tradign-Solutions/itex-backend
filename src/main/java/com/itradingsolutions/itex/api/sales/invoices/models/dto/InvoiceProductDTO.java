@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 @Getter
@@ -27,6 +28,12 @@ public class InvoiceProductDTO extends BaseDTO {
     private BigDecimal unitPrice = BigDecimal.ZERO;
     private BigDecimal profitMargin = BigDecimal.ZERO;
     private ProductCondition condition;
+
+    public BigDecimal getExtendedPrice() {
+        if (quantity == null || unitPrice == null)
+            return BigDecimal.ZERO;
+        return quantity.multiply(unitPrice).setScale(5, RoundingMode.HALF_UP);
+    }
 
     public void setUnitType(String unitType) {
         if (unitType != null)

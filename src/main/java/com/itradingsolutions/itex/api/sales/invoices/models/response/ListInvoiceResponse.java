@@ -2,7 +2,6 @@ package com.itradingsolutions.itex.api.sales.invoices.models.response;
 
 import com.itradingsolutions.itex.api.admin.user.models.responses.BasicUserResponse;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
-import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
 
 import java.math.BigDecimal;
@@ -14,7 +13,7 @@ public record ListInvoiceResponse(
         String draftNumber,
         String number,
         String name,
-        ClientResponse client,
+        InvoiceClientResponse client,
         BasicUserResponse salesRep,
         InvoiceStatus status,
         Currency currency,

@@ -9,6 +9,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceMapper
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceQueryService;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAccessGuard;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceDetailResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ public class InvoiceQueryServiceImpl extends UtilServiceAbs implements IInvoiceQ
     private final IInvoiceRepository repository;
     private final InvoiceMapper mapper;
     private final InvoiceAccessGuard guard;
+    private final InvoiceDetailResolver detailResolver;
 
     @Override
     @Transactional(readOnly = true)
@@ -44,7 +46,9 @@ public class InvoiceQueryServiceImpl extends UtilServiceAbs implements IInvoiceQ
     @Override
     @Transactional(readOnly = true)
     public InvoiceDTO findById(UUID id) {
-        return mapper.entityToDTO(findEntityById(id));
+        var invoice = repository.fetchDetailById(id)
+                .orElseThrow(() -> new NotExistInvoiceException(simpleMessage("sales.invoice.not-exist")));
+        return detailResolver.resolve(invoice);
     }
 
     @Override

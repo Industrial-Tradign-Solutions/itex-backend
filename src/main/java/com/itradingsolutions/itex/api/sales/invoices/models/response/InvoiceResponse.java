@@ -6,9 +6,9 @@ import com.itradingsolutions.itex.api.common.models.responses.BaseResponse;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
+import com.itradingsolutions.itex.api.ip.po.models.response.BasicIpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.masters.location.models.responses.CityResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientContactResponse;
-import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import lombok.AllArgsConstructor;
@@ -20,6 +20,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,7 +36,7 @@ public class InvoiceResponse extends BaseResponse {
     private ConsecutiveDepartment department;
     private InvoiceStatus status;
     private Currency currency;
-    private ClientResponse client;
+    private InvoiceClientResponse client;
     private ClientContactResponse clientContact;
     private String shipToName;
     private String shipToAddress;
@@ -66,4 +67,12 @@ public class InvoiceResponse extends BaseResponse {
     private String pdfUrl;
     private ZonedDateTime openAt;
     private BasicUserResponse openBy;
+
+    private List<InvoiceProductResponse> products;
+    private List<InvoiceChargeResponse> charges;
+    private List<InvoiceTaxResponse> taxes;
+    private List<BasicIpPurchaseOrderResponse> linkedPurchaseOrders;
+    private BigDecimal productsTotal;
+    private BigDecimal chargesTotal;
+    private BigDecimal taxesTotal;
 }

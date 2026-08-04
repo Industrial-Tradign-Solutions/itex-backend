@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.ip.po.service;
 
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
+import com.itradingsolutions.itex.api.ip.po.models.entities.IpPurchaseOrderEntity;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
@@ -31,6 +32,12 @@ public interface IIpPurchaseOrderService {
     void autoRejectOldCreatedIpPurchaseOrders();
 
     IpPurchaseOrderDTO findById(UUID id);
+
+    /**
+     * Managed entity accessor for sibling modules (e.g. the Invoice module resolves the FK of a
+     * PO link through here, never through the PO repository — CLAUDE.md cross-module rule).
+     */
+    IpPurchaseOrderEntity findEntityById(UUID id);
 
     IpPurchaseOrderDTO cloneIpPurchaseOrder(UUID id);
 

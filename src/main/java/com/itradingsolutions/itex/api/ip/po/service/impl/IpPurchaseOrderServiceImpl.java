@@ -537,7 +537,8 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
         return consecutiveService.generateConsecutive(CONSECUTIVE_MODULE, CONSECUTIVE_DEPARTMENT, clientCode);
     }
 
-    private IpPurchaseOrderEntity findEntityById(UUID id) {
+    @Override
+    public IpPurchaseOrderEntity findEntityById(UUID id) {
         return repository.findById(id).orElseThrow(
                 () -> new NotExistIpPurchaseOrderException(simpleMessage("ip.po.not-exist")));
     }

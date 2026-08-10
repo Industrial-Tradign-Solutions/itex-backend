@@ -9,7 +9,9 @@ public enum JasperReport {
     IP_Q_EN("IP/Q/IP_Q_EN.jasper"),
     IP_Q_ES("IP/Q/IP_Q_ES.jasper"),
     IP_PO_EN("IP/PO/IP_PO_EN.jasper"),
-    IP_PO_ES("IP/PO/IP_PO_ES.jasper")
+    IP_PO_ES("IP/PO/IP_PO_ES.jasper"),
+    IP_INV_EN("IP/INV/IP_INV_EN.jasper"),
+    IP_INV_ES("IP/INV/IP_INV_ES.jasper")
     ;
 
     private final String path;

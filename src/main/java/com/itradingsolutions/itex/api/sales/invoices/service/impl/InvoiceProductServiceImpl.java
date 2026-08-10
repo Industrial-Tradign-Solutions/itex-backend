@@ -16,10 +16,8 @@ import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceProduc
 import com.itradingsolutions.itex.api.sales.invoices.models.request.ImportInvoiceProductsRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.request.InvoiceProductRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.AvailablePoProductResponse;
-import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceProductService;
-import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAmountCalculator;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceChildMutationSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,37 +30,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoiceProductService {
 
+    private static final String NOT_EXIST_KEY = "sales.invoice.product.not-exist";
+
     private final InvoiceChildMutationSupport support;
-    private final IInvoiceRepository repository;
     private final InvoiceProductMapper mapper;
-    private final InvoiceAmountCalculator calculator;
     private final IInvoiceHistoryService historyService;
     private final IIpProductService productService;
     private final IIpPurchaseOrderService purchaseOrderService;
 
     @Override
     @Transactional
-    public InvoiceProductDTO add(UUID invoiceId, InvoiceProductRequest request) {
+    public InvoiceProductDTO create(UUID invoiceId, InvoiceProductRequest request) {
         var invoice = support.loadEditable(invoiceId);
         assertProductNotPresent(invoice, request.productId(), null);
 
-        var dto = mapper.requestToDTO(request);
         var entity = new InvoiceIpProductEntity();
         entity.setInvoice(invoice);
         entity.setProduct(productService.getProductById(request.productId()));
         entity.setNumber(nextNumber(invoice));
-        applyLineFields(entity, dto);
+        applyLineFields(entity, mapper.requestToDTO(request));
         invoice.getProducts().add(entity);
 
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        support.saveWithTotals(invoice);
 
         var savedDto = mapper.entityToDTO(entity);
         historyService.addHistoryProduct(InvoiceHistoryAction.ADD_PRODUCT, null, savedDto, invoiceId);
@@ -73,17 +68,15 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
     @Transactional
     public InvoiceProductDTO update(UUID invoiceId, UUID productId, InvoiceProductRequest request) {
         var invoice = support.loadEditable(invoiceId);
-        var entity = findChild(invoice, productId);
+        var entity = support.findChild(invoice.getProducts(), productId, NOT_EXIST_KEY);
         assertProductNotPresent(invoice, request.productId(), productId);
 
         var oldDto = mapper.entityToDTO(entity);
-        var dto = mapper.requestToDTO(request);
         if (!entity.getProduct().getId().equals(request.productId()))
             entity.setProduct(productService.getProductById(request.productId()));
-        applyLineFields(entity, dto);
+        applyLineFields(entity, mapper.requestToDTO(request));
 
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        support.saveWithTotals(invoice);
 
         var newDto = mapper.entityToDTO(entity);
         historyService.addHistoryProduct(InvoiceHistoryAction.UPDATE_PRODUCT, oldDto, newDto, invoiceId);
@@ -94,13 +87,11 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
     @Transactional
     public void remove(UUID invoiceId, UUID productId) {
         var invoice = support.loadEditable(invoiceId);
-        var entity = findChild(invoice, productId);
+        var entity = support.findChild(invoice.getProducts(), productId, NOT_EXIST_KEY);
         var oldDto = mapper.entityToDTO(entity);
 
-        invoice.getProducts().removeIf(p -> p.getId().equals(productId));
-
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        invoice.getProducts().remove(entity);
+        support.saveWithTotals(invoice);
 
         historyService.addHistoryProduct(InvoiceHistoryAction.REMOVE_PRODUCT, oldDto, null, invoiceId);
     }
@@ -109,7 +100,7 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
     @Transactional(readOnly = true)
     public InvoiceProductDTO get(UUID invoiceId, UUID productId) {
         var invoice = support.loadReadable(invoiceId);
-        return mapper.entityToDTO(findChild(invoice, productId));
+        return mapper.entityToDTO(support.findChild(invoice.getProducts(), productId, NOT_EXIST_KEY));
     }
 
     @Override
@@ -146,8 +137,7 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
             added.add(entity);
         }
 
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        support.saveWithTotals(invoice);
 
         var results = new ArrayList<InvoiceProductDTO>();
         for (var entity : added) {
@@ -233,13 +223,6 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
                 .anyMatch(p -> p.getProduct().getId().equals(productId));
         if (duplicate)
             throw new BadRequestException(simpleMessage("sales.invoice.product.exist"));
-    }
-
-    private InvoiceIpProductEntity findChild(InvoiceEntity invoice, UUID productId) {
-        return invoice.getProducts().stream()
-                .filter(p -> p.getId().equals(productId))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(simpleMessage("sales.invoice.product.not-exist")));
     }
 
     private int nextNumber(InvoiceEntity invoice) {

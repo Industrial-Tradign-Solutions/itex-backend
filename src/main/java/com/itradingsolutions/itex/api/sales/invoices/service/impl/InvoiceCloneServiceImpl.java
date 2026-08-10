@@ -5,8 +5,6 @@ import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.api.common.salesconsecutive.models.enums.SalesConsecutiveType;
 import com.itradingsolutions.itex.api.common.salesconsecutive.services.ISalesConsecutiveService;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
-import com.itradingsolutions.itex.api.sales.invoices.exceptions.InvoiceMaxOpenException;
-import com.itradingsolutions.itex.api.sales.invoices.exceptions.NotExistInvoiceException;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceChargeEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceClonedEntity;
@@ -22,8 +20,10 @@ import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceIpPoRepo
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceCloneService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceLockService;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAccessGuard;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAmountCalculator;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,20 +46,22 @@ public class InvoiceCloneServiceImpl extends UtilServiceAbs implements IInvoiceC
     private final IInvoiceClonedRepository clonedRepository;
     private final IInvoiceIpPoRepository linkedPoRepository;
     private final InvoiceMapper mapper;
-    private final InvoiceAccessGuard guard;
+    private final InvoiceAccessGuard accessGuard;
     private final InvoiceAmountCalculator calculator;
+    private final InvoiceFinder finder;
     private final IUserService userService;
     private final ISalesConsecutiveService salesConsecutiveService;
-    private final IInvoiceHistoryService invoiceHistoryService;
+    private final IInvoiceHistoryService historyService;
+    private final IInvoiceLockService lockService;
 
     @Override
     @Transactional
     public InvoiceDTO clone(UUID id) {
-        var original = findById(id);
-        guard.assertCanAccess(original);
+        var original = finder.findById(id);
+        accessGuard.assertCanAccess(original);
 
         var user = userService.getUserAuthenticated();
-        validateMaxOpen(user.getId());
+        lockService.assertCanOpenAnother(user.getId());
 
         var now = ZonedDateTime.now(zoneId);
         var clone = mapper.clone(original);
@@ -72,7 +74,7 @@ public class InvoiceCloneServiceImpl extends UtilServiceAbs implements IInvoiceC
         cloneChildren(original.getTaxes(), clone.getTaxes(), InvoiceCloneServiceImpl::cloneTax,
                 item -> item.setInvoice(clone));
 
-        clone.setTotalAmount(calculator.totalAmount(clone));
+        calculator.applyTotals(clone);
 
         var savedClone = repository.save(clone);
 
@@ -86,7 +88,7 @@ public class InvoiceCloneServiceImpl extends UtilServiceAbs implements IInvoiceC
 
         var originalDto = mapper.entityToDTO(original);
         var cloneDto = mapper.entityToDTO(savedClone);
-        invoiceHistoryService.addHistory(InvoiceHistoryAction.CLONE, originalDto, cloneDto);
+        historyService.addHistory(InvoiceHistoryAction.CLONE, originalDto, cloneDto);
 
         return cloneDto;
     }
@@ -126,15 +128,6 @@ public class InvoiceCloneServiceImpl extends UtilServiceAbs implements IInvoiceC
                     newLink.setPurchaseOrder(link.getPurchaseOrder());
                     linkedPoRepository.save(newLink);
                 });
-    }
-
-    private void validateMaxOpen(UUID userId) {
-        if (repository.countByOpenUserId(userId) >= maxTabsOpen)
-            throw new InvoiceMaxOpenException(compositeMessage("sales.invoice.not-open-max", new String[]{maxTabsOpen.toString()}));
-    }
-
-    private InvoiceEntity findById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new NotExistInvoiceException(simpleMessage("sales.invoice.not-exist")));
     }
 
     private static <T> void cloneChildren(List<T> source, List<T> target, Function<T, T> cloner, Consumer<T> linker) {

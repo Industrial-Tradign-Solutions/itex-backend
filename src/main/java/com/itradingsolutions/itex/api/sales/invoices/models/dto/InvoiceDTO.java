@@ -9,6 +9,7 @@ import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
 import com.itradingsolutions.itex.api.masters.location.models.dto.CityDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
+import com.itradingsolutions.itex.api.sales.invoices.models.InvoiceMoney;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceStatus;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import lombok.Getter;
@@ -17,7 +18,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -72,28 +72,34 @@ public class InvoiceDTO extends BaseDTO {
     private List<InvoicePurchaseOrderDTO> linkedPurchaseOrders;
 
     public BigDecimal getProductsTotal() {
-        return Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()
+        return InvoiceMoney.scaled(Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()
                 .map(InvoiceProductDTO::getExtendedPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(5, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     public BigDecimal getChargesTotal() {
-        return Optional.ofNullable(charges).orElseGet(Collections::emptyList).stream()
+        return InvoiceMoney.scaled(Optional.ofNullable(charges).orElseGet(Collections::emptyList).stream()
                 .map(InvoiceChargeDTO::getValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(5, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     public BigDecimal getTaxesTotal() {
-        return Optional.ofNullable(taxes).orElseGet(Collections::emptyList).stream()
+        return InvoiceMoney.scaled(Optional.ofNullable(taxes).orElseGet(Collections::emptyList).stream()
                 .map(InvoiceTaxDTO::getValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(5, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     public String getName() {
         return number != null ? number.toString() : draftNumber != null ? draftNumber.toString() : null;
+    }
+
+    /**
+     * Whether the invoice was settled after its due date. Derived rather than stored: {@code dueAt}
+     * and {@code paidAt} both survive the payment, so the fact is already in the row — {@code
+     * isOverdue} is cleared when the money arrives and cannot answer this later.
+     */
+    public boolean isPaidLate() {
+        return paidAt != null && dueAt != null && paidAt.isAfter(dueAt);
     }
 
     public void setShipToName(String shipToName) {

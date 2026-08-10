@@ -44,7 +44,7 @@ public class InvoiceProductController extends CommonController {
             @PathVariable("invoice_id") UUID invoiceId,
             @RequestBody @Valid InvoiceProductRequest request
     ) {
-        var dto = productService.add(invoiceId, request);
+        var dto = productService.create(invoiceId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("sales.invoice.product.added"),

@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.sales.invoices.service;
 
+import com.itradingsolutions.itex.api.sales.invoices.models.InvoiceMoney;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceChargeEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceIpProductEntity;
@@ -7,9 +8,10 @@ import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceTaxE
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Money math for Invoice, per the invoicing guide §5: internal scale is always 5 decimals,
@@ -29,56 +31,46 @@ import java.util.Optional;
 @Component
 public class InvoiceAmountCalculator {
 
-    private static final int SCALE = 5;
-
-    public BigDecimal totalAmount(InvoiceEntity invoice) {
-        return productsTotal(invoice).add(chargesTotal(invoice)).add(taxesTotal(invoice)).setScale(SCALE, RoundingMode.HALF_UP);
-    }
-
     /**
      * Single recalculation point (guide §5/§8): every product/charge/tax mutation calls this before
-     * saving, so the persisted {@code total_amount} snapshot never drifts from the line items.
+     * saving, so the persisted {@code total_amount} snapshot never drifts from the line items. It is
+     * also the only public entry point — the total is written here or nowhere.
      */
     public void applyTotals(InvoiceEntity invoice) {
         invoice.setTotalAmount(totalAmount(invoice));
     }
 
-    public BigDecimal productsTotal(InvoiceEntity invoice) {
-        return Optional.ofNullable(invoice.getProducts())
-                .orElseGet(Collections::emptyList).stream()
-                .map(this::lineSubtotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(SCALE, RoundingMode.HALF_UP);
+    private BigDecimal totalAmount(InvoiceEntity invoice) {
+        return InvoiceMoney.scaled(productsTotal(invoice).add(chargesTotal(invoice)).add(taxesTotal(invoice)));
     }
 
-    public BigDecimal chargesTotal(InvoiceEntity invoice) {
-        return Optional.ofNullable(invoice.getCharges())
-                .orElseGet(Collections::emptyList).stream()
-                .map(InvoiceChargeEntity::getValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(SCALE, RoundingMode.HALF_UP);
+    private BigDecimal productsTotal(InvoiceEntity invoice) {
+        return sum(invoice.getProducts(), this::lineSubtotal);
     }
 
-    public BigDecimal taxesTotal(InvoiceEntity invoice) {
-        return Optional.ofNullable(invoice.getTaxes())
+    private BigDecimal chargesTotal(InvoiceEntity invoice) {
+        return sum(invoice.getCharges(), InvoiceChargeEntity::getValue);
+    }
+
+    private BigDecimal taxesTotal(InvoiceEntity invoice) {
+        return sum(invoice.getTaxes(), InvoiceTaxEntity::getValue);
+    }
+
+    private <T> BigDecimal sum(List<T> items, Function<T, BigDecimal> amount) {
+        return InvoiceMoney.scaled(Optional.ofNullable(items)
                 .orElseGet(Collections::emptyList).stream()
-                .map(InvoiceTaxEntity::getValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(SCALE, RoundingMode.HALF_UP);
+                .map(amount)
+                .map(InvoiceMoney::orZero)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     /**
      * {@code unitPrice} is the raw cost and {@code profitMargin} the margin, stored as a direct
      * percentage (10.00 = 10%); the billed selling price is recomputed once as
      * {@code cost * (1 + margin / 100)} — the margin is never applied twice (matches
-     * {@code InvoiceProductDTO.getExtendedPrice}).
+     * {@code InvoiceProductDTO.getExtendedPrice}, both through {@link InvoiceMoney}).
      */
     private BigDecimal lineSubtotal(InvoiceIpProductEntity product) {
-        var margin = product.getProfitMargin() != null ? product.getProfitMargin() : BigDecimal.ZERO;
-        var marginFactor = BigDecimal.ONE.add(margin.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
-        return product.getQuantity()
-                .multiply(product.getUnitPrice())
-                .multiply(marginFactor)
-                .setScale(SCALE, RoundingMode.HALF_UP);
+        return InvoiceMoney.extendedPrice(product.getQuantity(), product.getUnitPrice(), product.getProfitMargin());
     }
 }

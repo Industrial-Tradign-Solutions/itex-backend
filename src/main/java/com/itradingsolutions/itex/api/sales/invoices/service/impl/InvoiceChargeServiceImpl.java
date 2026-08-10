@@ -1,12 +1,9 @@
 package com.itradingsolutions.itex.api.sales.invoices.service.impl;
 
-import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.po.service.IIpPurchaseOrderService;
-import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceChargeDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceChargeEntity;
-import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceTaxEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceChargeType;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceHistoryAction;
@@ -16,10 +13,8 @@ import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceTaxMap
 import com.itradingsolutions.itex.api.sales.invoices.models.request.ImportInvoiceChargesRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.request.InvoiceChargeRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.AvailablePoChargeResponse;
-import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceChargeService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryService;
-import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAmountCalculator;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceChildMutationSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,12 +32,11 @@ import java.util.UUID;
 public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoiceChargeService {
 
     private static final int DESCRIPTION_MAX = 100;
+    private static final String NOT_EXIST_KEY = "sales.invoice.charge.not-exist";
 
     private final InvoiceChildMutationSupport support;
-    private final IInvoiceRepository repository;
     private final InvoiceChargeMapper mapper;
     private final InvoiceTaxMapper taxMapper;
-    private final InvoiceAmountCalculator calculator;
     private final IInvoiceHistoryService historyService;
     private final IIpPurchaseOrderService purchaseOrderService;
 
@@ -50,17 +44,13 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
     @Transactional
     public InvoiceChargeDTO create(UUID invoiceId, InvoiceChargeRequest request) {
         var invoice = support.loadEditable(invoiceId);
-        var dto = mapper.requestToDTO(request);
 
         var entity = new InvoiceChargeEntity();
         entity.setInvoice(invoice);
-        entity.setDescription(dto.getDescription());
-        entity.setType(dto.getType());
-        entity.setValue(dto.getValue());
+        applyFields(entity, mapper.requestToDTO(request));
         invoice.getCharges().add(entity);
 
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        support.saveWithTotals(invoice);
 
         var savedDto = mapper.entityToDTO(entity);
         historyService.addHistoryCharge(InvoiceHistoryAction.ADD_CHARGE, null, savedDto, invoiceId);
@@ -71,16 +61,11 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
     @Transactional
     public InvoiceChargeDTO update(UUID invoiceId, UUID chargeId, InvoiceChargeRequest request) {
         var invoice = support.loadEditable(invoiceId);
-        var entity = findChild(invoice, chargeId);
+        var entity = support.findChild(invoice.getCharges(), chargeId, NOT_EXIST_KEY);
         var oldDto = mapper.entityToDTO(entity);
 
-        var dto = mapper.requestToDTO(request);
-        entity.setDescription(dto.getDescription());
-        entity.setType(dto.getType());
-        entity.setValue(dto.getValue());
-
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        applyFields(entity, mapper.requestToDTO(request));
+        support.saveWithTotals(invoice);
 
         var newDto = mapper.entityToDTO(entity);
         historyService.addHistoryCharge(InvoiceHistoryAction.UPDATE_CHARGE, oldDto, newDto, invoiceId);
@@ -91,13 +76,11 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
     @Transactional
     public void remove(UUID invoiceId, UUID chargeId) {
         var invoice = support.loadEditable(invoiceId);
-        var entity = findChild(invoice, chargeId);
+        var entity = support.findChild(invoice.getCharges(), chargeId, NOT_EXIST_KEY);
         var oldDto = mapper.entityToDTO(entity);
 
-        invoice.getCharges().removeIf(c -> c.getId().equals(chargeId));
-
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        invoice.getCharges().remove(entity);
+        support.saveWithTotals(invoice);
 
         historyService.addHistoryCharge(InvoiceHistoryAction.REMOVE_CHARGE, oldDto, null, invoiceId);
     }
@@ -106,7 +89,13 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
     @Transactional(readOnly = true)
     public InvoiceChargeDTO get(UUID invoiceId, UUID chargeId) {
         var invoice = support.loadReadable(invoiceId);
-        return mapper.entityToDTO(findChild(invoice, chargeId));
+        return mapper.entityToDTO(support.findChild(invoice.getCharges(), chargeId, NOT_EXIST_KEY));
+    }
+
+    private void applyFields(InvoiceChargeEntity entity, InvoiceChargeDTO dto) {
+        entity.setDescription(dto.getDescription());
+        entity.setType(dto.getType());
+        entity.setValue(dto.getValue());
     }
 
     @Override
@@ -130,7 +119,9 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
         }
 
         // The PO header salesTax has no rate/base of its own; it comes over as a tax row carrying
-        // only its amount (guide decision: salesTax imports as a tax, not a charge).
+        // only its amount (guide decision: salesTax imports as a tax, not a charge). This is the one
+        // place a tax value is not `taxableBase * rate` — editing the row through the tax endpoint
+        // recomputes it from whatever rate and base the user then supplies.
         InvoiceTaxEntity importedTax = null;
         var salesTax = po.getSalesTax();
         if (salesTax != null && salesTax.compareTo(BigDecimal.ZERO) > 0) {
@@ -144,8 +135,7 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
             invoice.getTaxes().add(importedTax);
         }
 
-        calculator.applyTotals(invoice);
-        repository.save(invoice);
+        support.saveWithTotals(invoice);
 
         var results = new ArrayList<InvoiceChargeDTO>();
         for (var entity : addedCharges) {
@@ -199,12 +189,5 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
         if (description == null)
             return "";
         return description.length() > DESCRIPTION_MAX ? description.substring(0, DESCRIPTION_MAX) : description;
-    }
-
-    private InvoiceChargeEntity findChild(InvoiceEntity invoice, UUID chargeId) {
-        return invoice.getCharges().stream()
-                .filter(c -> c.getId().equals(chargeId))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(simpleMessage("sales.invoice.charge.not-exist")));
     }
 }

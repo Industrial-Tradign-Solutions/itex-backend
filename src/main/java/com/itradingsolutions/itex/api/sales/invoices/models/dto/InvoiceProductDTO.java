@@ -4,13 +4,13 @@ import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.ip.products.models.dto.IpProductDTO;
 import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
+import com.itradingsolutions.itex.api.sales.invoices.models.InvoiceMoney;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 @Getter
@@ -37,13 +37,7 @@ public class InvoiceProductDTO extends BaseDTO {
      * what gets invoiced. Mirrors {@code IpQuotationProductDTO.getSellingExtendedPrice}.
      */
     public BigDecimal getExtendedPrice() {
-        if (quantity == null || unitPrice == null)
-            return BigDecimal.ZERO;
-        var margin = profitMargin != null ? profitMargin : BigDecimal.ZERO;
-        var marginFactor = BigDecimal.ONE.add(margin.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
-        return quantity.multiply(unitPrice)
-                .multiply(marginFactor)
-                .setScale(5, RoundingMode.HALF_UP);
+        return InvoiceMoney.extendedPrice(quantity, unitPrice, profitMargin);
     }
 
     public void setUnitType(String unitType) {

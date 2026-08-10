@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Assembles the full {@link InvoiceDTO} — the four collections {@code entityToDTO} deliberately
@@ -32,6 +33,8 @@ public class InvoiceDetailResolver {
     private final IInvoiceTaxRepository taxRepository;
     private final Map<ConsecutiveDepartment, InvoiceDepartmentDetailResolver> resolversByDepartment;
 
+    // Hand-written on purpose (the only one in the module): Spring injects the resolver List and
+    // this constructor indexes it by department, which @RequiredArgsConstructor cannot express.
     public InvoiceDetailResolver(InvoiceMapper mapper, InvoiceChargeMapper chargeMapper, InvoiceTaxMapper taxMapper,
                                   IInvoiceChargeRepository chargeRepository, IInvoiceTaxRepository taxRepository,
                                   List<InvoiceDepartmentDetailResolver> departmentResolvers) {
@@ -41,7 +44,7 @@ public class InvoiceDetailResolver {
         this.chargeRepository = chargeRepository;
         this.taxRepository = taxRepository;
         this.resolversByDepartment = departmentResolvers.stream()
-                .collect(java.util.stream.Collectors.toMap(InvoiceDepartmentDetailResolver::department, Function.identity()));
+                .collect(Collectors.toMap(InvoiceDepartmentDetailResolver::department, Function.identity()));
     }
 
     public InvoiceDTO resolve(InvoiceEntity invoice) {

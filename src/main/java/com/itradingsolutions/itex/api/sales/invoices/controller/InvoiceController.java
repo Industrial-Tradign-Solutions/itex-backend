@@ -7,22 +7,32 @@ import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.filters.FilterListInvoice;
 import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceMapper;
+import com.itradingsolutions.itex.api.sales.invoices.models.request.CancelInvoiceRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.request.CreateInvoiceRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.request.UpdateInvoiceRequest;
+import com.itradingsolutions.itex.api.sales.invoices.models.response.ClientStatementResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.ListInvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.OpenLockInvoiceResponse;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceCloneService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceDeleteService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceLockService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoicePrintService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceQueryService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceSaveService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceStatementService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceStatusService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -38,6 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/sales/invoice")
 @AllArgsConstructor
@@ -47,6 +58,10 @@ public class InvoiceController extends CommonController {
     private final IInvoiceLockService invoiceLockService;
     private final IInvoiceCloneService invoiceCloneService;
     private final IInvoiceSaveService invoiceSaveService;
+    private final IInvoiceStatusService invoiceStatusService;
+    private final IInvoiceDeleteService invoiceDeleteService;
+    private final IInvoicePrintService invoicePrintService;
+    private final IInvoiceStatementService invoiceStatementService;
     private final InvoiceMapper invoiceMapper;
 
     @PostMapping
@@ -139,5 +154,75 @@ public class InvoiceController extends CommonController {
                         simpleMessage("sales.invoice.cloned"),
                         invoiceMapper.dtoToListResponse(resp)
                 ));
+    }
+
+    @PatchMapping("/{invoice_id}/issue")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.ISSUE_INVOICE)
+    public ResponseEntity<MessageResponse<InvoiceResponse>> issueInvoice(@PathVariable("invoice_id") UUID invoiceId) {
+        var dto = invoiceStatusService.issue(invoiceId);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("sales.invoice.issued"),
+                invoiceMapper.dtoToResponse(dto)
+        ));
+    }
+
+    @PatchMapping("/{invoice_id}/revert-to-draft")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.REVERT_INVOICE_TO_DRAFT)
+    public ResponseEntity<MessageResponse<InvoiceResponse>> revertInvoiceToDraft(@PathVariable("invoice_id") UUID invoiceId) {
+        var dto = invoiceStatusService.revertToDraft(invoiceId);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("sales.invoice.reverted"),
+                invoiceMapper.dtoToResponse(dto)
+        ));
+    }
+
+    @PatchMapping("/{invoice_id}/cancel")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.CANCEL_INVOICE)
+    public ResponseEntity<MessageResponse<InvoiceResponse>> cancelInvoice(
+            @PathVariable("invoice_id") UUID invoiceId,
+            @RequestBody @Valid CancelInvoiceRequest request
+    ) {
+        var dto = invoiceStatusService.cancel(invoiceId, request);
+        return ResponseEntity.ok(new MessageResponse<>(
+                SUCCESS_TITLE,
+                simpleMessage("sales.invoice.cancelled"),
+                invoiceMapper.dtoToResponse(dto)
+        ));
+    }
+
+    /**
+     * A draft is rebuilt on every call; an issued invoice always returns the same stored document.
+     */
+    @GetMapping("/print/{invoice_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.VIEW_INVOICE)
+    public ResponseEntity<byte[]> printInvoice(@PathVariable("invoice_id") UUID invoiceId) {
+        var pdfBytes = invoicePrintService.print(invoiceId);
+
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", "invoice_" + invoiceId + ".pdf");
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
+    /** Account statement of a Client: billed, collected, aging of the debt and overdue invoices. */
+    @GetMapping("/statement/{client_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.VIEW_INVOICE)
+    public ResponseEntity<ClientStatementResponse> clientStatement(@PathVariable("client_id") UUID clientId) {
+        return ResponseEntity.ok(invoiceStatementService.statementByClient(clientId));
+    }
+
+    @DeleteMapping("/{invoice_id}")
+    @ResponseStatus(HttpStatus.OK)
+    @AccessToAction(action = ModuleAction.DELETE_INVOICE)
+    public ResponseEntity<MessageResponse<UUID>> deleteInvoice(@PathVariable("invoice_id") UUID invoiceId) {
+        invoiceDeleteService.delete(invoiceId);
+        return ResponseEntity.ok(new MessageResponse<>(SUCCESS_TITLE, simpleMessage("sales.invoice.deleted"), invoiceId));
     }
 }

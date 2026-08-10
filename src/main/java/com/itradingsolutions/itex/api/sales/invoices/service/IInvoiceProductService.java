@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface IInvoiceProductService {
 
-    InvoiceProductDTO add(UUID invoiceId, InvoiceProductRequest request);
+    InvoiceProductDTO create(UUID invoiceId, InvoiceProductRequest request);
 
     InvoiceProductDTO update(UUID invoiceId, UUID productId, InvoiceProductRequest request);
 

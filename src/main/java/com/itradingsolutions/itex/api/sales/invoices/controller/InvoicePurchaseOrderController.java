@@ -50,18 +50,18 @@ public class InvoicePurchaseOrderController extends CommonController {
         ));
     }
 
-    @DeleteMapping("/{ip_po_id}")
+    @DeleteMapping("/{po_id}")
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.UPDATE_INVOICE)
     public ResponseEntity<MessageResponse<UUID>> unlinkPurchaseOrder(
             @PathVariable("invoice_id") UUID invoiceId,
-            @PathVariable("ip_po_id") UUID ipPoId
+            @PathVariable("po_id") UUID poId
     ) {
-        linkedPoService.unlink(invoiceId, ipPoId);
+        linkedPoService.unlink(invoiceId, poId);
         return ResponseEntity.ok(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("sales.invoice.po.unlinked"),
-                ipPoId
+                poId
         ));
     }
 }

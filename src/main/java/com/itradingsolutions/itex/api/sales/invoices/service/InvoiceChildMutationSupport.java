@@ -1,13 +1,14 @@
 package com.itradingsolutions.itex.api.sales.invoices.service;
 
+import com.itradingsolutions.itex.api.common.models.entities.BaseEntity;
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
-import com.itradingsolutions.itex.api.sales.invoices.exceptions.NotExistInvoiceException;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,15 +24,17 @@ import java.util.UUID;
 public class InvoiceChildMutationSupport extends UtilServiceAbs {
 
     private final IInvoiceRepository repository;
+    private final InvoiceFinder finder;
     private final InvoiceAccessGuard accessGuard;
     private final InvoiceMutationGuard mutationGuard;
+    private final InvoiceAmountCalculator calculator;
 
     /**
      * Loads the invoice and runs the full guard block. The returned entity is managed, so mutating
      * its child collections and saving it cascades the change.
      */
     public InvoiceEntity loadEditable(UUID invoiceId) {
-        var invoice = findById(invoiceId);
+        var invoice = finder.findById(invoiceId);
         accessGuard.assertCanAccess(invoice);
         accessGuard.assertCanMutate(invoice);
         mutationGuard.assertEditable(invoice);
@@ -43,9 +46,26 @@ public class InvoiceChildMutationSupport extends UtilServiceAbs {
      * Read-only load with access scoping only (no editable/lock check), for the child GET endpoints.
      */
     public InvoiceEntity loadReadable(UUID invoiceId) {
-        var invoice = findById(invoiceId);
+        var invoice = finder.findById(invoiceId);
         accessGuard.assertCanAccess(invoice);
         return invoice;
+    }
+
+    /**
+     * The closing pair of every child mutation: recompute {@code total_amount} from the current
+     * line items and persist the aggregate.
+     */
+    public void saveWithTotals(InvoiceEntity invoice) {
+        calculator.applyTotals(invoice);
+        repository.save(invoice);
+    }
+
+    /** Locates a child row inside the invoice's own collection, or fails with the given message. */
+    public <T extends BaseEntity> T findChild(Collection<T> children, UUID childId, String messageKey) {
+        return Optional.ofNullable(children).orElseGet(Collections::emptyList).stream()
+                .filter(child -> child.getId().equals(childId))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(simpleMessage(messageKey)));
     }
 
     /**
@@ -58,10 +78,5 @@ public class InvoiceChildMutationSupport extends UtilServiceAbs {
                 .anyMatch(l -> l.getPurchaseOrder().getId().equals(poId));
         if (!linked)
             throw new BadRequestException(simpleMessage("sales.invoice.po.not-linked"));
-    }
-
-    private InvoiceEntity findById(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new NotExistInvoiceException(simpleMessage("sales.invoice.not-exist")));
     }
 }

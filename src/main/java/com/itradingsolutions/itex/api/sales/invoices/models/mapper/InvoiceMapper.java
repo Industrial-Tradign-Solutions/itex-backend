@@ -22,14 +22,14 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-import java.math.BigDecimal;
+import com.itradingsolutions.itex.api.sales.invoices.models.InvoiceNumberFormatter;
+
 import java.util.Collections;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface InvoiceMapper {
 
-    int NUMBER_PAD = 6;
 
     // Kept deliberately light: client.infoByDepartment is ignored so mapping an invoice never
     // walks infoByDepartment -> listContacts -> listPhones, and the four child lists are ignored
@@ -58,6 +58,7 @@ public interface InvoiceMapper {
     @Mapping(target = "productsTotal", expression = "java(dto.getProductsTotal())")
     @Mapping(target = "chargesTotal", expression = "java(dto.getChargesTotal())")
     @Mapping(target = "taxesTotal", expression = "java(dto.getTaxesTotal())")
+    @Mapping(target = "paidLate", expression = "java(dto.isPaidLate())")
     InvoiceResponse dtoToResponse(InvoiceDTO dto);
 
     @Mapping(target = "draftNumber", source = "draftNumber", qualifiedByName = "formatNumber")
@@ -65,6 +66,7 @@ public interface InvoiceMapper {
     @Mapping(target = "name", expression = "java(dto.getName())")
     @Mapping(target = "balanceDue", expression = "java(dto.getTotalAmount().subtract(dto.getPaidAmount()))")
     @Mapping(target = "client", expression = "java(toClientResponse(dto))")
+    @Mapping(target = "paidLate", expression = "java(dto.isPaidLate())")
     ListInvoiceResponse dtoToListResponse(InvoiceDTO dto);
 
     default InvoiceClientResponse toClientResponse(InvoiceDTO dto) {
@@ -141,7 +143,6 @@ public interface InvoiceMapper {
 
     @org.mapstruct.Named("formatNumber")
     static String formatNumber(Long value) {
-        if (value == null) return null;
-        return String.format("%0" + NUMBER_PAD + "d", value);
+        return InvoiceNumberFormatter.format(value);
     }
 }

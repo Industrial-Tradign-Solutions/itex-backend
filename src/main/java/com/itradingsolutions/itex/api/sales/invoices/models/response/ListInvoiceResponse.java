@@ -22,6 +22,7 @@ public record ListInvoiceResponse(
         BigDecimal balanceDue,
         ZonedDateTime dueAt,
         boolean overdue,
+        boolean paidLate,
         ZonedDateTime createdAt
 ) {
 }

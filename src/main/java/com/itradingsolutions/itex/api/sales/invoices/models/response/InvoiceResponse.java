@@ -58,6 +58,7 @@ public class InvoiceResponse extends BaseResponse {
     private BigDecimal balanceDue;
     private ZonedDateTime dueAt;
     private boolean overdue;
+    private boolean paidLate;
     private ZonedDateTime overdueNotifiedAt;
     private ZonedDateTime issuedAt;
     private ZonedDateTime partialPaidAt;

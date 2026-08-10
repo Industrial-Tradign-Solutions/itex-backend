@@ -70,7 +70,7 @@ public class InvoiceEntity extends BaseEntity {
     private ClientEntity client;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_contact_id")
+    @JoinColumn(name = "client_contact_id", nullable = false)
     private ClientContactEntity clientContact;
 
     @Column(name = "ship_to_name", nullable = false, length = 300)

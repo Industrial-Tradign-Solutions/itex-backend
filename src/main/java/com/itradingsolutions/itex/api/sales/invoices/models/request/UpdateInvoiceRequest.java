@@ -21,6 +21,8 @@ public record UpdateInvoiceRequest(
         @NotNull(message = "Client is required")
         UUID clientId,
 
+        // Optional: if omitted, the Client's main active contact (any department) is used.
+        // The invoice always ends up with a contact — it is a required column.
         UUID clientContactId,
 
         @NotNull(message = "Incoterms is required")

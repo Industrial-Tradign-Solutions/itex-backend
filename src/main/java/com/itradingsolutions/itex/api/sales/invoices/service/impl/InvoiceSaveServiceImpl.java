@@ -70,7 +70,7 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
 
         var department = request.department() != null ? request.department() : DEFAULT_DEPARTMENT;
         var client = clientService.findClientById(request.clientId(), true);
-        var contact = resolveContact(client, request.clientContactId(), department);
+        var contact = resolveContact(client, request.clientContactId());
 
         clientValidator.validate(client, contact);
 
@@ -132,20 +132,18 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
     }
 
     /**
-     * A client change resets the contact and re-derives the payment terms, and the new Client must
-     * itself be invoiceable — checked against its department default contact, the same question
-     * {@link #create} asks.
+     * Resolves the contact on every update, not just on a client change: an explicit
+     * {@code clientContactId} always wins, otherwise the Client's main active contact (any
+     * department) is used. The resulting Client + contact pair must be invoiceable, the same
+     * question {@link #create} asks.
      */
     private void applyClientAndContact(InvoiceEntity invoice, UpdateInvoiceRequest request) {
-        if (!invoice.getClient().getId().equals(request.clientId())) {
-            var client = clientService.findClientById(request.clientId(), true);
-            clientValidator.validate(client, shipToResolver.defaultContact(client, invoice.getDepartment()));
-            invoice.setClient(client);
-        }
+        if (!invoice.getClient().getId().equals(request.clientId()))
+            invoice.setClient(clientService.findClientById(request.clientId(), true));
 
-        invoice.setClientContact(request.clientContactId() == null
-                ? null
-                : clientContactService.findById(request.clientContactId(), invoice.getClient().getId()));
+        var contact = resolveContact(invoice.getClient(), request.clientContactId());
+        clientValidator.validate(invoice.getClient(), contact);
+        invoice.setClientContact(contact);
     }
 
     /**
@@ -212,9 +210,9 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
         invoice.setSalesRep(userService.findEntityById(request.salesRepId(), true));
     }
 
-    private ClientContactEntity resolveContact(ClientEntity client, UUID contactId, ConsecutiveDepartment department) {
+    private ClientContactEntity resolveContact(ClientEntity client, UUID contactId) {
         return contactId == null
-                ? shipToResolver.defaultContact(client, department)
+                ? shipToResolver.defaultContact(client)
                 : clientContactService.findById(contactId, client.getId());
     }
 

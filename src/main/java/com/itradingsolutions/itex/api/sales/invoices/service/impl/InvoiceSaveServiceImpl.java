@@ -15,8 +15,7 @@ import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEnt
 import com.itradingsolutions.itex.api.partners.clients.services.IClientContactService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
 import com.itradingsolutions.itex.api.sales.invoices.exceptions.InvoiceAccessDeniedException;
-import com.itradingsolutions.itex.api.sales.invoices.exceptions.InvoiceMaxOpenException;
-import com.itradingsolutions.itex.api.sales.invoices.exceptions.NotExistInvoiceException;
+import com.itradingsolutions.itex.api.sales.invoices.exceptions.InvoiceNotEditableException;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceHistoryAction;
@@ -26,10 +25,12 @@ import com.itradingsolutions.itex.api.sales.invoices.models.request.CreateInvoic
 import com.itradingsolutions.itex.api.sales.invoices.models.request.UpdateInvoiceRequest;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryService;
+import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceLockService;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceSaveService;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAccessGuard;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceClientValidator;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceDetailResolver;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceFinder;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceMutationGuard;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceShipToResolver;
 import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceShipToSnapshot;
@@ -55,8 +56,10 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
     private final InvoiceClientValidator clientValidator;
     private final InvoiceShipToResolver shipToResolver;
     private final InvoiceDetailResolver detailResolver;
+    private final InvoiceFinder finder;
     private final ISalesConsecutiveService salesConsecutiveService;
-    private final IInvoiceHistoryService invoiceHistoryService;
+    private final IInvoiceHistoryService historyService;
+    private final IInvoiceLockService lockService;
     private final IUserService userService;
     private final IClientService clientService;
     private final IClientContactService clientContactService;
@@ -66,7 +69,7 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
     @Transactional
     public InvoiceDTO create(CreateInvoiceRequest request) {
         var user = userService.getUserAuthenticated();
-        validateMaxOpen(user.getId());
+        lockService.assertCanOpenAnother(user.getId());
 
         var department = request.department() != null ? request.department() : DEFAULT_DEPARTMENT;
         var client = clientService.findClientById(request.clientId(), true);
@@ -100,21 +103,33 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
         applyFreeFields(invoice, mapper.createRequestToDTO(request));
 
         var dto = detailResolver.resolve(repository.save(invoice));
-        invoiceHistoryService.addHistory(InvoiceHistoryAction.CREATE, null, dto);
+        historyService.addHistory(InvoiceHistoryAction.CREATE, null, dto);
         return dto;
     }
 
     @Override
     @Transactional
     public InvoiceDTO update(UUID id, UpdateInvoiceRequest request) {
-        var invoice = findById(id);
+        var invoice = finder.findDetailById(id);
         accessGuard.assertCanAccess(invoice);
         accessGuard.assertCanMutate(invoice);
-        mutationGuard.assertEditable(invoice);
+        mutationGuard.assertHeaderEditable(invoice);
         mutationGuard.assertLockedByCurrentUser(invoice);
 
         // Snapshot before mutating: the mapper builds a fresh DTO, so it survives the changes below.
         var oldDto = mapper.entityToDTO(invoice);
+
+        if (invoice.getStatus() == InvoiceStatus.ISSUED)
+            applyRestrictedUpdate(invoice, request);
+        else
+            applyFullUpdate(invoice, request);
+
+        var newDto = detailResolver.resolve(repository.save(invoice));
+        historyService.addHistory(InvoiceHistoryAction.UPDATE, oldDto, newDto);
+        return newDto;
+    }
+
+    private void applyFullUpdate(InvoiceEntity invoice, UpdateInvoiceRequest request) {
         var user = userService.getUserAuthenticated();
 
         applyClientAndContact(invoice, request);
@@ -125,10 +140,40 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
         invoice.setVia(request.via());
         applyPaymentTerms(invoice, request, user);
         applySalesRep(invoice, request, user);
+    }
 
-        var newDto = detailResolver.resolve(repository.save(invoice));
-        invoiceHistoryService.addHistory(InvoiceHistoryAction.UPDATE, oldDto, newDto);
-        return newDto;
+    /**
+     * An issued invoice keeps only its non-financial fields editable (guide §4): internal remarks,
+     * remarks, order number, AWB/BL and packing list. Any attempt to change a financial or
+     * structural field is rejected naming the field, instead of being silently ignored — the
+     * frontend echoes the current values back, so an echo passes and a real change fails loudly.
+     */
+    private void applyRestrictedUpdate(InvoiceEntity invoice, UpdateInvoiceRequest request) {
+        assertUnchanged("clientId", request.clientId(), invoice.getClient().getId());
+        if (request.clientContactId() != null && invoice.getClientContact() != null)
+            assertUnchanged("clientContactId", request.clientContactId(), invoice.getClientContact().getId());
+        assertUnchanged("currency", request.currency(), invoice.getCurrency());
+        assertUnchanged("incoterms", request.incoterms(), invoice.getIncoterms());
+        assertUnchanged("via", request.via(), invoice.getVia());
+        if (request.paymentTerms() != null)
+            assertUnchanged("paymentTerms", request.paymentTerms(), invoice.getPaymentTerms());
+        if (request.salesRepId() != null && invoice.getSalesRep() != null)
+            assertUnchanged("salesRepId", request.salesRepId(), invoice.getSalesRep().getId());
+        if (invoice.getShipToCity() != null)
+            assertUnchanged("shipToCityId", request.shipToCityId(), invoice.getShipToCity().getId());
+        assertUnchanged("shipToName", request.shipToName(), invoice.getShipToName());
+        assertUnchanged("shipToAddress", request.shipToAddress(), invoice.getShipToAddress());
+        assertUnchanged("shipToPhone", request.shipToPhone(), invoice.getShipToPhone());
+        assertUnchanged("shipToContactName", request.shipToContactName(), invoice.getShipToContactName());
+        assertUnchanged("shipToEmail", request.shipToEmail(), invoice.getShipToEmail());
+
+        applyFreeFields(invoice, mapper.updateRequestToDTO(request));
+    }
+
+    private void assertUnchanged(String field, Object requested, Object current) {
+        if (requested != null && !requested.equals(current))
+            throw new InvoiceNotEditableException(
+                    compositeMessage("sales.invoice.issued-restricted-field", new String[]{field}));
     }
 
     /**
@@ -224,12 +269,4 @@ public class InvoiceSaveServiceImpl extends UtilServiceAbs implements IInvoiceSa
         return client.getPaymentTerms() != null ? client.getPaymentTerms() : PaymentTerms.TO_BE_AGREED;
     }
 
-    private void validateMaxOpen(UUID userId) {
-        if (repository.countByOpenUserId(userId) >= maxTabsOpen)
-            throw new InvoiceMaxOpenException(compositeMessage("sales.invoice.not-open-max", new String[]{maxTabsOpen.toString()}));
-    }
-
-    private InvoiceEntity findById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new NotExistInvoiceException(simpleMessage("sales.invoice.not-exist")));
-    }
 }

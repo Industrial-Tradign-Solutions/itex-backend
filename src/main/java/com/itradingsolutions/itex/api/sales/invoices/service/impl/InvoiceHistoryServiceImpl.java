@@ -10,7 +10,6 @@ import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
 import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
-import com.itradingsolutions.itex.api.masters.location.models.dto.CityDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceChargeDTO;
@@ -29,6 +28,8 @@ import com.itradingsolutions.itex.api.sales.invoices.models.enums.InvoiceVia;
 import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceHistoryMapper;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceHistoryRepository;
 import com.itradingsolutions.itex.api.sales.invoices.service.IInvoiceHistoryService;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceAccessGuard;
+import com.itradingsolutions.itex.api.sales.invoices.service.InvoiceFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 @Service
 @RequiredArgsConstructor
@@ -45,75 +47,96 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
 
     private final IInvoiceHistoryRepository repository;
     private final InvoiceHistoryMapper mapper;
+    private final InvoiceFinder finder;
+    private final InvoiceAccessGuard accessGuard;
 
     @Override
     @Transactional
     public void addHistory(InvoiceHistoryAction action, InvoiceDTO oldDto, InvoiceDTO newDto) {
         validateNotNull(newDto, "Data is not null");
-        var entity = new InvoiceHistoryEntity();
-        entity.setInvoice(newDto.getId());
-        entity.setData(resolveHistoryData(action, oldDto, newDto));
-        addHistoryCommon(action, entity);
+        saveHistory(action, newDto.getId(), resolveHistoryData(action, oldDto, newDto));
     }
 
     @Override
     @Transactional
     public void addHistoryProduct(InvoiceHistoryAction action, InvoiceProductDTO oldDto, InvoiceProductDTO newDto, UUID invoiceId) {
-        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
-        var entity = new InvoiceHistoryEntity();
-        entity.setInvoice(invoiceId);
-        entity.setData(resolveHistoryProductData(action, oldDto, newDto));
-        addHistoryCommon(action, entity);
+        saveHistory(action, invoiceId, resolveChildData(action, oldDto, newDto,
+                InvoiceHistoryAction.ADD_PRODUCT, InvoiceHistoryAction.REMOVE_PRODUCT,
+                InvoiceHistoryAction.UPDATE_PRODUCT, this::getValidateChangesProduct));
     }
 
     @Override
     @Transactional
     public void addHistoryCharge(InvoiceHistoryAction action, InvoiceChargeDTO oldDto, InvoiceChargeDTO newDto, UUID invoiceId) {
-        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
-        var entity = new InvoiceHistoryEntity();
-        entity.setInvoice(invoiceId);
-        entity.setData(resolveHistoryChargeData(action, oldDto, newDto));
-        addHistoryCommon(action, entity);
+        saveHistory(action, invoiceId, resolveChildData(action, oldDto, newDto,
+                InvoiceHistoryAction.ADD_CHARGE, InvoiceHistoryAction.REMOVE_CHARGE,
+                InvoiceHistoryAction.UPDATE_CHARGE, this::getValidateChangesCharge));
     }
 
     @Override
     @Transactional
     public void addHistoryTax(InvoiceHistoryAction action, InvoiceTaxDTO oldDto, InvoiceTaxDTO newDto, UUID invoiceId) {
-        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
-        var entity = new InvoiceHistoryEntity();
-        entity.setInvoice(invoiceId);
-        entity.setData(resolveHistoryTaxData(action, oldDto, newDto));
-        addHistoryCommon(action, entity);
+        saveHistory(action, invoiceId, resolveChildData(action, oldDto, newDto,
+                InvoiceHistoryAction.ADD_TAX, InvoiceHistoryAction.REMOVE_TAX,
+                InvoiceHistoryAction.UPDATE_TAX, this::getValidateChangesTax));
     }
 
     @Override
     @Transactional
     public void addHistoryPayment(InvoiceHistoryAction action, InvoicePaymentDTO oldDto, InvoicePaymentDTO newDto, UUID invoiceId) {
-        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
-        var entity = new InvoiceHistoryEntity();
-        entity.setInvoice(invoiceId);
-        entity.setData(resolveHistoryPaymentData(action, oldDto, newDto));
-        addHistoryCommon(action, entity);
+        saveHistory(action, invoiceId, resolveChildData(action, oldDto, newDto,
+                InvoiceHistoryAction.REGISTER_PAYMENT, null,
+                InvoiceHistoryAction.VOID_PAYMENT, this::getValidateChangesPayment));
     }
 
     @Override
     @Transactional
     public void addHistoryPurchaseOrder(InvoiceHistoryAction action, InvoicePurchaseOrderDTO oldDto, InvoicePurchaseOrderDTO newDto, UUID invoiceId) {
-        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
-        var entity = new InvoiceHistoryEntity();
-        entity.setInvoice(invoiceId);
-        entity.setData(resolveHistoryPurchaseOrderData(action, oldDto, newDto));
-        addHistoryCommon(action, entity);
+        saveHistory(action, invoiceId, resolveChildData(action, oldDto, newDto,
+                InvoiceHistoryAction.ADD_PURCHASE_ORDER, InvoiceHistoryAction.REMOVE_PURCHASE_ORDER,
+                null, null));
     }
 
+    /**
+     * Reading the audit trail is scoped the same way as reading the invoice itself (guide §12):
+     * without {@code VIEW_ALL_INVOICE}, only the assigned sales rep sees it. A nonexistent invoice
+     * is a 404, not an empty list.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<InvoiceHistoryDTO> getHistoryById(UUID invoiceId) {
+        accessGuard.assertCanAccess(finder.findById(invoiceId));
         var list = repository.fetchByInvoiceId(invoiceId);
         return list.stream().map(mapper::entityToDTO).toList();
     }
 
-    private void addHistoryCommon(InvoiceHistoryAction action, InvoiceHistoryEntity entity) {
+    /**
+     * Same shape for every child sub-resource: ADD/REGISTER records the whole new DTO, REMOVE the
+     * whole old one, UPDATE/VOID a field diff. Actions the sub-resource does not support arrive as
+     * {@code null} and fall through to the error.
+     */
+    private <T extends BaseDTO> Map<String, Object> resolveChildData(
+            InvoiceHistoryAction action, T oldDto, T newDto,
+            InvoiceHistoryAction addAction, InvoiceHistoryAction removeAction, InvoiceHistoryAction updateAction,
+            BiFunction<T, T, Map<String, Object>> diff
+    ) {
+        validateNotNull(newDto != null ? newDto : oldDto, "Data is not null");
+
+        if (action == addAction)
+            return convertToMap(newDto, true, true);
+        if (action == removeAction)
+            return convertToMap(oldDto, true, true);
+        if (action == updateAction && updateAction != null) {
+            validateNotNull(oldDto, "oldDto must not be null for " + action);
+            return diff.apply(oldDto, newDto);
+        }
+        throw new BadRequestException("Invalid action");
+    }
+
+    private void saveHistory(InvoiceHistoryAction action, UUID invoiceId, Map<String, Object> data) {
+        var entity = new InvoiceHistoryEntity();
+        entity.setInvoice(invoiceId);
+        entity.setData(data);
         entity.setUser(getUserAuthUser());
         entity.setAction(action);
         if (isUpdateAction(action)) {
@@ -149,61 +172,6 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
             case ISSUE, CANCEL, REVERT_TO_DRAFT -> {
                 validateNotNull(oldDto, "oldDto must not be null for " + action);
                 yield getValidateChangesStatus(oldDto, newDto);
-            }
-            default -> throw new BadRequestException("Invalid action");
-        };
-    }
-
-    private Map<String, Object> resolveHistoryProductData(InvoiceHistoryAction action, InvoiceProductDTO oldDto, InvoiceProductDTO newDto) {
-        return switch (action) {
-            case ADD_PRODUCT -> convertToMap(newDto, true, true);
-            case REMOVE_PRODUCT -> convertToMap(oldDto, true, true);
-            case UPDATE_PRODUCT -> {
-                validateNotNull(oldDto, "oldDto must not be null for UPDATE_PRODUCT");
-                yield getValidateChangesProduct(oldDto, newDto);
-            }
-            default -> throw new BadRequestException("Invalid action");
-        };
-    }
-
-    private Map<String, Object> resolveHistoryChargeData(InvoiceHistoryAction action, InvoiceChargeDTO oldDto, InvoiceChargeDTO newDto) {
-        return switch (action) {
-            case ADD_CHARGE -> convertToMap(newDto, true, true);
-            case REMOVE_CHARGE -> convertToMap(oldDto, true, true);
-            case UPDATE_CHARGE -> {
-                validateNotNull(oldDto, "oldDto must not be null for UPDATE_CHARGE");
-                yield getValidateChangesCharge(oldDto, newDto);
-            }
-            default -> throw new BadRequestException("Invalid action");
-        };
-    }
-
-    private Map<String, Object> resolveHistoryTaxData(InvoiceHistoryAction action, InvoiceTaxDTO oldDto, InvoiceTaxDTO newDto) {
-        return switch (action) {
-            case ADD_TAX -> convertToMap(newDto, true, true);
-            case REMOVE_TAX -> convertToMap(oldDto, true, true);
-            case UPDATE_TAX -> {
-                validateNotNull(oldDto, "oldDto must not be null for UPDATE_TAX");
-                yield getValidateChangesTax(oldDto, newDto);
-            }
-            default -> throw new BadRequestException("Invalid action");
-        };
-    }
-
-    private Map<String, Object> resolveHistoryPurchaseOrderData(InvoiceHistoryAction action, InvoicePurchaseOrderDTO oldDto, InvoicePurchaseOrderDTO newDto) {
-        return switch (action) {
-            case ADD_PURCHASE_ORDER -> convertToMap(newDto, true, true);
-            case REMOVE_PURCHASE_ORDER -> convertToMap(oldDto, true, true);
-            default -> throw new BadRequestException("Invalid action");
-        };
-    }
-
-    private Map<String, Object> resolveHistoryPaymentData(InvoiceHistoryAction action, InvoicePaymentDTO oldDto, InvoicePaymentDTO newDto) {
-        return switch (action) {
-            case REGISTER_PAYMENT -> convertToMap(newDto, true, true);
-            case VOID_PAYMENT -> {
-                validateNotNull(oldDto, "oldDto must not be null for VOID_PAYMENT");
-                yield getValidateChangesPayment(oldDto, newDto);
             }
             default -> throw new BadRequestException("Invalid action");
         };
@@ -291,11 +259,14 @@ public class InvoiceHistoryServiceImpl extends HistoryServiceImpl implements IIn
             safeGet(newDto.getStatus(), InvoiceStatus::getName)
         );
 
-        List<String> timestampFields = Arrays.asList(
-            "dueAt", "issuedAt", "cancelledAt", "cancelReason", "overdueNotifiedAt"
+        // Everything a status change is allowed to touch: the number assigned on the first issue,
+        // the totals frozen with it, and the timestamps of each state the invoice went through.
+        List<String> statusFields = Arrays.asList(
+            "number", "totalAmount", "paidAmount", "dueAt", "issuedAt",
+            "partialPaidAt", "paidAt", "cancelledAt", "cancelReason", "overdueNotifiedAt"
         );
 
-        timestampFields.forEach(field ->
+        statusFields.forEach(field ->
             putIfChanged(changes, field, getFieldValue(oldDto, field), getFieldValue(newDto, field))
         );
 

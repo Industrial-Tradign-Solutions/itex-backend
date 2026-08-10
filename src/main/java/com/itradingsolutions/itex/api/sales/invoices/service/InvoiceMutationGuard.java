@@ -21,10 +21,22 @@ public class InvoiceMutationGuard extends UtilServiceAbs {
 
     /**
      * {@code DRAFT} is the only editable status. {@code ISSUED} and {@code PARTIAL_PAID} only
-     * accept payment registration, and {@code PAID}/{@code CANCELLED} are final.
+     * accept payment registration, {@code PAID} only accepts voiding a payment, and
+     * {@code CANCELLED} is final. Status transitions do not go through here — they have their own
+     * matrix in {@link InvoiceTransitionGuard}.
      */
     public void assertEditable(InvoiceEntity invoice) {
         if (invoice.getStatus() != InvoiceStatus.DRAFT)
+            throw new InvoiceNotEditableException(simpleMessage("sales.invoice.not-editable"));
+    }
+
+    /**
+     * Header updates get one status more than line items: an {@code ISSUED} invoice keeps its
+     * non-financial fields editable (guide §4) — the caller is responsible for restricting WHICH
+     * fields when the status is not {@code DRAFT}.
+     */
+    public void assertHeaderEditable(InvoiceEntity invoice) {
+        if (invoice.getStatus() != InvoiceStatus.DRAFT && invoice.getStatus() != InvoiceStatus.ISSUED)
             throw new InvoiceNotEditableException(simpleMessage("sales.invoice.not-editable"));
     }
 

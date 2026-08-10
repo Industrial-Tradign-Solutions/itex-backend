@@ -65,6 +65,23 @@ public class FileServiceImpl extends UtilServiceAbs implements IFileService {
         return path;
     }
 
+    /**
+     * Same layout the generated PDFs use ({@code JasperServiceImpl}): everything under the data
+     * root, partitioned by the caller's folder, so uploads and reports live side by side.
+     */
+    @Override
+    public String saveDataFile(MultipartFile file, String relativeFolder, String fileName) {
+        Path folder = Paths.get(baseDataPath).resolve(relativeFolder);
+        try {
+            Files.createDirectories(folder);
+            Path path = folder.resolve(fileName);
+            file.transferTo(path);
+            return path.toString();
+        } catch (IOException e) {
+            throw new SaveFileException(simpleMessage("file.save.error"), e);
+        }
+    }
+
     @Override
     public void deleteTempFile(Path filePath) {
         try {
@@ -77,5 +94,10 @@ public class FileServiceImpl extends UtilServiceAbs implements IFileService {
     @Override
     public String fileExtension(Path filePath) {
         return getFileExtension(filePath.getFileName().toString());
+    }
+
+    @Override
+    public String fileExtension(String fileName) {
+        return getFileExtension(fileName);
     }
 }

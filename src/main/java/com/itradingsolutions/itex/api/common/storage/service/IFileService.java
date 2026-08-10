@@ -21,5 +21,18 @@ public interface IFileService {
     Path uploadTempFile(MultipartFile file);
     void deleteTempFile(Path filePath);
 
+    /**
+     * Stores a file permanently under the data folder and returns its absolute path.
+     *
+     * @param relativeFolder folder inside the data root, e.g. {@code 2026/08/IP/INV/payments};
+     *                       created if missing
+     * @param fileName       final name including extension; must already be unique, this method
+     *                       overwrites a file of the same name
+     */
+    String saveDataFile(MultipartFile file, String relativeFolder, String fileName);
+
     String fileExtension(Path filePath);
+
+    /** Extension of an uploaded file, lowercase and without the dot. */
+    String fileExtension(String fileName);
 }

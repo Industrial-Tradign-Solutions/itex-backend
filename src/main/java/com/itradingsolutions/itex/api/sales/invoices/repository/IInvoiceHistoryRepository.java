@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.sales.invoices.repository;
 
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceHistoryEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +14,9 @@ public interface IInvoiceHistoryRepository extends JpaRepository<InvoiceHistoryE
 
     @Query("SELECT h FROM InvoiceHistoryEntity h WHERE h.invoice = ?1 ORDER BY h.createdAt DESC")
     List<InvoiceHistoryEntity> fetchByInvoiceId(UUID invoiceId);
+
+    /** {@code invoice_id} is a plain FK column, so audit rows outlive a deleted draft unless removed. */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM InvoiceHistoryEntity h WHERE h.invoice = ?1")
+    void deleteByInvoiceId(UUID invoiceId);
 }

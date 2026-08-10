@@ -15,4 +15,7 @@ public interface IInvoiceIpProductRepository extends JpaRepository<InvoiceIpProd
             "LEFT JOIN FETCH pr.brand LEFT JOIN FETCH pr.coo " +
             "WHERE p.invoice.id = ?1 ORDER BY p.number")
     List<InvoiceIpProductEntity> fetchByInvoiceId(UUID invoiceId);
+
+    // "Has at least one product" check without initializing the invoice's products collection.
+    boolean existsByInvoice_Id(UUID invoiceId);
 }

@@ -190,6 +190,29 @@ create table t_invoice_history (
 CREATE INDEX idx_invoice_history_invoice_created ON t_invoice_history (invoice_id, created_at DESC);
 
 /*----------------------------------------------------------------------------------------------------------------------*/
+/* Indices de acceso. Agregados en la auditoria del modulo (pre-produccion): sin ellos, cada listado, el estado de       */
+/* cuenta, los schedulers nocturnos y toda lectura de hijos por invoice_id hacian sequential scan. PostgreSQL no crea    */
+/* indice automatico para las FK, solo para PK y UNIQUE.                                                                 */
+/*----------------------------------------------------------------------------------------------------------------------*/
+
+-- Listado: filtros por cliente/vendedor/estado y el alcance por sales rep de la guia §12
+CREATE INDEX idx_invoices_client ON t_invoices (client_id);
+CREATE INDEX idx_invoices_sales_rep ON t_invoices (sales_rep_id);
+CREATE INDEX idx_invoices_status ON t_invoices (status);
+-- Orden por defecto del listado paginado
+CREATE INDEX idx_invoices_created_at ON t_invoices (created_at DESC);
+-- Locks: parciales porque solo interesan las filas abiertas o vencidas, una fraccion minima de la tabla
+CREATE INDEX idx_invoices_open_by ON t_invoices (open_by_user_id) WHERE open_by_user_id IS NOT NULL;
+CREATE INDEX idx_invoices_overdue ON t_invoices (is_overdue) WHERE is_overdue = TRUE;
+-- Scheduler de vencidas: barre por due_at + status
+CREATE INDEX idx_invoices_due_at ON t_invoices (due_at) WHERE due_at IS NOT NULL;
+
+-- Hijos: toda lectura es por invoice_id
+CREATE INDEX idx_invoice_payments_invoice ON t_invoice_payments (invoice_id);
+CREATE INDEX idx_invoice_charges_invoice ON t_invoice_charges (invoice_id);
+CREATE INDEX idx_invoice_taxes_invoice ON t_invoice_taxes (invoice_id);
+
+/*----------------------------------------------------------------------------------------------------------------------*/
 /* Consecutivos de factura (mecanismo dedicado e independiente de itex_consecutive).                                     */
 /* DRAFT: secuencia global que reutiliza el menor hueco liberado. FINAL: secuencia global max+1 sin reuso.              */
 /* Los numeros usan BIGINT para un margen amplio.                                                                        */

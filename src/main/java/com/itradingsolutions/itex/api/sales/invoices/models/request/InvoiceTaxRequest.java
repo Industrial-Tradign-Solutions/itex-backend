@@ -9,10 +9,10 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 /**
- * Body of {@code POST}/{@code PUT /sales/invoice/{id}/tax}. Taxes are entered manually: the frontend
- * pre-loads the subtotal for convenience, but {@code rate}, {@code taxableBase} and {@code value}
- * arrive already computed and are persisted as received — the backend does not recompute them nor
- * couple them to the products subtotal.
+ * Body of {@code POST}/{@code PUT /sales/invoice/{id}/tax}. Taxes are entered manually: the taxable
+ * base is the caller's decision — the backend does not couple it to the products subtotal — but the
+ * resulting {@code value} is <strong>not</strong> received, it is computed here as
+ * {@code taxableBase * rate} so the money math stays in one place.
  */
 public record InvoiceTaxRequest(
 
@@ -29,9 +29,5 @@ public record InvoiceTaxRequest(
 
         @NotNull(message = "Taxable base is required")
         @DecimalMin(value = "0", message = "Taxable base cannot be negative")
-        BigDecimal taxableBase,
-
-        @NotNull(message = "Value is required")
-        @DecimalMin(value = "0", message = "Value cannot be negative")
-        BigDecimal value
+        BigDecimal taxableBase
 ) {}

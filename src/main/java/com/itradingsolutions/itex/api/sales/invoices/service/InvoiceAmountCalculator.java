@@ -68,15 +68,17 @@ public class InvoiceAmountCalculator {
     }
 
     /**
-     * {@code unitPrice} is the raw cost and {@code profitMargin} the margin; the billed selling
-     * price is recomputed once as {@code cost * (1 + margin)} — the margin is never applied twice
-     * (matches {@code InvoiceProductDTO.getExtendedPrice}).
+     * {@code unitPrice} is the raw cost and {@code profitMargin} the margin, stored as a direct
+     * percentage (10.00 = 10%); the billed selling price is recomputed once as
+     * {@code cost * (1 + margin / 100)} — the margin is never applied twice (matches
+     * {@code InvoiceProductDTO.getExtendedPrice}).
      */
     private BigDecimal lineSubtotal(InvoiceIpProductEntity product) {
         var margin = product.getProfitMargin() != null ? product.getProfitMargin() : BigDecimal.ZERO;
+        var marginFactor = BigDecimal.ONE.add(margin.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
         return product.getQuantity()
                 .multiply(product.getUnitPrice())
-                .multiply(BigDecimal.ONE.add(margin))
+                .multiply(marginFactor)
                 .setScale(SCALE, RoundingMode.HALF_UP);
     }
 }

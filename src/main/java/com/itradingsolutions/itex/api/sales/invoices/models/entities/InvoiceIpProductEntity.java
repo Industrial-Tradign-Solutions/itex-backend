@@ -58,7 +58,7 @@ public class InvoiceIpProductEntity extends BaseEntity {
     @Column(name = "unit_price", nullable = false, precision = 15, scale = 5)
     private BigDecimal unitPrice;
 
-    @Column(name = "profit_margin", nullable = false, precision = 3, scale = 2)
+    @Column(name = "profit_margin", nullable = false, precision = 5, scale = 2)
     private BigDecimal profitMargin;
 
     @Enumerated(EnumType.STRING)

@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.sales.invoices.models.request;
 
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.ip.products.models.enums.ProductCondition;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,8 +13,9 @@ import java.util.UUID;
 
 /**
  * Body of {@code POST}/{@code PUT /sales/invoice/{id}/product}. {@code unitPrice} is the raw cost
- * and {@code profitMargin} the margin; the billed price is recomputed as {@code cost * (1 + margin)}
- * so the margin is never applied twice (see {@code InvoiceProductDTO.getExtendedPrice}).
+ * and {@code profitMargin} the margin as a direct percentage (10.00 = 10%); the billed price is
+ * recomputed as {@code cost * (1 + margin / 100)} so the margin is never applied twice (see
+ * {@code InvoiceProductDTO.getExtendedPrice}).
  */
 public record InvoiceProductRequest(
 
@@ -37,7 +39,8 @@ public record InvoiceProductRequest(
         BigDecimal unitPrice,
 
         @NotNull(message = "Profit margin is required")
-        @DecimalMin(value = "0", message = "Profit margin cannot be negative")
+        @DecimalMin(value = "0.01", message = "Profit margin must be at least 0.01")
+        @DecimalMax(value = "100", message = "Profit margin cannot exceed 100")
         BigDecimal profitMargin,
 
         @NotNull(message = "Condition is required")

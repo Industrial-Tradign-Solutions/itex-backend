@@ -31,16 +31,18 @@ public class InvoiceProductDTO extends BaseDTO {
 
     /**
      * Billed line total. {@code unitPrice} is the raw cost dragged from the Quote Request and
-     * {@code profitMargin} the margin dragged from the Quotation; the selling price is recomputed
-     * here once as {@code cost * (1 + margin)} so the margin is never applied twice — what was
-     * quoted is what gets invoiced. Mirrors {@code IpQuotationProductDTO.getSellingExtendedPrice}.
+     * {@code profitMargin} the margin dragged from the Quotation, stored as a direct percentage
+     * (10.00 = 10%); the selling price is recomputed here once as
+     * {@code cost * (1 + margin / 100)} so the margin is never applied twice — what was quoted is
+     * what gets invoiced. Mirrors {@code IpQuotationProductDTO.getSellingExtendedPrice}.
      */
     public BigDecimal getExtendedPrice() {
         if (quantity == null || unitPrice == null)
             return BigDecimal.ZERO;
         var margin = profitMargin != null ? profitMargin : BigDecimal.ZERO;
+        var marginFactor = BigDecimal.ONE.add(margin.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
         return quantity.multiply(unitPrice)
-                .multiply(BigDecimal.ONE.add(margin))
+                .multiply(marginFactor)
                 .setScale(5, RoundingMode.HALF_UP);
     }
 

@@ -70,7 +70,7 @@ CREATE TABLE t_invoices (
     status                  VARCHAR(20)     NOT NULL    DEFAULT 'DRAFT',
     currency                VARCHAR(20)     NOT NULL,
     client_id               UUID            NOT NULL    REFERENCES t_clients(id),
-    client_contact_id       UUID                        REFERENCES t_clients_contacts(id),
+    client_contact_id       UUID            NOT NULL    REFERENCES t_clients_contacts(id),
     ship_to_name            VARCHAR(300)    NOT NULL,
     ship_to_address         VARCHAR(500)    NOT NULL,
     ship_to_city            UUID            NOT NULL    REFERENCES t_cities(id),
@@ -153,7 +153,7 @@ CREATE TABLE t_invoice_ip_products(
     lead_time               INT             NOT NULL    DEFAULT 0,
     lead_time_type          VARCHAR(10)     NOT NULL    DEFAULT 'WEEKS',
     unit_price              NUMERIC(15,5)   NOT NULL    DEFAULT 0,
-    profit_margin           NUMERIC(3,2)    NOT NULL    DEFAULT 0,
+    profit_margin           NUMERIC(5,2)    NOT NULL    DEFAULT 0.01    CHECK (profit_margin >= 0.01 AND profit_margin <= 100.00),
     condition               VARCHAR(20)     NOT NULL,
     created_at              TIMESTAMP       NOT NULL
 );
@@ -215,3 +215,15 @@ CREATE TABLE t_sales_consecutive_free (
 -- Este valor se ajusta con un UPDATE simple cuando se defina, sin recompilar.
 INSERT INTO t_sales_consecutive_sequence (type, current_value) VALUES ('DRAFT_INV', 0);
 INSERT INTO t_sales_consecutive_sequence (type, current_value) VALUES ('INV', 999);
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* profit_margin pasa de fraccion (0.10 = 10%) a porcentaje directo (10.00 = 10%), rango 0.01-100.                       */
+/* Se ajusta t_ip_quotation_products aca (no en V2.0.0__Quotations_module.sql) porque ninguno de los dos modulos corre   */
+/* aun en PDN: no hace falta UPDATE de datos existentes, y agrupar el cambio evita una migracion nueva solo para esto.   */
+/* Invoice copia este valor de Quotation tal cual al importar, asi que ambas columnas deben representar lo mismo.        */
+/*----------------------------------------------------------------------------------------------------------------------*/
+ALTER TABLE t_ip_quotation_products DROP CONSTRAINT IF EXISTS t_ip_quotation_products_profit_margin_check;
+ALTER TABLE t_ip_quotation_products ALTER COLUMN profit_margin TYPE NUMERIC(5,2);
+ALTER TABLE t_ip_quotation_products ALTER COLUMN profit_margin SET DEFAULT 0.01;
+ALTER TABLE t_ip_quotation_products ADD CONSTRAINT t_ip_quotation_products_profit_margin_check
+    CHECK (profit_margin >= 0.01 AND profit_margin <= 100.00);

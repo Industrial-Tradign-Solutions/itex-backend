@@ -73,7 +73,7 @@ public class InvoiceDTO extends BaseDTO {
 
     public BigDecimal getProductsTotal() {
         return InvoiceMoney.scaled(Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()
-                .map(InvoiceProductDTO::getExtendedPrice)
+                .map(InvoiceProductDTO::getSellingExtendedPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 

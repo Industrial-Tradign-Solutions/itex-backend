@@ -10,7 +10,7 @@ import java.text.DecimalFormat;
 /**
  * One billed line. {@code unitPrice} on the invoice is the raw cost, so the printed price is the
  * selling price — cost plus margin — and the extended price is what
- * {@code InvoiceProductDTO.getExtendedPrice} already computes.
+ * {@code InvoiceProductDTO.getSellingExtendedPrice} already computes.
  */
 @Getter
 public class InvoiceProductReportDTO {
@@ -36,7 +36,7 @@ public class InvoiceProductReportDTO {
         this.unitType = product.getUnitType() != null ? product.getUnitType() : "";
         this.condition = product.getCondition() != null ? product.getCondition().getName() : "";
         this.unitPrice = quantityFormat.format(InvoiceMoney.sellingUnitPrice(product.getUnitPrice(), product.getProfitMargin()));
-        this.extendedPrice = amountFormat.format(product.getExtendedPrice());
+        this.extendedPrice = amountFormat.format(product.getSellingExtendedPrice());
 
         configProduct(product);
         configDeliveryTime(product);

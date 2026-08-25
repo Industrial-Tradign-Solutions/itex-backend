@@ -82,6 +82,8 @@ public interface InvoiceMapper {
 
     @Mapping(target = "ipProduct", source = "product")
     @Mapping(target = "extendedPrice", expression = "java(dto.getExtendedPrice())")
+    @Mapping(target = "sellingUnitPrice", expression = "java(dto.getSellingUnitPrice())")
+    @Mapping(target = "sellingExtendedPrice", expression = "java(dto.getSellingExtendedPrice())")
     InvoiceProductResponse toProductResponse(InvoiceProductDTO dto);
 
     InvoiceChargeResponse toChargeResponse(InvoiceChargeDTO dto);

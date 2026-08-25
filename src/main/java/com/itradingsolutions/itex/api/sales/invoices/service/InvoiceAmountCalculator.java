@@ -68,7 +68,7 @@ public class InvoiceAmountCalculator {
      * {@code unitPrice} is the raw cost and {@code profitMargin} the margin, stored as a direct
      * percentage (10.00 = 10%); the billed selling price is recomputed once as
      * {@code cost * (1 + margin / 100)} — the margin is never applied twice (matches
-     * {@code InvoiceProductDTO.getExtendedPrice}, both through {@link InvoiceMoney}).
+     * {@code InvoiceProductDTO.getSellingExtendedPrice}, both through {@link InvoiceMoney}).
      */
     private BigDecimal lineSubtotal(InvoiceIpProductEntity product) {
         return InvoiceMoney.extendedPrice(product.getQuantity(), product.getUnitPrice(), product.getProfitMargin());

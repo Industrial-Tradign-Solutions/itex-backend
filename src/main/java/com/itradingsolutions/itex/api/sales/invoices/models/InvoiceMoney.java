@@ -33,6 +33,11 @@ public final class InvoiceMoney {
         return scaled(orZero(unitPrice).multiply(sellingFactor(profitMargin)));
     }
 
+    /** Raw cost of a product line: {@code quantity * unitPrice}, without margin. */
+    public static BigDecimal costExtendedPrice(BigDecimal quantity, BigDecimal unitPrice) {
+        return scaled(orZero(quantity).multiply(orZero(unitPrice)));
+    }
+
     /** Billed amount of a product line: {@code quantity * unitPrice * (1 + margin/100)}. */
     public static BigDecimal extendedPrice(BigDecimal quantity, BigDecimal unitPrice, BigDecimal profitMargin) {
         return scaled(orZero(quantity).multiply(orZero(unitPrice)).multiply(sellingFactor(profitMargin)));

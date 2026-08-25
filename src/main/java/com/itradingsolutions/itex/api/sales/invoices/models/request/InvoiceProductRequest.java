@@ -15,7 +15,7 @@ import java.util.UUID;
  * Body of {@code POST}/{@code PUT /sales/invoice/{id}/product}. {@code unitPrice} is the raw cost
  * and {@code profitMargin} the margin as a direct percentage (10.00 = 10%); the billed price is
  * recomputed as {@code cost * (1 + margin / 100)} so the margin is never applied twice (see
- * {@code InvoiceProductDTO.getExtendedPrice}).
+ * {@code InvoiceProductDTO.getSellingExtendedPrice}).
  */
 public record InvoiceProductRequest(
 

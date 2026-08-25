@@ -29,14 +29,21 @@ public class InvoiceProductDTO extends BaseDTO {
     private BigDecimal profitMargin = BigDecimal.ZERO;
     private ProductCondition condition;
 
-    /**
-     * Billed line total. {@code unitPrice} is the raw cost dragged from the Quote Request and
-     * {@code profitMargin} the margin dragged from the Quotation, stored as a direct percentage
-     * (10.00 = 10%); the selling price is recomputed here once as
-     * {@code cost * (1 + margin / 100)} so the margin is never applied twice — what was quoted is
-     * what gets invoiced. Mirrors {@code IpQuotationProductDTO.getSellingExtendedPrice}.
-     */
+    /** Raw cost of this line: {@code quantity * unitPrice}, without margin. For display only. */
     public BigDecimal getExtendedPrice() {
+        return InvoiceMoney.costExtendedPrice(quantity, unitPrice);
+    }
+
+    /** Selling price of one unit: {@code unitPrice * (1 + profitMargin / 100)}. */
+    public BigDecimal getSellingUnitPrice() {
+        return InvoiceMoney.sellingUnitPrice(unitPrice, profitMargin);
+    }
+
+    /**
+     * Selling total of this line: {@code quantity * sellingUnitPrice}. Used for invoice totals
+     * ({@code productsTotal}) and for display. Mirrors the old {@code getExtendedPrice} formula.
+     */
+    public BigDecimal getSellingExtendedPrice() {
         return InvoiceMoney.extendedPrice(quantity, unitPrice, profitMargin);
     }
 

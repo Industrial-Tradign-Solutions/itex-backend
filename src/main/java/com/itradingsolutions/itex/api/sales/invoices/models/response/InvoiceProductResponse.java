@@ -23,6 +23,8 @@ public record InvoiceProductResponse(
         BigDecimal unitPrice,
         BigDecimal profitMargin,
         ProductCondition condition,
-        BigDecimal extendedPrice
+        BigDecimal extendedPrice,
+        BigDecimal sellingUnitPrice,
+        BigDecimal sellingExtendedPrice
 ) {
 }

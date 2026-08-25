@@ -73,6 +73,8 @@ public class InvoiceResponse extends BaseResponse {
     private List<InvoiceChargeResponse> charges;
     private List<InvoiceTaxResponse> taxes;
     private List<BasicIpPurchaseOrderResponse> linkedPurchaseOrders;
+    private List<InvoiceBasicResponse> clonedInvoices;
+    private InvoiceBasicResponse clonedByInvoice;
     private BigDecimal productsTotal;
     private BigDecimal chargesTotal;
     private BigDecimal taxesTotal;

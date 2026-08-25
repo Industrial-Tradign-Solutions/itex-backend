@@ -7,6 +7,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceCharge
 import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceMapper;
 import com.itradingsolutions.itex.api.sales.invoices.models.mapper.InvoiceTaxMapper;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceChargeRepository;
+import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceClonedRepository;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceTaxRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -31,18 +32,21 @@ public class InvoiceDetailResolver {
     private final InvoiceTaxMapper taxMapper;
     private final IInvoiceChargeRepository chargeRepository;
     private final IInvoiceTaxRepository taxRepository;
+    private final IInvoiceClonedRepository clonedRepository;
     private final Map<ConsecutiveDepartment, InvoiceDepartmentDetailResolver> resolversByDepartment;
 
     // Hand-written on purpose (the only one in the module): Spring injects the resolver List and
     // this constructor indexes it by department, which @RequiredArgsConstructor cannot express.
     public InvoiceDetailResolver(InvoiceMapper mapper, InvoiceChargeMapper chargeMapper, InvoiceTaxMapper taxMapper,
                                   IInvoiceChargeRepository chargeRepository, IInvoiceTaxRepository taxRepository,
+                                  IInvoiceClonedRepository clonedRepository,
                                   List<InvoiceDepartmentDetailResolver> departmentResolvers) {
         this.mapper = mapper;
         this.chargeMapper = chargeMapper;
         this.taxMapper = taxMapper;
         this.chargeRepository = chargeRepository;
         this.taxRepository = taxRepository;
+        this.clonedRepository = clonedRepository;
         this.resolversByDepartment = departmentResolvers.stream()
                 .collect(Collectors.toMap(InvoiceDepartmentDetailResolver::department, Function.identity()));
     }
@@ -63,6 +67,22 @@ public class InvoiceDetailResolver {
                 .map(chargeMapper::entityToDTO).toList());
         dto.setTaxes(taxRepository.findByInvoice_IdOrderByCreatedAt(invoice.getId()).stream()
                 .map(taxMapper::entityToDTO).toList());
+        loadClonedInvoices(invoice, dto);
+        loadClonedByInvoice(invoice, dto);
         return dto;
+    }
+
+    private void loadClonedInvoices(InvoiceEntity entity, InvoiceDTO dto) {
+        var children = entity.getClonedInvoices();
+        if (children != null && !children.isEmpty()) {
+            dto.setClonedInvoices(children.stream()
+                    .map(c -> mapper.entityToDTO(c.getClonedInvoice()))
+                    .toList());
+        }
+    }
+
+    private void loadClonedByInvoice(InvoiceEntity entity, InvoiceDTO dto) {
+        clonedRepository.fetchByClonedId(entity.getId())
+                .ifPresent(cloned -> dto.setClonedByInvoice(mapper.entityToDTO(cloned.getMainInvoice())));
     }
 }

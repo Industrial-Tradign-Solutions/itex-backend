@@ -12,6 +12,7 @@ import com.itradingsolutions.itex.api.sales.invoices.models.dto.InvoiceTaxDTO;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.models.request.CreateInvoiceRequest;
 import com.itradingsolutions.itex.api.sales.invoices.models.request.UpdateInvoiceRequest;
+import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceBasicResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceChargeResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceClientResponse;
 import com.itradingsolutions.itex.api.sales.invoices.models.response.InvoiceProductResponse;
@@ -55,6 +56,8 @@ public interface InvoiceMapper {
     @Mapping(target = "charges", expression = "java(mapChargesResponse(dto))")
     @Mapping(target = "taxes", expression = "java(mapTaxesResponse(dto))")
     @Mapping(target = "linkedPurchaseOrders", expression = "java(mapLinkedPOsResponse(dto))")
+    @Mapping(target = "clonedInvoices", expression = "java(mapClonedInvoicesResponse(dto))")
+    @Mapping(target = "clonedByInvoice", expression = "java(mapClonedByInvoiceResponse(dto))")
     @Mapping(target = "productsTotal", expression = "java(dto.getProductsTotal())")
     @Mapping(target = "chargesTotal", expression = "java(dto.getChargesTotal())")
     @Mapping(target = "taxesTotal", expression = "java(dto.getTaxesTotal())")
@@ -114,6 +117,24 @@ public interface InvoiceMapper {
 
     default BasicIpPurchaseOrderResponse toLinkedPoResponse(InvoicePurchaseOrderDTO po) {
         return new BasicIpPurchaseOrderResponse(po.getId(), po.getNumber());
+    }
+
+    default List<InvoiceBasicResponse> mapClonedInvoicesResponse(InvoiceDTO dto) {
+        if (dto.getClonedInvoices() == null) return Collections.emptyList();
+        return dto.getClonedInvoices().stream()
+                .map(this::toBasicInvoiceResponse)
+                .toList();
+    }
+
+    default InvoiceBasicResponse mapClonedByInvoiceResponse(InvoiceDTO dto) {
+        if (dto.getClonedByInvoice() == null) return null;
+        return toBasicInvoiceResponse(dto.getClonedByInvoice());
+    }
+
+    default InvoiceBasicResponse toBasicInvoiceResponse(InvoiceDTO invoice) {
+        if (invoice == null) return null;
+        String number = formatNumber(invoice.getNumber() != null ? invoice.getNumber() : invoice.getDraftNumber());
+        return new InvoiceBasicResponse(invoice.getId(), number);
     }
 
     @Mapping(target = "id", ignore = true)

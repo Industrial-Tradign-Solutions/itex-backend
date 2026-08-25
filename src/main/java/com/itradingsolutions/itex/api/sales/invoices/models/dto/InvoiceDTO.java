@@ -70,6 +70,8 @@ public class InvoiceDTO extends BaseDTO {
     private List<InvoiceChargeDTO> charges;
     private List<InvoiceTaxDTO> taxes;
     private List<InvoicePurchaseOrderDTO> linkedPurchaseOrders;
+    private List<InvoiceDTO> clonedInvoices;
+    private InvoiceDTO clonedByInvoice;
 
     public BigDecimal getProductsTotal() {
         return InvoiceMoney.scaled(Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()

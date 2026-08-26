@@ -41,6 +41,7 @@ public interface InvoiceMapper {
     @Mapping(target = "charges", ignore = true)
     @Mapping(target = "taxes", ignore = true)
     @Mapping(target = "linkedPurchaseOrders", ignore = true)
+    @Mapping(target = "clonedInvoices", ignore = true)
     InvoiceDTO entityToDTO(InvoiceEntity entity);
 
     InvoiceDTO createRequestToDTO(CreateInvoiceRequest request);

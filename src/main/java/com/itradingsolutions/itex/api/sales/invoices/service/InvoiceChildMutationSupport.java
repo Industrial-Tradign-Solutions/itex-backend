@@ -5,6 +5,8 @@ import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.sales.invoices.models.entities.InvoiceEntity;
 import com.itradingsolutions.itex.api.sales.invoices.repository.IInvoiceRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +24,9 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class InvoiceChildMutationSupport extends UtilServiceAbs {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final IInvoiceRepository repository;
     private final InvoiceFinder finder;
@@ -58,6 +63,16 @@ public class InvoiceChildMutationSupport extends UtilServiceAbs {
     public void saveWithTotals(InvoiceEntity invoice) {
         calculator.applyTotals(invoice);
         repository.save(invoice);
+    }
+
+    /**
+     * Explicitly persists a new child entity so it becomes managed and gets an ID assigned
+     * before any auto-flush triggered by subsequent queries. Without this, the orphan-removal
+     * cascade on the parent's collection fails because it cannot resolve the ID of a
+     * transient child.
+     */
+    public void persist(BaseEntity entity) {
+        entityManager.persist(entity);
     }
 
     /** Locates a child row inside the invoice's own collection, or fails with the given message. */

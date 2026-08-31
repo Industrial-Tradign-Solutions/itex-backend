@@ -48,6 +48,7 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
         var entity = new InvoiceChargeEntity();
         entity.setInvoice(invoice);
         applyFields(entity, mapper.requestToDTO(request));
+        support.persist(entity);
         invoice.getCharges().add(entity);
 
         support.saveWithTotals(invoice);
@@ -114,6 +115,7 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
             entity.setDescription(truncate(view.description()));
             entity.setType(InvoiceChargeType.OTHER);
             entity.setValue(view.value() != null ? view.value() : BigDecimal.ZERO);
+            support.persist(entity);
             invoice.getCharges().add(entity);
             addedCharges.add(entity);
         }
@@ -132,6 +134,7 @@ public class InvoiceChargeServiceImpl extends UtilServiceAbs implements IInvoice
             importedTax.setRate(BigDecimal.ZERO);
             importedTax.setTaxableBase(BigDecimal.ZERO);
             importedTax.setValue(salesTax);
+            support.persist(importedTax);
             invoice.getTaxes().add(importedTax);
         }
 

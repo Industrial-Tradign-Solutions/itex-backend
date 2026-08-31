@@ -34,6 +34,7 @@ public class InvoiceTaxServiceImpl extends UtilServiceAbs implements IInvoiceTax
         var entity = new InvoiceTaxEntity();
         entity.setInvoice(invoice);
         applyFields(entity, mapper.requestToDTO(request));
+        support.persist(entity);
         invoice.getTaxes().add(entity);
 
         support.saveWithTotals(invoice);

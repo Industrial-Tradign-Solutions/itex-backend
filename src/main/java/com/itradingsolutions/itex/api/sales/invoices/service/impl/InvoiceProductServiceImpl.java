@@ -55,6 +55,7 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
         entity.setProduct(productService.getProductById(request.productId()));
         entity.setNumber(nextNumber(invoice));
         applyLineFields(entity, mapper.requestToDTO(request));
+        support.persist(entity);
         invoice.getProducts().add(entity);
 
         support.saveWithTotals(invoice);
@@ -133,6 +134,7 @@ public class InvoiceProductServiceImpl extends UtilServiceAbs implements IInvoic
             entity.setProduct(productService.getProductById(productId));
             entity.setNumber(number++);
             applyImportedFields(entity, quotationProduct, qrProduct);
+            support.persist(entity);
             invoice.getProducts().add(entity);
             added.add(entity);
         }

@@ -73,6 +73,12 @@ public class InvoiceDTO extends BaseDTO {
     private List<InvoiceDTO> clonedInvoices;
     private InvoiceDTO clonedByInvoice;
 
+    public BigDecimal getProductsSubTotal() {
+        return InvoiceMoney.scaled(Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()
+                .map(InvoiceProductDTO::getExtendedPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+    }
+
     public BigDecimal getProductsTotal() {
         return InvoiceMoney.scaled(Optional.ofNullable(products).orElseGet(Collections::emptyList).stream()
                 .map(InvoiceProductDTO::getSellingExtendedPrice)

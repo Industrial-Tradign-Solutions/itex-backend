@@ -136,7 +136,7 @@ public class ClientSchedule {
                     continue;
                 }
                 String deptName = "DEPARTMENT: " + (info.getDepartment() != null ? info.getDepartment().getName() : "Unknown");
-                for (var contact: info.getListContacts()) {
+                for (var contact: info.getListContacts().stream().filter(PartnerContactDTO::isActive).toList()) {
                     String contactName = "CONTACT: " + (contact.getName() != null ? contact.getName() : "No Name");
                     if (contact.getEmail() == null || contact.getEmail().isBlank())
                         errors.add(deptName + " | " + contactName + " | ERROR: Missing email");

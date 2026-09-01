@@ -27,6 +27,5 @@ public interface IClientService {
     ClientDashboardResponse dashboardClients();
 
     List<ClientDTO> listAllByStatus(ClientStatus status);
-    List<ClientDTO> listAllWhitMissingInfo();
     List<ClientDTO> listAllActive();
 }

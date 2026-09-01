@@ -72,7 +72,7 @@ public class ClientSchedule {
      * 1. Notificacion de AccountRep IP
      * */
     //@Scheduled(cron = "0 0 5 * * 3")
-    @Scheduled(cron = "0 32 19 * * *")
+    @Scheduled(cron = "0 42 19 * * *")
     private void sendActiveClientNotification() {
         var listClients = clientService.listAllByStatus(ClientStatus.ACTIVE);
         //sendNotificationClientNotAssignedToAccountRepByDep(listClients, Departments.IP);
@@ -114,10 +114,10 @@ public class ClientSchedule {
         for (var client : clients) {
             List<String> errors = new ArrayList<>();
             if (client.getAddress() == null || client.getAddress().isBlank())
-                errors.add("Falta direccion");
+                errors.add("Missing address");
 
             if (client.getCity() == null)
-                errors.add("Falta Ciudad");
+                errors.add("Missing city");
 
             int notContacts = 0;
             for (var info: client.getInfoByDepartment()) {
@@ -125,26 +125,26 @@ public class ClientSchedule {
                     notContacts++;
                     continue;
                 }
-                String deptName = "DEPARTMENT: " + (info.getDepartment() != null ? info.getDepartment().getName() : "Desconocido");
+                String deptName = "DEPARTMENT: " + (info.getDepartment() != null ? info.getDepartment().getName() : "Unknown");
                 for (var contact: info.getListContacts()) {
-                    String contactName = "CONTAC: " + (contact.getName() != null ? contact.getName() : "Sin Nombre");
+                    String contactName = "CONTACT: " + (contact.getName() != null ? contact.getName() : "No Name");
                     if (contact.getEmail() == null || contact.getEmail().isBlank())
-                        errors.add(deptName + "," + contactName + ", ERROR: Falta el email");
+                        errors.add(deptName + " | " + contactName + " | ERROR: Missing email");
                     if (contact.getListPhones().isEmpty())
-                        errors.add(deptName + "," + contactName + ", ERROR: El contacto no tiene telefonos asociados");
+                        errors.add(deptName + " | " + contactName + " | ERROR: No phone numbers associated");
 
                     for (var phone: contact.getListPhones()) {
                         if (phone.getCountryCode() == null || phone.getCountryCode().isBlank())
-                            errors.add(deptName + "," + contactName + ", PHONE: " + phone.getFullPhone() + ", ERROR: Falta el Country code");
+                            errors.add(deptName + " | " + contactName + " | PHONE: " + phone.getFullPhone() + " | ERROR: Missing country code");
 
                         if (phone.getPhoneNumber() == null || phone.getPhoneNumber().isBlank()) {
-                            errors.add(deptName + "," + contactName + ", PHONE: " + phone.getFullPhone() + ", ERROR: Falta el Numero de telefono");
+                            errors.add(deptName + " | " + contactName + " | PHONE: " + phone.getFullPhone() + " | ERROR: Missing phone number");
                         }
                     }
                 }
             }
             if (notContacts == client.getInfoByDepartment().size())
-                errors.add("El cliente no tiene contactos");
+                errors.add("Client has no contacts");
 
             if (!errors.isEmpty())
                 listMissingInfo.add(new ClientMissingInfo(errors, client));
@@ -268,24 +268,27 @@ public class ClientSchedule {
         for (ClientMissingInfo client : clientMissingInfos) {
             if (client.errors()== null || client.errors().isEmpty()) {
                 clientsTemplate = clientsTemplate
-                        .concat("<li><p style=\"line-height: 140%; text-align: left;\"> ")
+                        .concat("<li style=\"margin-bottom: 12px;\"><p style=\"line-height: 140%; text-align: left; font-size: 15px; color: #1a1a1a; font-weight: bold;\">")
                         .concat(client.client().getCode())
                         .concat(" - ")
                         .concat(client.client().getName())
                         .concat("</p></li>");
             } else {
                 clientsTemplate = clientsTemplate
-                        .concat("<li><p style=\"line-height: 140%; text-align: left;\"> ")
+                        .concat("<li style=\"margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;\"><p style=\"line-height: 140%; text-align: left; font-size: 15px; color: #1a1a1a; font-weight: bold;\">")
                         .concat(client.client().getCode())
                         .concat(" - ")
                         .concat(client.client().getName())
                         .concat("</p>")
-                        .concat("<ul>");
+                        .concat("<ul style=\"margin-top: 6px; padding-left: 20px;\">");
                 for(var error: client.errors()) {
+                    String errorColor = error.contains("PHONE") ? "#e65100" : "#d32f2f";
                     clientsTemplate = clientsTemplate
-                            .concat("<li><p style=\"line-height: 140%; text-align: left;\"> ")
+                            .concat("<li><p style=\"line-height: 140%; text-align: left; font-size: 13px; color: ")
+                            .concat(errorColor)
+                            .concat("; margin-bottom: 4px;\">")
                             .concat(error)
-                            .concat(" </li> ");
+                            .concat("</p></li>");
                 }
                 clientsTemplate = clientsTemplate
                         .concat("</ul></li>");

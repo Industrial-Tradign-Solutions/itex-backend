@@ -8,6 +8,7 @@ import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientMissingI
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
+import com.itradingsolutions.itex.api.partners.common.models.dto.PartnerContactDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 @Component
 @EnableScheduling
@@ -66,12 +68,11 @@ public class ClientSchedule {
             );
     }
 
-
     /*
      * Funcion para notificar errores en los clientes
      * 1. Notificacion de AccountRep IP
      * */
-    @Scheduled(cron = "0 0 5 * * 3")
+    @Scheduled(cron = "0 29 20 * * *")
     private void sendActiveClientNotification() {
         var listClients = clientService.listAllByStatus(ClientStatus.ACTIVE);
         sendNotificationClientNotAssignedToAccountRepByDep(listClients, Departments.IP);
@@ -88,24 +89,26 @@ public class ClientSchedule {
                                 && info.getAccountRep() == null))
                 .map(clientDTO -> new ClientMissingInfo(null, clientDTO))
                 .toList();
-        sendMail(
-            filteredClients,
-            "Notification of clients not assigned to a account rep",
-            "The following customers do not have an assigned account representative for the ".concat(department.getName()).concat(" department:"),
-            sentEmail,
-            sentName
-        );
+        if (!filteredClients.isEmpty())
+            sendMail(
+                filteredClients,
+                "Notification of clients not assigned to a account rep",
+                "The following customers do not have an assigned account representative for the ".concat(department.getName()).concat(" department:"),
+                sentEmail,
+                sentName
+            );
     }
 
     private void sendNotificationClientWhitMissingInfo(List<ClientDTO> clients) {
         var clientsWithMissingInfo = getClientsWhitMissingInfo(clients);
-        sendMail(
-            clientsWithMissingInfo,
-    "Notification of Clients with missing information",
-    "The following clients do not have complete information: ",
-            sentEmail,
-            sentName
-        );
+        if (!clientsWithMissingInfo.isEmpty())
+            sendMail(
+                clientsWithMissingInfo,
+        "Notification of Clients with missing information",
+        "The following clients do not have complete information: ",
+                sentEmail,
+                sentName
+            );
     }
 
     private List<ClientMissingInfo> getClientsWhitMissingInfo(List<ClientDTO> clients) {
@@ -120,7 +123,15 @@ public class ClientSchedule {
 
             int notContacts = 0;
             for (var info: client.getInfoByDepartment()) {
-                if (info.getListContacts() == null) {
+                boolean hasActiveContacts = info.getListContacts() != null &&
+                        info.getListContacts().stream().anyMatch(PartnerContactDTO::isActive);
+
+                if (!hasActiveContacts) {
+                    UUID deptId = (info.getDepartment() != null) ? info.getDepartment().getId() : null;
+
+                    if (Objects.equals(deptId, Departments.IP.getDepartmentId()))
+                        errors.add(Departments.IP.getName() + " require contacts");
+
                     notContacts++;
                     continue;
                 }
@@ -181,11 +192,24 @@ public class ClientSchedule {
                         .concat("</p>")
                         .concat("<ul style=\"margin-top: 6px; padding-left: 20px;\">");
                 for(var error: client.errors()) {
-                    String errorColor = error.contains("PHONE") ? "#e65100" : "#d32f2f";
+                    boolean isRequired = error.contains("require contacts");
+                    String errorColor = isRequired ? "#b71c1c" : error.contains("PHONE") ? "#e65100" : "#d32f2f";
+                    String bgColor = isRequired ? "#ffebee" : "transparent";
+                    String fontWeight = isRequired ? "bold" : "normal";
+                    String padding = isRequired ? "6px 10px" : "0";
+                    String borderRadius = isRequired ? "4px" : "0";
                     clientsTemplate = clientsTemplate
                             .concat("<li><p style=\"line-height: 140%; text-align: left; font-size: 13px; color: ")
                             .concat(errorColor)
-                            .concat("; margin-bottom: 4px;\">")
+                            .concat("; margin-bottom: 4px; font-weight: ")
+                            .concat(fontWeight)
+                            .concat("; background-color: ")
+                            .concat(bgColor)
+                            .concat("; padding: ")
+                            .concat(padding)
+                            .concat("; border-radius: ")
+                            .concat(borderRadius)
+                            .concat(";\">")
                             .concat(error)
                             .concat("</p></li>");
                 }

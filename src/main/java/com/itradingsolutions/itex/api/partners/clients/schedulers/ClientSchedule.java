@@ -72,7 +72,7 @@ public class ClientSchedule {
      * Funcion para notificar errores en los clientes
      * 1. Notificacion de AccountRep IP
      * */
-    @Scheduled(cron = "0 29 20 * * *")
+    @Scheduled(cron = "0 0 5 * * 3")
     private void sendActiveClientNotification() {
         var listClients = clientService.listAllByStatus(ClientStatus.ACTIVE);
         sendNotificationClientNotAssignedToAccountRepByDep(listClients, Departments.IP);

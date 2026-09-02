@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.qr.repositories;
 
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -32,6 +33,13 @@ public interface IIpQuoteRequestProductRepository extends JpaRepository<IpQuoteR
            WHERE p.ipProduct.id = ?1 AND p.ipQuoteRequest.id = ?2
            """)
     boolean existsProductById(UUID productId, UUID qrId);
+
+    @Query("""
+           SELECT p.ipProduct.mfrReference, p.ipProduct.description, p.ipProduct.status
+           FROM IpQuoteRequestProductEntity p
+           WHERE p.ipQuoteRequest.id = ?1 AND p.ipProduct.status <> ?2
+           """)
+    List<Object[]> fetchProductsNotInStatus(UUID qrId, IpProductStatus status);
 
     @Query("""
            SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END

@@ -218,8 +218,11 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
         var product = findById(productId);
         validateSubstitutedProduct(product.getStatus());
         validateOpenProduct(product, userService.getUserAuthenticated());
+        var newProduct = findById(newProductId);
+        if (newProduct.getStatus() != IpProductStatus.ACTIVE)
+            throw new NotReplaceIpProductException(simpleMessage("ip.product.replace-not-active"));
         product.setStatus(IpProductStatus.SUBSTITUTED);
-        product.setSubstituteProduct(findById(newProductId));
+        product.setSubstituteProduct(newProduct);
         return ipProductMapper.entityToDTO(ipProductRepository.save(product));
     }
 

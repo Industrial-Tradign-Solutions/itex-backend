@@ -113,7 +113,6 @@ public class IpQuotationDTO extends BaseDTO {
                 .stream()
                 .map(IpQuotationProductDTO::getGrossWeightLbs)
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

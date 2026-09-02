@@ -12,6 +12,7 @@ import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMappe
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationProductRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationProductService;
+import com.itradingsolutions.itex.api.ip.qr.models.dto.QuoteRequestProductIdProjection;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -55,8 +56,8 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         var idToProductId = qrProductRepository.findProductIdsByIds(uniqueQrProductIds)
                 .stream()
                 .collect(Collectors.toMap(
-                        row -> (UUID) row[0],
-                        row -> (UUID) row[1]
+                        QuoteRequestProductIdProjection::id,
+                        QuoteRequestProductIdProjection::productId
                 ));
 
         if (idToProductId.size() != uniqueQrProductIds.size()) {
@@ -66,7 +67,7 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         // 2.1 Block products in DRAFT status
         var hasDraftProduct = ipProductRepository.fetchStatusByIds(Set.copyOf(idToProductId.values()))
                 .stream()
-                .anyMatch(row -> row[1] == IpProductStatus.DRAFT);
+                .anyMatch(projection -> projection.status() == IpProductStatus.DRAFT);
         if (hasDraftProduct) {
             throw new BadRequestException(simpleMessage("ip.q.product.draft-not-allowed"));
         }

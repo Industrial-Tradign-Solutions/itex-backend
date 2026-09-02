@@ -43,7 +43,7 @@ public class IpQuoteRequestProductDTO extends BaseDTO {
             return BigDecimal.ZERO;
         if (BigDecimal.ZERO.compareTo(this.ipProduct.getNetWeightLbs()) == 0 || BigDecimal.ZERO.compareTo(quantity) == 0)
             return BigDecimal.ZERO;
-        return this.ipProduct.getNetWeightLbs().multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+        return this.ipProduct.getNetWeightLbs().multiply(quantity);
     }
 
     public void setProductId(UUID productId) {

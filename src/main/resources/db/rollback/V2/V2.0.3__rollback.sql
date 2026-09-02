@@ -1,26 +1,3 @@
 DELETE FROM flyway_schema_history WHERE version = '2.0.3';
-DELETE FROM t_actions WHERE menu_item_id = 5001;
-DELETE FROM t_menus WHERE id = 5001;
-DELETE FROM t_menus WHERE id = 5000;
-
-DROP TABLE IF EXISTS t_sales_consecutive_sequence;
-DROP TABLE IF EXISTS t_sales_consecutive_free;
-DROP TABLE IF EXISTS t_invoice_cloned;
-DROP INDEX IF EXISTS idx_invoice_history_invoice_created;
-DROP TABLE IF EXISTS t_invoice_history;
-DROP TABLE IF EXISTS t_invoice_ip_products;
-DROP INDEX IF EXISTS idx_invoice_payments_invoice;
-DROP TABLE IF EXISTS t_invoice_payments;
-DROP INDEX IF EXISTS idx_invoice_taxes_invoice;
-DROP TABLE IF EXISTS t_invoice_taxes;
-DROP INDEX IF EXISTS idx_invoice_charges_invoice;
-DROP TABLE IF EXISTS t_invoice_charges;
-DROP TABLE IF EXISTS t_invoice_ip_po;
-DROP INDEX IF EXISTS idx_invoices_client;
-DROP INDEX IF EXISTS idx_invoices_sales_rep;
-DROP INDEX IF EXISTS idx_invoices_status;
-DROP INDEX IF EXISTS idx_invoices_created_at;
-DROP INDEX IF EXISTS idx_invoices_open_by;
-DROP INDEX IF EXISTS idx_invoices_overdue;
-DROP INDEX IF EXISTS idx_invoices_due_at;
-DROP TABLE IF EXISTS t_invoices;
+-- Reversa la precision de net_weight_lbs de 5 a 3 decimales.
+ALTER TABLE t_ip_products ALTER COLUMN net_weight_lbs TYPE numeric(15,3);

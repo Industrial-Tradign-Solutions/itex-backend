@@ -26,6 +26,7 @@ public class UniqueDB {
     public static final String SUPPLIER_DEPARTMENT_INFO = "supplier_department_unique";
     public static final String SUPPLIER_TAX_ID = "supplier_tax_id_unique";
     public static final String BRAND_NAME = "brand_unique_name";
+    public static final String IP_PRODUCT_MFR_REFERENCE_UNIQUE = "ip_product_mfr_reference_unique";
     public static final String IP_QR_NUMBER = "ip_qr_unique_number";
     public static final String IP_QR_CLONED_ID = "t_ip_quote_requests_cloned_clone_qr_id_unique";
     public static final String IP_QR_PRODUCT_UNIQUE = "t_ip_quote_request_products_unique_product";
@@ -67,6 +68,7 @@ public class UniqueDB {
                 CLIENT_TAX_ID,
                 SUPPLIER_TAX_ID,
                 BRAND_NAME,
+                IP_PRODUCT_MFR_REFERENCE_UNIQUE,
                 IP_QR_NUMBER,
                 IP_QR_CLONED_ID,
                 IP_QR_PRODUCT_UNIQUE,

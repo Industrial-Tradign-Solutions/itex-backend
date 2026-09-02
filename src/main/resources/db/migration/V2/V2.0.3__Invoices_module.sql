@@ -239,14 +239,4 @@ CREATE TABLE t_sales_consecutive_free (
 INSERT INTO t_sales_consecutive_sequence (type, current_value) VALUES ('DRAFT_INV', 0);
 INSERT INTO t_sales_consecutive_sequence (type, current_value) VALUES ('INV', 999);
 
-/*----------------------------------------------------------------------------------------------------------------------*/
-/* profit_margin pasa de fraccion (0.10 = 10%) a porcentaje directo (10.00 = 10%), rango 0.01-100.                       */
-/* Se ajusta t_ip_quotation_products aca (no en V2.0.0__Quotations_module.sql) porque ninguno de los dos modulos corre   */
-/* aun en PDN: no hace falta UPDATE de datos existentes, y agrupar el cambio evita una migracion nueva solo para esto.   */
-/* Invoice copia este valor de Quotation tal cual al importar, asi que ambas columnas deben representar lo mismo.        */
-/*----------------------------------------------------------------------------------------------------------------------*/
-ALTER TABLE t_ip_quotation_products DROP CONSTRAINT IF EXISTS t_ip_quotation_products_profit_margin_check;
-ALTER TABLE t_ip_quotation_products ALTER COLUMN profit_margin TYPE NUMERIC(5,2);
-ALTER TABLE t_ip_quotation_products ALTER COLUMN profit_margin SET DEFAULT 0.01;
-ALTER TABLE t_ip_quotation_products ADD CONSTRAINT t_ip_quotation_products_profit_margin_check
-    CHECK (profit_margin >= 0.01 AND profit_margin <= 100.00);
+

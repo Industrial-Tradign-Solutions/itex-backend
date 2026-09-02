@@ -5,6 +5,7 @@ public enum IpProductHistoryActions {
     UPDATE,
     DISABLE,
     ENABLE,
+    BACK_TO_DRAFT,
     REPLACE,
     ADD_SURPLUS,
     REMOVE_SURPLUS,

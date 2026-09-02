@@ -2,6 +2,8 @@ package com.itradingsolutions.itex.api.ip.q.service.impl;
 
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
+import com.itradingsolutions.itex.api.ip.products.repositories.IIpProductRepository;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QProductExistException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
@@ -31,6 +33,7 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     private final IIpQuotationProductRepository qProductRepository;
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IIpQuoteRequestProductRepository qrProductRepository;
+    private final IIpProductRepository ipProductRepository;
 
     @Override
     @Transactional
@@ -58,6 +61,14 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
 
         if (idToProductId.size() != uniqueQrProductIds.size()) {
             throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
+        }
+
+        // 2.1 Block products in DRAFT status
+        var hasDraftProduct = ipProductRepository.fetchStatusByIds(Set.copyOf(idToProductId.values()))
+                .stream()
+                .anyMatch(row -> row[1] == IpProductStatus.DRAFT);
+        if (hasDraftProduct) {
+            throw new BadRequestException(simpleMessage("ip.q.product.draft-not-allowed"));
         }
 
         // 3. Deduplicate by productId within request (first wins, rest skipped)
@@ -154,10 +165,11 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         entity.setCondition(productRequest.getCondition());
 
         if (productRequest.getQuoteRequestProduct() != null && productRequest.getQuoteRequestProduct().getId() != null) {
-            entity.setQuoteRequestProduct(
-                    qrProductRepository.findById(productRequest.getQuoteRequestProduct().getId())
-                            .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")))
-            );
+            var qrProduct = qrProductRepository.findById(productRequest.getQuoteRequestProduct().getId())
+                    .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
+            if (qrProduct.getIpProduct().getStatus() == IpProductStatus.DRAFT)
+                throw new BadRequestException(simpleMessage("ip.q.product.draft-not-allowed"));
+            entity.setQuoteRequestProduct(qrProduct);
         } else {
             entity.setQuoteRequestProduct(null);
         }

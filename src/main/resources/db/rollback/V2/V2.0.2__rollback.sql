@@ -1,26 +1,12 @@
 DELETE FROM flyway_schema_history WHERE version = '2.0.2';
-DELETE FROM t_actions WHERE menu_item_id = 5001;
-DELETE FROM t_menus WHERE id = 5001;
-DELETE FROM t_menus WHERE id = 5000;
 
-DROP TABLE IF EXISTS t_sales_consecutive_sequence;
-DROP TABLE IF EXISTS t_sales_consecutive_free;
-DROP TABLE IF EXISTS t_invoice_cloned;
-DROP INDEX IF EXISTS idx_invoice_history_invoice_created;
-DROP TABLE IF EXISTS t_invoice_history;
-DROP TABLE IF EXISTS t_invoice_ip_products;
-DROP INDEX IF EXISTS idx_invoice_payments_invoice;
-DROP TABLE IF EXISTS t_invoice_payments;
-DROP INDEX IF EXISTS idx_invoice_taxes_invoice;
-DROP TABLE IF EXISTS t_invoice_taxes;
-DROP INDEX IF EXISTS idx_invoice_charges_invoice;
-DROP TABLE IF EXISTS t_invoice_charges;
-DROP TABLE IF EXISTS t_invoice_ip_po;
-DROP INDEX IF EXISTS idx_invoices_client;
-DROP INDEX IF EXISTS idx_invoices_sales_rep;
-DROP INDEX IF EXISTS idx_invoices_status;
-DROP INDEX IF EXISTS idx_invoices_created_at;
-DROP INDEX IF EXISTS idx_invoices_open_by;
-DROP INDEX IF EXISTS idx_invoices_overdue;
-DROP INDEX IF EXISTS idx_invoices_due_at;
-DROP TABLE IF EXISTS t_invoices;
+-- Products lifecycle rollback
+ALTER TABLE t_ip_products DROP CONSTRAINT IF EXISTS ip_product_mfr_reference_unique;
+ALTER TABLE t_ip_products ALTER COLUMN mfr_reference DROP NOT NULL;
+
+-- Quotations profit_margin rollback (back to fraction 0.00-1.00)
+ALTER TABLE t_ip_quotation_products DROP CONSTRAINT IF EXISTS t_ip_quotation_products_profit_margin_check;
+ALTER TABLE t_ip_quotation_products ALTER COLUMN profit_margin TYPE NUMERIC(3,2);
+ALTER TABLE t_ip_quotation_products ALTER COLUMN profit_margin SET DEFAULT 0.00;
+ALTER TABLE t_ip_quotation_products ADD CONSTRAINT t_ip_quotation_products_profit_margin_check
+    CHECK (profit_margin >= 0.00 AND profit_margin <= 1.00);

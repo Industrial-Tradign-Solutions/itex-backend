@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Comparator;
@@ -93,11 +94,12 @@ public class IpProductDTO extends BaseDTO {
 
     public void setNetWeightLbs(String netWeightLbs) {
         if (netWeightLbs != null && !netWeightLbs.isEmpty())
-            this.netWeightLbs = new BigDecimal(netWeightLbs);
+            this.netWeightLbs = new BigDecimal(netWeightLbs).setScale(5, RoundingMode.HALF_UP);
     }
 
     public void setNetWeightLbs(BigDecimal netWeightLbs) {
-        this.netWeightLbs = netWeightLbs;
+        if (netWeightLbs != null)
+            this.netWeightLbs = netWeightLbs.setScale(5, RoundingMode.HALF_UP);
     }
 
     public void setCooId(UUID cooId) {

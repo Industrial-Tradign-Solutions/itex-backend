@@ -53,7 +53,7 @@ public class IpProductEntity extends BaseEntity {
     @Column(name = "client_reference", length = 100)
     private String clientReference;
 
-    @Column(name = "net_weight_lbs", scale = 3, precision = 15)
+    @Column(name = "net_weight_lbs", scale = 5, precision = 15)
     private BigDecimal netWeightLbs;
 
     @Column(name = "nmfc")

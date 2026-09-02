@@ -16,6 +16,7 @@ import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotExistIpQuoteRequestException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenIpQuoteRequestException;
@@ -48,12 +49,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -398,8 +401,28 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     private void validateStatusRequirements(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
         if (newStatus == IpQuoteRequestStatus.ANSWERED && (!qr.isValidAnswered() || qr.getSentAt() == null))
             throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-answered"));
+        if (newStatus == IpQuoteRequestStatus.ANSWERED) {
+            var notActiveProducts = productRepository.fetchProductsNotInStatus(qr.getId(), IpProductStatus.ACTIVE);
+            if (!notActiveProducts.isEmpty())
+                throw new NotChangeStatusException(compositeMessage(
+                        "ip.qr.products-not-active",
+                        new String[]{formatNotActiveProducts(notActiveProducts)}
+                ));
+        }
         if (newStatus == IpQuoteRequestStatus.COMPLETE && qr.getAnsweredAt() == null)
             throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
+    }
+
+    private static String formatNotActiveProducts(List<Object[]> notActiveProducts) {
+        return notActiveProducts.stream()
+                .map(row -> {
+                    var mfrReference = (String) row[0];
+                    var description = (String) row[1];
+                    var status = ((IpProductStatus) row[2]).name();
+                    var label = StringUtils.hasText(mfrReference) ? mfrReference : description;
+                    return label + " (" + status + ")";
+                })
+                .collect(Collectors.joining(", "));
     }
 
     private void validateTerminalStatus(IpQuoteRequestStatus currentStatus) {

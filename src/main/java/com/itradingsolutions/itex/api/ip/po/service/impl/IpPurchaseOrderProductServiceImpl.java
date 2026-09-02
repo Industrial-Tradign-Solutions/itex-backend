@@ -17,10 +17,12 @@ import com.itradingsolutions.itex.api.ip.po.models.response.EligibleIpPurchaseOr
 import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrderProductRepository;
 import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrderRepository;
 import com.itradingsolutions.itex.api.ip.po.service.IIpPurchaseOrderProductService;
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMapper;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationProductRepository;
+import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -81,13 +83,16 @@ public class IpPurchaseOrderProductServiceImpl extends UtilServiceAbs implements
         var nextNumber = productRepository.findMaxNumberByPurchaseOrderId(poId) + 1;
         var entities = new ArrayList<IpPurchaseOrderProductEntity>();
         for (var quotationProductId : quotationProductIds) {
-            if (!eligibleIds.containsKey(quotationProductId))
+            var qp = eligibleIds.get(quotationProductId);
+            if (qp == null)
                 throw new IpPurchaseOrderProductNotEligibleException(simpleMessage("ip.po.product.not-eligible"));
+            if (isDraftProduct(qp))
+                throw new BadRequestException(simpleMessage("ip.po.product.draft-not-allowed"));
             if (existingIds.contains(quotationProductId)) continue;
 
             var entity = new IpPurchaseOrderProductEntity();
             entity.setPurchaseOrder(po);
-            entity.setQuotationProduct(eligibleIds.get(quotationProductId));
+            entity.setQuotationProduct(qp);
             entity.setNumber(nextNumber++);
             entities.add(entity);
         }
@@ -129,8 +134,16 @@ public class IpPurchaseOrderProductServiceImpl extends UtilServiceAbs implements
                         quotation.getId(), supplier.getId())
                 .stream()
                 .filter(qp -> !existingIds.contains(qp.getId()))
+                .filter(qp -> !isDraftProduct(qp))
                 .map(this::toEligibleResponse)
                 .toList();
+    }
+
+    private boolean isDraftProduct(IpQuotationProductEntity qp) {
+        return Optional.ofNullable(qp.getQuoteRequestProduct())
+                .map(IpQuoteRequestProductEntity::getIpProduct)
+                .map(ipProduct -> ipProduct.getStatus() == IpProductStatus.DRAFT)
+                .orElse(false);
     }
 
     private EligibleIpPurchaseOrderProductResponse toEligibleResponse(IpQuotationProductEntity entity) {

@@ -16,8 +16,7 @@ public class IpProductStatusRule extends UtilServiceAbs {
                 && hasText(dto.getClientDescription())
                 && hasText(dto.getMfrReference())
                 && hasText(dto.getClientReference())
-                && dto.getNetWeightLbs() != null
-                && dto.getFreightClass() != null;
+                && dto.getNetWeightLbs() != null;
     }
 
     public void validateTransition(IpProductStatus currentStatus, IpProductStatus newStatus, IpProductDTO dto) {

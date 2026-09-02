@@ -3,6 +3,7 @@ package com.itradingsolutions.itex.api.ip.products.models.entity;
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.common.models.entities.BaseEntity;
 import com.itradingsolutions.itex.api.common.util.models.enums.FreightClass;
+import com.itradingsolutions.itex.api.common.util.models.enums.UniqueDB;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.masters.brand.models.entities.BrandEntity;
 import com.itradingsolutions.itex.api.masters.location.models.entities.CountryEntity;
@@ -16,6 +17,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,7 +29,9 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "t_ip_products")
+@Table(name = "t_ip_products", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"mfr_reference"}, name = UniqueDB.IP_PRODUCT_MFR_REFERENCE_UNIQUE)
+})
 public class IpProductEntity extends BaseEntity {
 
     @Serial
@@ -43,7 +47,7 @@ public class IpProductEntity extends BaseEntity {
     @Column(name = "client_description", length = 1000)
     private String clientDescription;
 
-    @Column(name = "mfr_reference", length = 100)
+    @Column(name = "mfr_reference", nullable = false, length = 100, unique = true)
     private String mfrReference;
 
     @Column(name = "client_reference", length = 100)

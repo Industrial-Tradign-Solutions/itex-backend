@@ -70,6 +70,7 @@ import org.springframework.transaction.annotation.Transactional;
 import net.sf.jasperreports.engine.JRException;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -192,7 +193,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         entity.setCurrency(request.currency());
         entity.setStatus(IpQuotationStatus.CREATED);
         entity.setCreatedAt(ZonedDateTime.now(zoneId));
-        entity.setApplicationAt(ZonedDateTime.now(zoneId));
+        entity.setApplicationAt(request.applicationAt());
         entity.setSalesRep(userService.getUserAuthenticated());
 
         entity.setLeadTime(0);
@@ -308,6 +309,11 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if (request.incoterms() != null) quotation.setIncoterms(request.incoterms());
         if (request.paymentTerms() != null) quotation.setPaymentTerms(request.paymentTerms());
 
+        if (request.applicationAt() != null
+                && !request.applicationAt().equals(quotation.getApplicationAt())) {
+            quotation.setApplicationAt(request.applicationAt());
+        }
+
         var integrityErrors = IntegrityValidator.validateQuotationIntegrity(quotation);
         if (!integrityErrors.isEmpty()) {
             throw new QuotationIntegrityException(integrityErrors);
@@ -346,6 +352,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
 
         validateNotSameStatus(quotation, newStatus);
         validateTerminalStatus(currentStatus);
+        validateApplicationAtForStatus(quotation, newStatus);
         validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
         validatePurchaseOrderForReject(quotation, newStatus);
 
@@ -372,6 +379,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                 .ifPresent(messageKey -> {
                     throw new NotChangeStatusException(simpleMessage(messageKey));
                 });
+    }
+
+    private void validateApplicationAtForStatus(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if ((newStatus == IpQuotationStatus.SENT || newStatus == IpQuotationStatus.ANSWERED)
+                && quotation.getApplicationAt() == null) {
+            throw new NotChangeStatusException(simpleMessage("ip.q.application-at-required"));
+        }
     }
 
     private StatusTransition<IpQuotationEntity> resolveTransition(IpQuotationStatus currentStatus,
@@ -494,7 +508,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         var cloned = quotationMapper.clone(original);
         cloned.setStatus(IpQuotationStatus.CREATED);
         cloned.setCreatedAt(ZonedDateTime.now(zoneId));
-        cloned.setApplicationAt(ZonedDateTime.now(zoneId));
+        cloned.setApplicationAt(null);
         cloned.setNumber(consecutiveService.generateConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, original.getClient().getCode()));
         
         // Clone QRs and products

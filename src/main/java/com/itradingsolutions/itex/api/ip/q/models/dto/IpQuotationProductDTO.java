@@ -30,7 +30,7 @@ public class IpQuotationProductDTO extends BaseDTO {
         if (profitMargin == null || BigDecimal.ZERO.compareTo(profitMargin) == 0)
             return quoteRequestProduct.getUnitPrice();
         return quoteRequestProduct.getUnitPrice()
-                .multiply(BigDecimal.ONE.add(profitMargin))
+                .multiply(marginFactor())
                 .setScale(5, RoundingMode.HALF_UP);
     }
 
@@ -40,8 +40,16 @@ public class IpQuotationProductDTO extends BaseDTO {
         if (profitMargin == null || BigDecimal.ZERO.compareTo(profitMargin) == 0)
             return quoteRequestProduct.getExtendedPrice();
         return quoteRequestProduct.getExtendedPrice()
-                .multiply(BigDecimal.ONE.add(profitMargin))
+                .multiply(marginFactor())
                 .setScale(5, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * {@code profitMargin} is stored as a direct percentage (10.00 = 10%), not a fraction, so it
+     * must be divided by 100 before being applied as a multiplier.
+     */
+    private BigDecimal marginFactor() {
+        return BigDecimal.ONE.add(profitMargin.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
     }
 
     public BigDecimal getGrossWeightLbs() {

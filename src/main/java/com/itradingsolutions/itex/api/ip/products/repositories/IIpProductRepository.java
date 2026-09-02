@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.products.repositories;
 
+import com.itradingsolutions.itex.api.ip.products.models.dto.IpProductStatusProjection;
 import com.itradingsolutions.itex.api.ip.products.models.entity.IpProductEntity;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,8 +31,8 @@ public interface IIpProductRepository extends JpaRepository<IpProductEntity, UUI
     @Query("SELECT c FROM IpProductEntity c WHERE c.status IN :status")
     List<IpProductEntity> fetchAllByStatusIn(@Param("status") Collection<IpProductStatus> statuses);
 
-    @Query("SELECT p.id, p.status FROM IpProductEntity p WHERE p.id IN :ids")
-    List<Object[]> fetchStatusByIds(@Param("ids") Collection<UUID> ids);
+    @Query("SELECT new com.itradingsolutions.itex.api.ip.products.models.dto.IpProductStatusProjection(p.id, p.status) FROM IpProductEntity p WHERE p.id IN :ids")
+    List<IpProductStatusProjection> fetchStatusByIds(@Param("ids") Collection<UUID> ids);
 
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END FROM IpProductEntity p WHERE p.description = ?1 AND p.mfrReference = ?2")
     boolean existsProductByDescription(String description, String mfrReference);

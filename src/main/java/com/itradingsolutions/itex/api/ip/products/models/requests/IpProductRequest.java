@@ -19,6 +19,7 @@ public class IpProductRequest {
 
     private String clientDescription;
 
+    @NotEmpty(message = "MFR Reference is required")
     private String mfrReference;
 
     private String clientReference;

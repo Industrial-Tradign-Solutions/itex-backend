@@ -44,6 +44,7 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
     private final IIpProductRepository ipProductRepository;
     private final IIpProductSurplusRepository ipProductSurplusRepository;
     private final IpProductMapper  ipProductMapper;
+    private final IpProductStatusRule ipProductStatusRule;
 
     private final ICountryService countryService;
     private final IBrandService brandService;
@@ -53,13 +54,21 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
     @Transactional
     public IpProductDTO createIpProduct(IpProductDTO ipProductDTO, boolean isImported) {
         IpProductEntity entity = new IpProductEntity();
-        entity.setStatus(IpProductStatus.ACTIVE);
+        entity.setStatus(resolveInitialStatus(isImported, ipProductDTO));
         entity.setCreatedAt(ZonedDateTime.now(zoneId));
         if (!isImported) {
             entity.setOpenAt(ZonedDateTime.now(zoneId));
             entity.setOpenBy(userService.getUserAuthenticated());
         }
         return saveProductInfo(ipProductDTO, entity);
+    }
+
+    private IpProductStatus resolveInitialStatus(boolean isImported, IpProductDTO ipProductDTO) {
+        if (!isImported)
+            return IpProductStatus.DRAFT;
+        return ipProductStatusRule.isCompleteForActivation(ipProductDTO)
+                ? IpProductStatus.ACTIVE
+                : IpProductStatus.DRAFT;
     }
 
     @Override
@@ -191,11 +200,13 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
 
     @Override
     @Transactional
-    public IpProductDTO enableIpProductById(UUID id) {
+    public IpProductDTO changeStatusIpProductById(UUID id, IpProductStatus newStatus) {
         var product = findById(id);
         validateSubstitutedProduct(product.getStatus());
         validateOpenProduct(product, userService.getUserAuthenticated());
-        product.setStatus(IpProductStatus.ACTIVE);
+        var dto = ipProductMapper.entityToDTO(product);
+        ipProductStatusRule.validateTransition(product.getStatus(), newStatus, dto);
+        product.setStatus(newStatus);
         return ipProductMapper.entityToDTO(ipProductRepository.save(product));
     }
 
@@ -223,7 +234,7 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
     @Override
     @Transactional(readOnly = true)
     public List<IpProductDTO> listAllActiveProducts() {
-        var list = ipProductRepository.fetchAllByStatus(IpProductStatus.ACTIVE);
+        var list = ipProductRepository.fetchAllByStatusIn(List.of(IpProductStatus.ACTIVE, IpProductStatus.DRAFT));
         return list.stream().map(ipProductMapper::entityToDTO).toList();
     }
 

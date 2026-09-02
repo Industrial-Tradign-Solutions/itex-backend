@@ -19,6 +19,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class IpQuotationResponse extends BaseResponse {
     private LeadTime validityType;
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
-    private ZonedDateTime applicationAt;
+    private LocalDate applicationAt;
     private BasicUserResponse openBy;
     private ZonedDateTime openAt;
     private ZonedDateTime sentAt;

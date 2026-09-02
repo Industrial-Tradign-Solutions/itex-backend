@@ -6,6 +6,7 @@ import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductHistoryActions;
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.products.models.filter.FilterListIpProducts;
 import com.itradingsolutions.itex.api.ip.products.models.mappers.IpProductHistoryMapper;
 import com.itradingsolutions.itex.api.ip.products.models.mappers.IpProductMapper;
@@ -166,18 +167,22 @@ public class IpProductController extends CommonController {
                 );
     }
 
-    @PatchMapping("/enable/{idProduct}")
+    @PatchMapping("/change-status/{idProduct}")
     @ResponseStatus(HttpStatus.OK)
     @AccessToAction(action = ModuleAction.ENABLE_IP_PRODUCT)
-    public ResponseEntity<MessageResponse<ListIpProductResponse>> enabledProduct(
-            @PathVariable UUID idProduct
+    public ResponseEntity<MessageResponse<ListIpProductResponse>> changeStatusProduct(
+            @PathVariable UUID idProduct,
+            @RequestParam IpProductStatus status
     ) {
-        var product = productService.enableIpProductById(idProduct);
-        productHistoryService.addHistory(IpProductHistoryActions.ENABLE, null, product);
+        var oldProduct = productService.findIpProductById(idProduct);
+        var product = productService.changeStatusIpProductById(idProduct, status);
+        var historyAction = status.equals(IpProductStatus.ACTIVE) ? IpProductHistoryActions.ENABLE : IpProductHistoryActions.BACK_TO_DRAFT;
+        var message = status.equals(IpProductStatus.ACTIVE) ? "ip.product.enabled" : "ip.product.draft";
+        productHistoryService.addHistory(historyAction, oldProduct, product);
         return ResponseEntity.status(HttpStatus.OK).body(
                 new MessageResponse<>(
                         SUCCESS_TITLE,
-                        simpleMessage("ip.product.enabled"),
+                        simpleMessage(message),
                         productMapper.dtoToListResponse(product)
                 ));
     }

@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum IpProductStatus implements BaseEnum {
+    DRAFT("DRAFT"),
     ACTIVE("ACTIVE"),
     SUBSTITUTED("SUBSTITUTED"),
     INACTIVE("INACTIVE")

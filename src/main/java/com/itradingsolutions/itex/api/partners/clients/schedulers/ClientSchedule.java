@@ -2,11 +2,17 @@ package com.itradingsolutions.itex.api.partners.clients.schedulers;
 
 import com.itradingsolutions.itex.api.common.email.model.enums.MailTemplates;
 import com.itradingsolutions.itex.api.common.email.service.IMailService;
+import com.itradingsolutions.itex.api.masters.department.models.enums.Departments;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
+import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientMissingInfo;
+import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
+import com.itradingsolutions.itex.api.partners.common.models.dto.PartnerContactDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -15,11 +21,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.UUID;
 
 @Component
 @EnableScheduling
 @RequiredArgsConstructor
+@Slf4j
 public class ClientSchedule {
 
     private final IClientService clientService;
@@ -31,123 +39,184 @@ public class ClientSchedule {
     @Value("${itex.notifications.client.name}")
     private String sentName;
 
+    /*
+    Funcion para desbloquear todos los clientes en la noche y no tener clientes bloqueados para nadie el dia siguiente
+    */
     @Scheduled(cron = "30 50 23 * * *")
     private void cronUnlockClients() {
         var listClients = clientService.listAllOpenClients(null);
         listClients.forEach(client -> clientService.unlockClient(client.getId()));
     }
 
+    /*
+     * Funcion para notificar que clientes estan en prospecto
+     * Solo envia si hay algun prospecto
+     * */
     @Scheduled(cron = "0 0 5 * * 3")
     private void sendNotificationsProspects() {
-        var listClients = clientService.listAllByStatus(ClientStatus.PROSPECT);
-        var mails = getListMails(listClients);
-        var infoToMails = getMapClients(mails);
-        sendNotifications(infoToMails, "Clients Notification Prospects", "The following clients are in prospect status: ");
+        var listClients = clientService.listAllByStatus(ClientStatus.PROSPECT)
+            .stream()
+            .map(clientDTO -> new ClientMissingInfo(null, clientDTO))
+            .toList();
+        if (!listClients.isEmpty())
+            sendMail(
+                listClients,
+                "Clients Notification Prospects",
+                "The following clients are in prospect status: ",
+                sentEmail,
+                sentName
+            );
     }
 
-    @Scheduled(cron = "0 5 5 * * 3")
-    private void sendNotificationClientNotAssignedToAccountRep() {
+    /*
+     * Funcion para notificar errores en los clientes
+     * 1. Notificacion de AccountRep IP
+     * */
+    @Scheduled(cron = "0 0 5 * * 3")
+    private void sendActiveClientNotification() {
         var listClients = clientService.listAllByStatus(ClientStatus.ACTIVE);
-        List<String> clients = new ArrayList<>(listClients.size());
-        for (var client : listClients) {
-            boolean addClient = true;
+        sendNotificationClientNotAssignedToAccountRepByDep(listClients, Departments.IP);
+        //sendNotificationClientNotAssignedToAccountRepByDep(listClients, Departments.ACC);
+        sendNotificationClientWhitMissingInfo(listClients);
+    }
+
+
+    private void sendNotificationClientNotAssignedToAccountRepByDep(List<ClientDTO> clients, Departments department) {
+        var filteredClients = clients.stream()
+                .filter(client -> client.getInfoByDepartment() != null && client.getInfoByDepartment().stream()
+                        .anyMatch(info -> info.getDepartment() != null
+                                && Objects.equals(info.getDepartment().getId(), department.getDepartmentId())
+                                && info.getAccountRep() == null))
+                .map(clientDTO -> new ClientMissingInfo(null, clientDTO))
+                .toList();
+        if (!filteredClients.isEmpty())
+            sendMail(
+                filteredClients,
+                "Notification of clients not assigned to a account rep",
+                "The following customers do not have an assigned account representative for the ".concat(department.getName()).concat(" department:"),
+                sentEmail,
+                sentName
+            );
+    }
+
+    private void sendNotificationClientWhitMissingInfo(List<ClientDTO> clients) {
+        var clientsWithMissingInfo = getClientsWhitMissingInfo(clients);
+        if (!clientsWithMissingInfo.isEmpty())
+            sendMail(
+                clientsWithMissingInfo,
+        "Notification of Clients with missing information",
+        "The following clients do not have complete information: ",
+                sentEmail,
+                sentName
+            );
+    }
+
+    private List<ClientMissingInfo> getClientsWhitMissingInfo(List<ClientDTO> clients) {
+        List<ClientMissingInfo> listMissingInfo = new ArrayList<>();
+        for (var client : clients) {
+            List<String> errors = new ArrayList<>();
+            if (client.getAddress() == null || client.getAddress().isBlank())
+                errors.add("Missing address");
+
+            if (client.getCity() == null)
+                errors.add("Missing city");
+
+            int notContacts = 0;
             for (var info: client.getInfoByDepartment()) {
-                if (info.getAccountRep() != null) {
-                    addClient = false;
-                    break;
+                boolean hasActiveContacts = info.getListContacts() != null &&
+                        info.getListContacts().stream().anyMatch(PartnerContactDTO::isActive);
+
+                if (!hasActiveContacts) {
+                    UUID deptId = (info.getDepartment() != null) ? info.getDepartment().getId() : null;
+
+                    if (Objects.equals(deptId, Departments.IP.getDepartmentId()))
+                        errors.add(Departments.IP.getName() + " require contacts");
+
+                    notContacts++;
+                    continue;
+                }
+                String deptName = "DEPARTMENT: " + (info.getDepartment() != null ? info.getDepartment().getName() : "Unknown");
+                for (var contact: info.getListContacts().stream().filter(PartnerContactDTO::isActive).toList()) {
+                    String contactName = "CONTACT: " + (contact.getName() != null ? contact.getName() : "No Name");
+                    if (contact.getEmail() == null || contact.getEmail().isBlank())
+                        errors.add(deptName + " | " + contactName + " | ERROR: Missing email");
+                    if (contact.getListPhones().isEmpty())
+                        errors.add(deptName + " | " + contactName + " | ERROR: No phone numbers associated");
+
+                    for (var phone: contact.getListPhones()) {
+                        if (phone.getCountryCode() == null || phone.getCountryCode().isBlank())
+                            errors.add(deptName + " | " + contactName + " | PHONE: " + phone.getFullPhone() + " | ERROR: Missing country code");
+
+                        if (phone.getPhoneNumber() == null || phone.getPhoneNumber().isBlank()) {
+                            errors.add(deptName + " | " + contactName + " | PHONE: " + phone.getFullPhone() + " | ERROR: Missing phone number");
+                        }
+                    }
                 }
             }
-            if (addClient) {
-                clients.add(client.getName());
-            }
+            if (notContacts == client.getInfoByDepartment().size())
+                errors.add("Client has no contacts");
+
+            if (!errors.isEmpty())
+                listMissingInfo.add(new ClientMissingInfo(errors, client));
         }
-        if (!clients.isEmpty())
-            sendMail(clients, "Notification of clients not assigned to a account rep", "The following clients do not have an assigned account rep:", sentEmail, sentName);
+        return listMissingInfo;
     }
 
-    @Scheduled(cron = "0 10 5 * * 3")
-    private void sendNotificationsInfo() {
-        var listClients = clientService.listAllWhitMissingInfo();
-        var mails = getListMails(listClients);
-        var infoToMails = getMapClients(mails);
-        sendNotifications(infoToMails, "Notification of Clients with missing information", "The following clients do not have complete information: ");
-    }
-
-    private static final String CLIENT_NAME = "client";
-    private static final String USER_MAIL_NAME = "userMail";
-    private static final String USER_FULL_NAME = "userFullName";
-
-    private List<Map<String, String>> getListMails(List<ClientDTO> listClients) {
-        List<Map<String, String>> mails = new ArrayList<>();
-
-        listClients.forEach(client -> {
-            var listDepInfo = client.getInfoByDepartment().stream().filter(info -> info.getAccountRep() != null).toList();
-
-            if (listDepInfo.isEmpty()) {
-                Map<String, String> item = new HashMap<>();
-                item.put(CLIENT_NAME, client.getName());
-
-                if (client.getUpdatedBy() != null) {
-                    item.put(USER_MAIL_NAME, client.getUpdatedBy().getEmail());
-                    item.put(USER_FULL_NAME, client.getUpdatedBy().getFullName());
-                } else {
-                    item.put(USER_MAIL_NAME, client.getCreatedBy().getEmail());
-                    item.put(USER_FULL_NAME, client.getCreatedBy().getFullName());
-                }
-
-                mails.add(item);
-            } else {
-                listDepInfo.forEach(depInfo -> {
-                    Map<String, String> item = new HashMap<>();
-                    item.put(CLIENT_NAME, client.getName());
-                    item.put(USER_MAIL_NAME, depInfo.getAccountRep().getEmail());
-                    item.put(USER_FULL_NAME, depInfo.getAccountRep().getFullName());
-                    mails.add(item);
-                });
-            }
-        });
-        return mails;
-    }
-
-    private Map<String, Map<String, Object>> getMapClients(List<Map<String, String>> mails) {
-        return mails.stream()
-                .filter(map -> map.get(USER_MAIL_NAME) != null)
-                .collect(Collectors.groupingBy(
-                        map -> map.get(USER_MAIL_NAME),
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                list -> {
-                                    Map<String, Object> newMap = new HashMap<>();
-                                    newMap.put(CLIENT_NAME, list.stream()
-                                            .map(map -> map.get(CLIENT_NAME))
-                                            .toList());
-                                    newMap.put(USER_FULL_NAME, list.stream()
-                                            .map(map -> map.get(USER_FULL_NAME))
-                                            .findFirst()
-                                            .orElse(""));
-                                    return newMap;
-                                }
-                        )
-
-                ));
-    }
-
-    private void sendNotifications(Map<String, Map<String, Object>> infoToMails, String subject, String message) {
-        infoToMails.forEach((userMail, dataList) ->
-            sendMail((List<String>) dataList.get(CLIENT_NAME), subject, message, userMail, (String) dataList.get(USER_FULL_NAME))
-        );
-    }
-
-    private void sendMail(List<String> clientNames, String subject, String message, String userMail, String userFullName) {
-        var clientsTemplate = "";
-        for (String clientName : clientNames) {
-            clientsTemplate = clientsTemplate.concat("<li><p style=\"line-height: 140%; text-align: left;\"> ").concat(clientName).concat("</p></li>");
-        }
+    private void sendMail(List<ClientMissingInfo> clientMissingInfos, String subject, String message, String userMail, String userFullName) {
+        var clientsTemplate = getClientsTemplate(clientMissingInfos);
         Map<String, Object> data = new HashMap<>();
         data.put("listClients", clientsTemplate);
         data.put("message", message);
         data.put("name", userFullName);
-
+        log.info("Sent mail to {} whit subject {}", userMail, subject);
         mailService.sendTemplate(userMail, subject, data, false, MailTemplates.CLIENT_NOTIFICATION);
+    }
+
+    @NonNull
+    private static String getClientsTemplate(List<ClientMissingInfo> clientMissingInfos) {
+        var clientsTemplate = "";
+        for (ClientMissingInfo client : clientMissingInfos) {
+            if (client.errors()== null || client.errors().isEmpty()) {
+                clientsTemplate = clientsTemplate
+                        .concat("<li style=\"margin-bottom: 12px;\"><p style=\"line-height: 140%; text-align: left; font-size: 15px; color: #1a1a1a; font-weight: bold;\">")
+                        .concat(client.client().getCode())
+                        .concat(" - ")
+                        .concat(client.client().getName())
+                        .concat("</p></li>");
+            } else {
+                clientsTemplate = clientsTemplate
+                        .concat("<li style=\"margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;\"><p style=\"line-height: 140%; text-align: left; font-size: 15px; color: #1a1a1a; font-weight: bold;\">")
+                        .concat(client.client().getCode())
+                        .concat(" - ")
+                        .concat(client.client().getName())
+                        .concat("</p>")
+                        .concat("<ul style=\"margin-top: 6px; padding-left: 20px;\">");
+                for(var error: client.errors()) {
+                    boolean isRequired = error.contains("require contacts");
+                    String errorColor = isRequired ? "#b71c1c" : error.contains("PHONE") ? "#e65100" : "#d32f2f";
+                    String bgColor = isRequired ? "#ffebee" : "transparent";
+                    String fontWeight = isRequired ? "bold" : "normal";
+                    String padding = isRequired ? "6px 10px" : "0";
+                    String borderRadius = isRequired ? "4px" : "0";
+                    clientsTemplate = clientsTemplate
+                            .concat("<li><p style=\"line-height: 140%; text-align: left; font-size: 13px; color: ")
+                            .concat(errorColor)
+                            .concat("; margin-bottom: 4px; font-weight: ")
+                            .concat(fontWeight)
+                            .concat("; background-color: ")
+                            .concat(bgColor)
+                            .concat("; padding: ")
+                            .concat(padding)
+                            .concat("; border-radius: ")
+                            .concat(borderRadius)
+                            .concat(";\">")
+                            .concat(error)
+                            .concat("</p></li>");
+                }
+                clientsTemplate = clientsTemplate
+                        .concat("</ul></li>");
+            }
+        }
+        return clientsTemplate;
     }
 }

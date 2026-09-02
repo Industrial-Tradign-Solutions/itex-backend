@@ -42,7 +42,7 @@ public class IpQuotationProductEntity extends BaseEntity {
     @Column(name = "number", nullable = false)
     private Integer number;
 
-    @Column(name = "profit_margin", nullable = false, precision = 3, scale = 2)
+    @Column(name = "profit_margin", nullable = false, precision = 5, scale = 2)
     private BigDecimal profitMargin = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
@@ -50,8 +50,8 @@ public class IpQuotationProductEntity extends BaseEntity {
     private IpQuotationProductCondition condition;
 
     public void setProfitMargin(BigDecimal profitMargin) {
-        if (profitMargin.compareTo(BigDecimal.ZERO) < 0 || profitMargin.compareTo(BigDecimal.ONE) > 0) {
-            throw new IllegalArgumentException("El margen debe estar entre 0.00 y 1.00");
+        if (profitMargin.compareTo(new BigDecimal("0.01")) < 0 || profitMargin.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new IllegalArgumentException("El margen debe estar entre 0.01 y 100 (porcentaje)");
         }
         this.profitMargin = profitMargin.setScale(2, RoundingMode.HALF_UP);
     }

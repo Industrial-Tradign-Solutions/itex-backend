@@ -1,5 +1,7 @@
 package com.itradingsolutions.itex.api.ip.products.models.responses;
 
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
+
 import java.util.UUID;
 
 public record BasicIpProductResponse(
@@ -8,6 +10,7 @@ public record BasicIpProductResponse(
         String description,
         String clientDescription,
         String mfrReference,
-        String clientReference
+        String clientReference,
+        IpProductStatus status
 ) {
 }

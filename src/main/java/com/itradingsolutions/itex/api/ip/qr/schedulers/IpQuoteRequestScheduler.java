@@ -52,19 +52,4 @@ public class IpQuoteRequestScheduler {
                 .filter(qr -> qr.getListQuotations() != null && !qr.getListQuotations().isEmpty())
                 .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
     }
-
-    @Scheduled(cron = "30 55 23 * * *")
-    private void cronAnsweredIpQuoteRequest() {
-        final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
-
-        ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.SENT)
-                .stream()
-                .filter(qr -> qr.getCreatedAt().isBefore(limit))
-                .filter(qr -> qr.getSupplier() != null)
-                .forEach(qr -> {
-                    if (qr.isValidAnswered()) {
-                        ipQuoteRequestService.changeStatusQuoteRequest(qr.getId(), IpQuoteRequestStatus.ANSWERED);
-                    }
-                });
-    }
 }

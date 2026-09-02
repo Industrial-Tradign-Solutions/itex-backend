@@ -10,7 +10,7 @@
   <style type="text/css">
     @media only screen and (min-width: 620px) {
       .u-row {
-        width: 600px !important;
+        width: 780px !important;
       }
 
       .u-row .u-col {
@@ -19,7 +19,7 @@
 
 
       .u-row .u-col-100 {
-        width: 600px !important;
+        width: 780px !important;
       }
 
     }
@@ -123,11 +123,11 @@
         <td style="word-break: break-word;border-collapse: collapse !important;vertical-align: top">
           <div class="u-row-container" style="padding: 0px;background-color: transparent">
             <div class="u-row"
-              style="margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: transparent;">
+              style="margin: 0 auto;min-width: 320px;max-width: 780px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: transparent;">
               <div
                 style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
                 <div class="u-col u-col-100"
-                  style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
+                  style="max-width: 320px;min-width: 780px;display: table-cell;vertical-align: top;">
                   <div
                     style="background-color: #e9e9e9;height: 100%;width: 100% !important;border-radius: 0px;-webkit-border-radius: 0px; -moz-border-radius: 0px;">
                     <div
@@ -162,11 +162,11 @@
           </div>
           <div class="u-row-container" style="padding: 0px;background-color: transparent">
             <div class="u-row"
-              style="margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: transparent;">
+              style="margin: 0 auto;min-width: 320px;max-width: 780px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: transparent;">
               <div
                 style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
                 <div class="u-col u-col-100"
-                  style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
+                  style="max-width: 320px;min-width: 780px;display: table-cell;vertical-align: top;">
                   <div style="background-color: #ffffff;height: 100%;width: 100% !important;">
                     <div
                       style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;">
@@ -266,12 +266,12 @@
             </div>
           </div>
           <div class="u-row-container" style="padding: 0px;background-color: transparent">
-            <div class="u-row" style="margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: transparent;">
+            <div class="u-row" style="margin: 0 auto;min-width: 320px;max-width: 780px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: transparent;">
               <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: transparent;"><![endif]-->
+                <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:780px;"><tr style="background-color: transparent;"><![endif]-->
 
-                <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;border-radius: 0px;-webkit-border-radius: 0px; -moz-border-radius: 0px;" valign="top"><![endif]-->
-                <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
+                <!--[if (mso)|(IE)]><td align="center" width="780" style="width: 780px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;border-radius: 0px;-webkit-border-radius: 0px; -moz-border-radius: 0px;" valign="top"><![endif]-->
+                <div class="u-col u-col-100" style="max-width: 320px;min-width: 780px;display: table-cell;vertical-align: top;">
                   <div style="height: 100%;width: 100% !important;border-radius: 0px;-webkit-border-radius: 0px; -moz-border-radius: 0px;">
                     <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;border-radius: 0px;-webkit-border-radius: 0px; -moz-border-radius: 0px;"><!--<![endif]-->
 

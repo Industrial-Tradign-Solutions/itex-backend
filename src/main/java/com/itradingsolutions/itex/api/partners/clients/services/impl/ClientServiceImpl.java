@@ -13,6 +13,7 @@ import com.itradingsolutions.itex.api.partners.clients.exceptions.NotExistClient
 import com.itradingsolutions.itex.api.partners.clients.exceptions.NotOpenClientException;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientContactDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
+import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientMissingInfo;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.filter.FilterListClients;
@@ -160,45 +161,7 @@ public class ClientServiceImpl extends UtilServiceAbs implements IClientService 
         return list.stream().map(clientMapper::entityToDto).toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ClientDTO> listAllWhitMissingInfo() {
-        List<ClientEntity> list = clientRepository.fetchAllByStatus(ClientStatus.ACTIVE);
-        List<ClientEntity> clients = new ArrayList<>();
-        for (var client : list) {
-            if (client.getAddress() == null || client.getAddress().isEmpty()) {
-                clients.add(client);
-                break;
-            }
-            if (client.getCity() == null) {
-                clients.add(client);
-                break;
-            }
-            boolean addClient = false;
-            for (var info: client.getInfoByDepartment()) {
-                for (var contact: info.getListContacts()) {
-                    if (contact.getEmail() == null || contact.getEmail().isEmpty()) {
-                        addClient = true;
-                        break;
-                    }
-                    for (var phone: contact.getListPhones()) {
-                        if (phone.getCountryCode() == null || phone.getCountryCode().isEmpty()) {
-                            addClient = true;
-                            break;
-                        }
-                        if (phone.getPhoneNumber() == null || phone.getPhoneNumber().isEmpty()) {
-                            addClient = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (addClient) {
-                clients.add(client);
-            }
-        }
-        return clients.stream().map(clientMapper::entityToDto).toList();
-    }
+
 
     @Override
     @Transactional(readOnly = true)

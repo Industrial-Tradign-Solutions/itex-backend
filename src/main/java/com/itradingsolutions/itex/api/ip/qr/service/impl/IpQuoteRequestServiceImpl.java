@@ -22,6 +22,7 @@ import com.itradingsolutions.itex.api.ip.qr.exceptions.NotExistIpQuoteRequestExc
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenIpQuoteRequestException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotOpenQuoteRequestException;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestDTO;
+import com.itradingsolutions.itex.api.ip.qr.models.dto.QuoteRequestProductStatusProjection;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.reports.IpQuoteRequestReportDTO;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestOtherChargesEntity;
@@ -413,12 +414,12 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
             throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
     }
 
-    private static String formatNotActiveProducts(List<Object[]> notActiveProducts) {
+    private static String formatNotActiveProducts(List<QuoteRequestProductStatusProjection> notActiveProducts) {
         return notActiveProducts.stream()
-                .map(row -> {
-                    var mfrReference = (String) row[0];
-                    var description = (String) row[1];
-                    var status = ((IpProductStatus) row[2]).name();
+                .map(projection -> {
+                    var mfrReference = projection.mfrReference();
+                    var description = projection.description();
+                    var status = projection.status().name();
                     var label = StringUtils.hasText(mfrReference) ? mfrReference : description;
                     return label + " (" + status + ")";
                 })

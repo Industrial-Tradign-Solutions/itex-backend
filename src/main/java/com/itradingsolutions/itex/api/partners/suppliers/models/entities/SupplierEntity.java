@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.partners.suppliers.models.entities;
 
 import com.itradingsolutions.itex.api.common.util.models.enums.UniqueDB;
+import com.itradingsolutions.itex.api.masters.brand.models.entities.BrandSupplierEntity;
 import com.itradingsolutions.itex.api.partners.common.models.entities.PartnerEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.enums.SupplierStatus;
 import jakarta.persistence.CascadeType;
@@ -38,4 +39,7 @@ public class SupplierEntity extends PartnerEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "supplier", cascade =  CascadeType.ALL)
     private List<SupplierInfoDepEntity> infoByDepartment;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "supplier", cascade =  CascadeType.ALL)
+    private List<BrandSupplierEntity> brands;
 }

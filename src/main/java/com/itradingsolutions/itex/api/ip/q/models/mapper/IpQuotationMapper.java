@@ -43,6 +43,7 @@ public interface IpQuotationMapper {
     @Mapping(target = "number", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "applicationAt", ignore = true)
     @Mapping(target = "quoteRequestsQuotations", ignore = true)
     @Mapping(target = "pdfUrl", ignore = true)
     @Mapping(target = "openBy", ignore = true)

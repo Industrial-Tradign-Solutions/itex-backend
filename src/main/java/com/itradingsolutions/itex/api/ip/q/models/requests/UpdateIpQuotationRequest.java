@@ -4,10 +4,11 @@ import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Incoterms;
 import com.itradingsolutions.itex.api.common.util.models.enums.PaymentTerms;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record UpdateIpQuotationRequest(
@@ -40,6 +41,10 @@ public record UpdateIpQuotationRequest(
 
         Incoterms incoterms,
 
-        PaymentTerms paymentTerms
+        PaymentTerms paymentTerms,
+
+        @NotNull(message = "Application date is required")
+        @JsonFormat(pattern = "MM-dd-yyyy")
+        LocalDate applicationAt
 ) {
 }

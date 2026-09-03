@@ -4,6 +4,7 @@ import com.itradingsolutions.itex.api.admin.user.models.responses.BasicUserRespo
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientResponse;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -14,7 +15,7 @@ public record ListIpQuotationResponse(
         ClientResponse client,
         IpQuotationStatus status,
         BasicUserResponse salesRep,
-        ZonedDateTime applicationAt,
+        LocalDate applicationAt,
         ZonedDateTime createdAt
 ) {
 }

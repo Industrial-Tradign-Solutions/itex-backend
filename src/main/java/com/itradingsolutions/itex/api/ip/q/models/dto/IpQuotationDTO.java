@@ -18,6 +18,7 @@ import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +47,7 @@ public class IpQuotationDTO extends BaseDTO {
     private LeadTime validityType;
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
-    private ZonedDateTime applicationAt;
+    private LocalDate applicationAt;
     private String pdfUrl;
     private UserDTO openBy;
     private ZonedDateTime openAt;

@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serial;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -101,8 +102,8 @@ public class IpQuotationEntity extends BaseEntity {
     @Column(name = "payment_terms", length = 40, nullable = false)
     private PaymentTerms paymentTerms;
 
-    @Column(name = "application_at", nullable = false)
-    private ZonedDateTime applicationAt;
+    @Column(name = "application_at")
+    private LocalDate applicationAt;
 
     @Column(name = "path_pdf", length = 1000)
     private String pdfUrl;

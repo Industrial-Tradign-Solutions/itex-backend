@@ -358,6 +358,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         validateApplicationAtForStatus(quotation, newStatus);
         validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
         validatePurchaseOrderForReject(quotation, newStatus);
+        validatePurchaseOrderForComplete(quotation, newStatus);
 
         var transition = resolveTransition(currentStatus, newStatus);
         validateRequirement(transition, quotation);
@@ -459,41 +460,36 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     private void validatePurchaseOrderChangeStatus(IpQuotationEntity quotation) {
-        //TODO, validamos que el no tenga ninguna PO asignada
-        /*
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(list -> {
-                    throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
-                });
-
-         */
+        if (purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.cannot-revert-with-po"));
+        }
     }
 
+    /**
+     * A Quotation can only be REJECTED when it has no Purchase Orders associated.
+     */
     private void validatePurchaseOrderForReject(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
         if (newStatus != IpQuotationStatus.REJECTED) return;
-        //TODO, validamos que todas las PO esten en rejected
+        if (purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.cannot-reject-with-po"));
+        }
+    }
 
-        /*
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(quotations -> {
-                    boolean allQuotationsRejected = quotations.stream()
-                            .map(IpQuotationsQuoteRequestEntity::getQuotation)
-                            .map(IpQuotationEntity::getStatus)
-                            .allMatch(status -> status == IpQuotationStatus.REJECTED);
-
-                    if (!allQuotationsRejected)
-                        throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
-                });
-         */
+    /**
+     * A Quotation can only be COMPLETED when it has at least one Purchase Order associated.
+     */
+    private void validatePurchaseOrderForComplete(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus != IpQuotationStatus.COMPLETE) return;
+        if (!purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.complete-requires-po"));
+        }
     }
 
     @Override
     @Transactional
     public void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId) {
         var quotation = findById(quotationId);
-        validateQuotationForQRDeletion(quotation);
+        validateQuoteRequestModificationAllowed(quotation, "ip.q.qr.cannot-delete");
         var exists = qqrRepository.existsByIdAndQuotation_Id(qqrId, quotationId);
         if (!exists) {
             throw new NotExistIpQuotationException(simpleMessage("ip.q.qr.not-exist"));
@@ -507,7 +503,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds) {
         var quotation = findById(quotationId);
-        validateEditable(quotation);
+        validateQuoteRequestModificationAllowed(quotation, "ip.q.qr.cannot-add");
 
         // Initialize the list if it's null
         if (quotation.getQuoteRequestsQuotations() == null) {
@@ -620,15 +616,14 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return quotationMapper.entityToDTO(saved);
     }
 
-    private void validateEditable(IpQuotationEntity quotation) {
-        if (quotation.getStatus() == IpQuotationStatus.COMPLETE || quotation.getStatus() == IpQuotationStatus.REJECTED)
-            throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
-    }
-
-    private void validateQuotationForQRDeletion(IpQuotationEntity quotation) {
-        if (quotation.getStatus() != IpQuotationStatus.CREATED &&
-            quotation.getStatus() != IpQuotationStatus.SENT) {
-            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.qr.cannot-delete"));
+    /**
+     * Quote Requests can only be added to or removed from a Quotation while it is in
+     * CREATED status. In any other status the linked QRs become immutable; the Quotation
+     * must be moved back to CREATED first in order to modify its Quote Requests.
+     */
+    private void validateQuoteRequestModificationAllowed(IpQuotationEntity quotation, String messageKey) {
+        if (quotation.getStatus() != IpQuotationStatus.CREATED) {
+            throw new QuotationStatusRestrictionException(simpleMessage(messageKey));
         }
     }
 

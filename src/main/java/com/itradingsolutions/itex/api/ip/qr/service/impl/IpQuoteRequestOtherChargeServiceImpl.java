@@ -28,10 +28,12 @@ public class IpQuoteRequestOtherChargeServiceImpl extends UtilServiceAbs impleme
     @Override
     @Transactional
     public IpQuoteRequestOtherChargesDTO create(IpQuoteRequestOtherChargesDTO request, UUID qrId) {
+        var qr = qrService.getEntityById(qrId);
+        qrService.validateEditableStatus(qr);
         if (qrOtherChargesRepository.existsDescription(request.getDescription(), qrId))
             throw new QrOtherChargeExistException(simpleMessage("ip.qr.other-charges.exist"));
         var entity = new IpQuoteRequestOtherChargesEntity();
-        entity.setIpQuoteRequest(qrService.getEntityById(qrId));
+        entity.setIpQuoteRequest(qr);
         return saveQrOtherCharge(request, entity);
     }
 
@@ -39,6 +41,7 @@ public class IpQuoteRequestOtherChargeServiceImpl extends UtilServiceAbs impleme
     @Transactional
     public IpQuoteRequestOtherChargesDTO update(IpQuoteRequestOtherChargesDTO request, UUID qrOtherChargeId, UUID qrId) {
         var entity = findById(qrOtherChargeId, qrId);
+        qrService.validateEditableStatus(entity.getIpQuoteRequest());
         if (qrOtherChargesRepository.existsDescription(request.getDescription(), qrId, qrOtherChargeId))
             throw new QrOtherChargeExistException(simpleMessage("ip.qr.other-charges.exist"));
         return saveQrOtherCharge(request, entity);
@@ -53,6 +56,7 @@ public class IpQuoteRequestOtherChargeServiceImpl extends UtilServiceAbs impleme
     @Override
     @Transactional
     public void remove(UUID qrOtherChargeId, UUID qrId) {
+        qrService.validateEditableStatus(qrService.getEntityById(qrId));
         qrOtherChargesRepository.deleteById(qrId, qrOtherChargeId);
     }
 

@@ -53,7 +53,9 @@ import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProduc
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
 import com.itradingsolutions.itex.api.partners.suppliers.models.responses.BasicSupplierResponse;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestHistoryAction;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
+import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestHistoryService;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.repository.IClientContactRepository;
@@ -94,6 +96,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IClientContactRepository clientContactRepository;
     private final IClientContactService clientContactService;
+    private final IIpQuoteRequestHistoryService qrHistoryService;
     private final IIpQuotationHistoryService historyService;
     private final IpQuotationOtherChargeMapper otherChargeMapper;
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
@@ -361,9 +364,52 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         transition.sideEffect().accept(quotation);
         quotation.setStatus(newStatus);
 
-        var newQuotation = toDto(quotationRepository.save(quotation));
+        var savedQuotation = quotationRepository.save(quotation);
+        if (newStatus == IpQuotationStatus.ANSWERED) {
+            processQuoteRequestsOnAnswered(savedQuotation);
+        }
+
+        var newQuotation = toDto(savedQuotation);
         historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldQuotation, newQuotation);
         return newQuotation;
+    }
+
+    /**
+     * When a Quotation is ANSWERED, each linked Quote Request is transitioned automatically:
+     * QRs contributing at least one product to the Quotation are marked COMPLETE, while
+     * QRs with no products in the Quotation are marked REJECTED (this automatic flow is
+     * allowed to reject QRs even while linked to a Quotation, unlike the manual flow).
+     * Other Charges imported from a QR do not influence this decision.
+     */
+    private void processQuoteRequestsOnAnswered(IpQuotationEntity quotation) {
+        var qqrList = quotation.getQuoteRequestsQuotations();
+        if (qqrList == null || qqrList.isEmpty()) return;
+
+        var user = userService.getUserAuthenticated();
+
+        for (var qqr : qqrList) {
+            var qr = qqr.getQuoteRequest();
+            if (qr == null) continue;
+
+            boolean hasProductsInQuotation = qqr.getQuotationProducts() != null
+                    && !qqr.getQuotationProducts().isEmpty();
+
+            var targetStatus = hasProductsInQuotation
+                    ? IpQuoteRequestStatus.COMPLETE
+                    : IpQuoteRequestStatus.REJECTED;
+
+            var oldStatus = qr.getStatus();
+            qrService.changeStatusInternal(qr.getId(), targetStatus);
+
+            qrHistoryService.addHistoryAutoStatusChange(
+                    IpQuoteRequestHistoryAction.STATUS_CHANGE_BY_Q,
+                    qr.getId(),
+                    oldStatus,
+                    targetStatus,
+                    quotation.getNumber(),
+                    user
+            );
+        }
     }
 
     private void validateNotSameStatus(IpQuotationEntity quotation, IpQuotationStatus newStatus) {

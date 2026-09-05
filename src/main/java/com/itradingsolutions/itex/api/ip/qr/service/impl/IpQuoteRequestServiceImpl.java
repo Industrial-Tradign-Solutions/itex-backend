@@ -29,6 +29,7 @@ import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestOtherC
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestsClonedEntity;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestHistoryAction;
 import com.itradingsolutions.itex.api.ip.qr.models.filters.FilterListIpQuoteRequest;
 import com.itradingsolutions.itex.api.ip.qr.models.mappers.IpQuoteRequestMapper;
 import com.itradingsolutions.itex.api.ip.qr.models.mappers.IpQuoteRequestOtherChargeMapper;
@@ -37,6 +38,7 @@ import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestClonedRe
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestOtherChargesRepository;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestRepository;
+import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestHistoryService;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientContactService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
@@ -53,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -80,8 +83,11 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     private final IpQuoteRequestOtherChargeMapper qrOtherChargesMapper;
     private final IIpQuoteRequestOtherChargesRepository qrOtherChargesRepository;
 
+    private final IIpQuoteRequestHistoryService historyService;
+
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.QR;
+    private static final int AUTO_REJECT_DAYS = 30;
 
     private final JasperService jasperService;
 
@@ -108,6 +114,7 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         var entity = findById(id);
         var oldConsecutive = entity.getNumber();
         validateOpenQR(entity, userService.getUserAuthenticated());
+        validateEditableStatus(entity);
 
         if (!entity.getSalesRep().getId().equals(dto.getSalesRep().getId())) {
             entity.setSalesRep(userService.findEntityById(dto.getSalesRep().getId(), true));
@@ -341,6 +348,63 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     }
 
     @Override
+    @Transactional
+    public void changeStatusInternal(UUID qrId, IpQuoteRequestStatus newStatus) {
+        var qr = findById(qrId);
+        var currentStatus = qr.getStatus();
+
+        // Do not touch QRs already in the target status or in a terminal status
+        if (currentStatus == newStatus || isFinalStatus(currentStatus)) {
+            return;
+        }
+
+        setStatusTimestamp(qr, newStatus);
+        if (newStatus.ordinal() < currentStatus.ordinal()) {
+            clearFutureTimestamps(qr, newStatus);
+        }
+        qr.setStatus(newStatus);
+        clearOpenLockOnFinalStatus(qr);
+        qrRepository.save(qr);
+    }
+
+    @Override
+    @Transactional
+    public int autoRejectStaleQuoteRequests() {
+        // Date-only comparison: a QR exceeded 30 days when its reference date is on or before
+        // today - 30, which is equivalent to its timestamp being strictly before midnight of today - 29.
+        var cutoff = LocalDate.now(zoneId).minusDays(AUTO_REJECT_DAYS - 1L).atStartOfDay(zoneId);
+
+        return rejectStale(qrRepository.fetchStaleCreated(IpQuoteRequestStatus.CREATED, cutoff))
+             + rejectStale(qrRepository.fetchStaleSent(IpQuoteRequestStatus.SENT, cutoff))
+             + rejectStale(qrRepository.fetchStaleAnsweredWithoutQuotation(IpQuoteRequestStatus.ANSWERED, cutoff));
+    }
+
+    private int rejectStale(List<IpQuoteRequestEntity> staleQuoteRequests) {
+        staleQuoteRequests.forEach(this::rejectStaleExpired);
+        return staleQuoteRequests.size();
+    }
+
+    private void rejectStaleExpired(IpQuoteRequestEntity qr) {
+        var oldStatus = qr.getStatus();
+        changeStatusInternal(qr.getId(), IpQuoteRequestStatus.REJECTED);
+        historyService.addHistoryAutoStatusChange(
+                IpQuoteRequestHistoryAction.AUTO_REJECTED_TIME,
+                qr.getId(),
+                oldStatus,
+                IpQuoteRequestStatus.REJECTED,
+                null,
+                qr.getSalesRep()
+        );
+    }
+
+    @Override
+    public void validateEditableStatus(IpQuoteRequestEntity entity) {
+        if (isFinalStatus(entity.getStatus())) {
+            throw new NotChangeStatusException(simpleMessage("ip.qr.not-editable-by-status"));
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<IpQuoteRequestDTO> getListQuoteRequestByClientAvailableToQuotation(UUID clientId, boolean viewCompletedQR, Currency currency) {
         List<IpQuoteRequestStatus> status = new java.util.ArrayList<>(List.of(IpQuoteRequestStatus.ANSWERED));
@@ -373,6 +437,7 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
             clearFutureTimestamps(qr, newStatus);
         }
         qr.setStatus(newStatus);
+        clearOpenLockOnFinalStatus(qr);
 
         return qrMapper.entityToDTO(qrRepository.save(qr));
     }
@@ -462,6 +527,13 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
                     if (!allQuotationsRejected)
                         throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
                 });
+    }
+
+    private void clearOpenLockOnFinalStatus(IpQuoteRequestEntity qr) {
+        if (isFinalStatus(qr.getStatus())) {
+            qr.setOpenBy(null);
+            qr.setOpenAt(null);
+        }
     }
 
     private void clearFutureTimestamps(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {

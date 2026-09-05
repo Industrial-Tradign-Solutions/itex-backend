@@ -242,7 +242,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request) {
         var quotation = findById(id);
-        validateEditable(quotation);
+        validateQuotationEditable(quotation, userService.getUserAuthenticated());
         
         var oldDto = quotationMapper.entityToDTO(quotation);
         var oldConsecutive = quotation.getNumber();
@@ -363,6 +363,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         validateRequirement(transition, quotation);
         transition.sideEffect().accept(quotation);
         quotation.setStatus(newStatus);
+        clearOpenLockOnFinalStatus(quotation);
 
         var savedQuotation = quotationRepository.save(quotation);
         if (newStatus == IpQuotationStatus.ANSWERED) {
@@ -726,10 +727,10 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     @Override
-    public void validateQuotationInCreatedStatus(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
-        if (entity.getStatus() != IpQuotationStatus.CREATED) {
-            throw new NotOpenQuoteRequestException(simpleMessage("ip.q.not-created-status"));
-        }
+    public void validateQuotationEditable(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
+        if (isFinalStatus(entity.getStatus()))
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.not-editable-by-status"));
+        validateOpenQuotation(entity, user);
     }
 
     /**
@@ -879,6 +880,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private boolean isFinalStatus(IpQuotationStatus status) {
         return status == IpQuotationStatus.COMPLETE
                 || status == IpQuotationStatus.REJECTED;
+    }
+
+    private void clearOpenLockOnFinalStatus(IpQuotationEntity quotation) {
+        if (isFinalStatus(quotation.getStatus())) {
+            quotation.setOpenBy(null);
+            quotation.setOpenAt(null);
+        }
     }
 
     private JasperReport getReportTemplateFor(IpQuotationEntity quotation) {

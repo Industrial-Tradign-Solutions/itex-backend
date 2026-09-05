@@ -43,7 +43,7 @@ public class IpQuotationOtherChargesQuoteRequestServiceImpl extends UtilServiceA
         if (items == null || items.isEmpty()) return List.of();
 
         var quotation = quotationService.getEntityById(quotationId);
-        quotationService.validateQuotationInCreatedStatus(quotation, userService.getUserAuthenticated());
+        quotationService.validateQuotationEditable(quotation, userService.getUserAuthenticated());
 
         // 1. Validate no duplicate qrOtherChargeId within request
         var qrOtherChargeIds = items.stream()
@@ -109,6 +109,10 @@ public class IpQuotationOtherChargesQuoteRequestServiceImpl extends UtilServiceA
     public void remove(UUID id, UUID quotationId) {
         var entity = repository.findByIdAndQuotationsQuoteRequest_Quotation_Id(id, quotationId)
                 .orElseThrow(() -> new NotFoundException(simpleMessage("ip.q.other-charges.imported-from-qr.not-found")));
+        quotationService.validateQuotationEditable(
+                entity.getQuotationsQuoteRequest().getQuotation(),
+                userService.getUserAuthenticated()
+        );
         repository.delete(entity);
     }
 

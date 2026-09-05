@@ -426,6 +426,9 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         var currentStatus = qr.getStatus();
 
         validateNotSameStatus(qr, newStatus);
+        if (newStatus == IpQuoteRequestStatus.COMPLETE) {
+            validateManualComplete(currentStatus, userService.getUserAuthenticated());
+        }
         validateSupplierRequiredForStatusChange(currentStatus, newStatus, qr);
         validateStatusRequirements(qr, newStatus);
         validateTerminalStatus(currentStatus);
@@ -442,6 +445,21 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         return qrMapper.entityToDTO(qrRepository.save(qr));
     }
 
+    /**
+     * A Quote Request is normally completed automatically when a Quotation containing
+     * its products is answered. Manual completion is only allowed from an ANSWERED Quote
+     * Request and requires the COMPLETE_IP_QUOTE_REQUESTS permission: a controlled fallback
+     * for when the automatic flow cannot complete it for some reason.
+     */
+    private void validateManualComplete(IpQuoteRequestStatus currentStatus, UserEntity user) {
+        if (!validateAction(user, ModuleAction.COMPLETE_IP_QUOTE_REQUESTS)) {
+            throw new NotChangeStatusException(simpleMessage("ip.qr.no-manual-complete"));
+        }
+        if (currentStatus != IpQuoteRequestStatus.ANSWERED) {
+            throw new NotChangeStatusException(simpleMessage("ip.qr.manual-complete-requires-answered"));
+        }
+    }
+
     private void validateSupplierRequiredForStatusChange(IpQuoteRequestStatus currentStatus, IpQuoteRequestStatus newStatus, IpQuoteRequestEntity qr) {
         if (requiresSupplierForStatusChange(currentStatus, newStatus) && qr.getSupplier() == null) {
             throw new NotChangeStatusException(
@@ -454,7 +472,6 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         return switch (newStatus) {
             case SENT -> currentStatus == IpQuoteRequestStatus.CREATED;
             case ANSWERED -> currentStatus == IpQuoteRequestStatus.SENT;
-            case COMPLETE -> currentStatus == IpQuoteRequestStatus.ANSWERED;
             default -> false;
         };
     }
@@ -475,8 +492,6 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
                         new String[]{formatNotActiveProducts(notActiveProducts)}
                 ));
         }
-        if (newStatus == IpQuoteRequestStatus.COMPLETE && qr.getAnsweredAt() == null)
-            throw new NotChangeStatusException(simpleMessage("ip.qr.not-valid-complete"));
     }
 
     private static String formatNotActiveProducts(List<QuoteRequestProductStatusProjection> notActiveProducts) {

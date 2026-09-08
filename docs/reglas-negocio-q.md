@@ -1,7 +1,7 @@
 # Manual de Reglas de Negocio — Quotation (Q)
 
 > **Módulo:** `IP_QUOTATIONS`
-> **Estado del documento:** ⚠️ **BORRADOR** — el módulo de Q aún tiene **ajustes pendientes** (ver §11). Este manual refleja el comportamiento vigente al 2026-09-05 y debe actualizarse cuando se apliquen esos ajustes.
+> **Estado del documento:** Actualizado al 2026-09-08.
 > **Base:** `src/main/java/com/itradingsolutions/itex/api/ip/q/`
 
 ## 1. Propósito del módulo y su lugar en el flujo IP
@@ -34,7 +34,7 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 | `leadTime` + `leadTimeType` | Sí | Usuario (default `0` / `DAYS` en creación) | Plazo de entrega ofrecido. |
 | `validity` + `validityType` | Sí | Usuario (default `0` / `DAYS` en creación) | Vigencia de la cotización. |
 | `incoterms` | No | Usuario | Incoterm del documento. |
-| `paymentTerms` | Sí | **Auto: desde el client** en creación; editable en `PUT` | No hay gate de permiso en el `PUT` (a diferencia de QR). Existe la acción `EDIT_PAYMENT_TERMS_IP_QUOTATIONS` (4003006) pero **no se usa** en el flujo de actualización actual. |
+| `paymentTerms` | Sí | **Auto: desde el client** en creación; editable en `PUT` | Sobrescritura manual solo con el permiso `EDIT_PAYMENT_TERMS_IP_QUOTATIONS` (4003006); si no, se ignora silenciosamente. |
 | `applicationAt` | Sí (para `SENT`/`ANSWERED`) | Usuario | Fecha de aplicación ofrecida, **solo fecha (sin hora)**. Es **requerida** para poder pasar a `SENT` o `ANSWERED` → `ip.q.application-at-required`. |
 | `pdfUrl` | No | Sistema (al imprimir) | PDF generado; en estados **finales** se **reutiliza**. |
 | `openBy` / `openAt` | No | Sistema (open-lock) | Lock de edición (ver §5). Se limpia en estados finales y con el unlock nocturno. |
@@ -65,11 +65,11 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 |------------|------|------------|-------------------|----------------|
 | `CREATED → SENT` | Manual (`PATCH /ip/q/{id}/change-status?status=SENT`) | **≥1 QR enlazada** y **≥1 producto** (`HAS_QUOTE_REQUESTS` + `HAS_PRODUCTS`); `applicationAt` presente | `sentAt = ahora` | `ip.q.not-valid-sent`; `ip.q.application-at-required` |
 | `SENT → ANSWERED` | Manual | ≥1 producto; `sentAt` presente; `applicationAt` presente | `answeredAt = ahora`; **dispara transiciones automáticas de las QR** (§7, que las deja inmutables) | `ip.q.not-valid-answered`; `ip.q.application-at-required` |
-| `ANSWERED → COMPLETE` | Manual | ≥1 producto; `answeredAt` presente; **≥1 PO asociada** | `completeAt = ahora` | `ip.q.not-valid-complete`; `ip.q.complete-requires-po` |
+| `ANSWERED → COMPLETE` | Manual | ≥1 producto; `answeredAt` presente; **≥1 PO asociada**; permiso `COMPLETE_IP_QUOTATIONS` (4003007) | `completeAt = ahora` | `ip.q.not-valid-complete`; `ip.q.complete-requires-po`; `ip.q.no-manual-complete`; `ip.q.manual-complete-requires-answered` |
 | `ANSWERED → SENT` (rollback) | Manual | **Sin PO asociada** | `answeredAt = null` | `ip.q.cannot-revert-with-po` |
 | `ANSWERED → CREATED` (rollback) | Manual | Sin PO asociada | `answeredAt = null`, `sentAt = null` | `ip.q.cannot-revert-with-po` |
 | `SENT → CREATED` (rollback) | Manual | — (no valida PO asociada en este caso) | `sentAt = null` | — |
-| `CREATED/SENT/ANSWERED → REJECTED` | Manual (`DELETE /ip/q/{id}`, permiso `REJECT_IP_QUOTATIONS`) | **Sin PO asociada** | `rejectAt = ahora`; limpia `openBy`/`openAt` | `ip.q.cannot-reject-with-po` |
+| `CREATED/SENT/ANSWERED → REJECTED` | Manual (`DELETE /ip/q/{id}`, permiso `REJECT_IP_QUOTATIONS`) | Todas las QR asociadas en `COMPLETE`/`REJECTED`; sin POs o todas las POs en `REJECTED` | `rejectAt = ahora`; limpia `openBy`/`openAt` | `ip.q.qr-not-completed-or-rejected`; `ip.q.po-not-all-rejected` |
 
 **Reglas transversales:**
 - **Mismo estado:** no se permite → `ip.q.equal-status`.
@@ -77,7 +77,8 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 - Al pasar a estado terminal se **cierra el open-lock**.
 - `change-status` con `REJECTED` **no está permitido**: el controlador lo rechaza (`IllegalArgumentException`); el rechazo va por `DELETE`.
 - **`change-status` NO exige open-lock.** Sí exige status no terminal (los cambios de estado no pasan por `validateQuotationEditable`).
-- **Respuesta del endpoint:** desde la última corrección, `PATCH /ip/q/{id}/change-status` devuelve el **objeto completo** (`IpQuotationResponse`), igual que `reject`; ya no devuelve el resumen `ListIpQuotationResponse`.
+- **Respuesta del endpoint:** `PATCH /ip/q/{id}/change-status` devuelve el **objeto completo** (`IpQuotationResponse`), igual que `reject`.
+- **Productos ACTIVE obligatorios:** cualquier cambio de estado (avance o rollback, excepto a `REJECTED`) exige que todos los productos de la Q estén en estado `ACTIVE` → `ip.q.product.not-active`.
 
 ### 4.2 Validación extra al enviar ($4.1 note)
 
@@ -111,9 +112,9 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 
 - Se agregan a partir de los productos de las **QR enlazadas** (cada línea de la Q referencia el producto de la QR de origen; `unitPrice`/`leadTime` provienen de la línea original de la QR).
 - El margen (`profitMargin`) y la condición (`condition`) se agregan a nivel de la Q.
-- **No** se permite el mismo producto de QR duplicado dentro de un request (`ip.q.product.duplicate-qrproduct-in-request`).
-- **No** se permite agregar productos cuyo producto maestro esté en `DRAFT` (`ip.q.product.draft-not-allowed`).
-- Si el mismo `productId` llega varias veces en un request, se **deduplica**: gana la primera, el resto se omite.
+- **No** se permite el mismo `quoteRequestProductId` duplicado dentro de un request (`ip.q.product.duplicate-qrproduct-in-request`).
+- **No** se permite el mismo `productId` duplicado dentro de un request ni de la Q (`ip.q.product.product-already-in-quotation`).
+- **Solo** se permiten productos maestros en estado `ACTIVE` (`ip.q.product.draft-not-allowed`).
 
 ### 6.2 Other charges
 
@@ -126,10 +127,10 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 | # | Disparador | Acción |
 |---|-----------|--------|
 | 1 | **Q pasa a `ANSWERED`** (manual) | QR con ≥1 producto en la Q → **`COMPLETE`**; QR sin productos en la Q → **`REJECTED`**; QR ya terminal → intacta. Historial `STATUS_CHANGE_BY_Q`, usuario = quien respondió la Q. |
-| 2 | **Job diario 23:53** | Desbloquear **todas** las Q abiertas (`openBy`/`openAt = null`). |
-| 3 | **Job diario 23:54** | Q `CREATED` con `createdAt` > 45 días → se marca `REJECTED` (`rejectAt = ahora`). ⚠️ **No usa `changeStatus`**: no valida nada, no escribe historial, no limpia el open-lock ni revierte QR. **Ver pendientes §11.** |
+| 2 | **Job diario 00:10** | Auto-rechazar Qs `CREATED`/`SENT`/`ANSWERED` con más de 30 días en su estado actual. Usa `changeStatusInternal`: escribe timestamp correcto, limpia open-lock y registra historial `AUTO_REJECTED_TIME` atribuido al sales rep. Para `ANSWERED` se omite si tiene POs no `REJECTED`. |
+| 3 | **Job diario 23:53** | Desbloquear **todas** las Q abiertas (`openBy`/`openAt = null`). |
 
-Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 54 23 * * *`.
+Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 10 0 * * *`.
 
 ## 8. Relación Q ↔ QR y Q ↔ PO
 
@@ -156,7 +157,8 @@ Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 
 | 4003003 | `VIEW_HISTORY_IP_QUOTATIONS` | Ver historial. |
 | 4003004 | `CLONE_IP_QUOTATIONS` | Clonar Q. |
 | 4003005 | `REJECT_IP_QUOTATIONS` | Rechazar Q (`DELETE /ip/q/{id}`). |
-| 4003006 | `EDIT_PAYMENT_TERMS_IP_QUOTATIONS` | Existe en el enum pero **no se usa** en el flujo de actualización actual (el `PUT` permite modificar `paymentTerms` sin gate). |
+| 4003006 | `EDIT_PAYMENT_TERMS_IP_QUOTATIONS` | Sobrescribir `paymentTerms` manualmente en el `PUT`. |
+| 4003007 | `COMPLETE_IP_QUOTATIONS` | Completar Q manualmente (`ANSWERED → COMPLETE`). No viene en roles por defecto. |
 | — | Sin acción (solo acceso al módulo) | `change-status`, open/close-lock, listar, imprimir. |
 
 ## 10. Mensajes de error (key → cuándo se dispara)
@@ -168,8 +170,14 @@ Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 
 | `ip.q.not-valid-complete` | `ANSWERED→COMPLETE` sin `answeredAt`/sin productos. |
 | `ip.q.application-at-required` | Pasar a `SENT`/`ANSWERED` sin `applicationAt`. |
 | `ip.q.complete-requires-po` | `COMPLETE` sin ninguna PO asociada. |
-| `ip.q.cannot-reject-with-po` | Rechazo con PO asociada. |
+| `ip.q.cannot-reject-with-po` | Rechazo con PO asociada (mensaje legacy; ahora se usa `ip.q.po-not-all-rejected`). |
 | `ip.q.cannot-revert-with-po` | Rollback (`ANSWERED→SENT/CREATED`) con PO asociada. |
+| `ip.q.no-manual-complete` | `COMPLETE` manual sin permiso `COMPLETE_IP_QUOTATIONS`. |
+| `ip.q.manual-complete-requires-answered` | `COMPLETE` manual desde estado distinto de `ANSWERED`. |
+| `ip.q.auto-rejected-time` | Historial de auto-rechazo por 30 días sin actividad. |
+| `ip.q.qr-not-completed-or-rejected` | Rechazo manual con QR asociadas no terminadas. |
+| `ip.q.po-not-all-rejected` | Rechazo manual con POs asociadas no todas `REJECTED`. |
+| `ip.q.product.not-active` | Cambio de estado con productos no `ACTIVE`. |
 | `ip.q.cannot-change-complete-status` / `ip.q.cannot-change-rejected-status` | Intentar cambiar un estado terminal. |
 | `ip.q.equal-status` | Transición a un estado igual al actual. |
 | `ip.q.client-change-blocked` | Cambiar el cliente con QR enlazadas. |
@@ -184,12 +192,11 @@ Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 
 | `ip.q.not-generate-doc` | Imprimir sin QRs. |
 | `ip.q.not-exist` | Q inexistente. |
 
-## 11. Ajustes pendientes del módulo (por lo que este documento es BORRADOR)
+## 11. Ajustes pendientes fuera del alcance actual
 
-1. **Auto-rechazo de Q viejas (45 días):** el job de las 23:54 no pasa por `changeStatus`: escribe `status` + `rejectAt` directo. **No cierra el open-lock**, **no escribe historial** y **no** revierte/libera las QR enlazadas. Decidir si alinearlo con el flujo normal.
-2. **Rollback de QR cuando la Q retrocede:** al volver `ANSWERED → SENT/CREATED`, las QR que se completaron/rechazaron **no** se restauran. Definir si el rollback debe revertir también las QR.
-3. **`SENT → CREATED` no valida PO:** a diferencia del rollback desde `ANSWERED`, volver de `SENT` a `CREATED` no bloquea si hay PO. Confirmar si es intencional.
-4. **`DELETE` de productos/other charges de la QR no exige open-lock** (solo status editable) — al revés que en Q, donde sí se exige ambos. Uniformar criterio si aplica.
+1. **Rollback de QR cuando la Q retrocede:** al volver `ANSWERED → SENT/CREATED`, las QR que se completaron/rechazaron **no** se restauran. Definir si el rollback debe revertir también las QR.
+2. **`SENT → CREATED` no valida PO:** a diferencia del rollback desde `ANSWERED`, volver de `SENT` a `CREATED` no bloquea si hay PO. Confirmar si es intencional.
+3. **`DELETE` de productos/other charges de la QR no exige open-lock** (solo status editable) — al revés que en Q, donde sí se exige ambos. Uniformar criterio si aplica.
 
 ## 12. Referencias de código
 

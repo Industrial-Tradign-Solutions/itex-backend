@@ -9,6 +9,7 @@ public enum IpQuotationHistoryAction {
     CLONE,
     REJECTED,
     STATUS_CHANGE,
+    AUTO_REJECTED_TIME,
     ADD_PRODUCT,
     REMOVE_PRODUCT,
     UPDATE_PRODUCT,

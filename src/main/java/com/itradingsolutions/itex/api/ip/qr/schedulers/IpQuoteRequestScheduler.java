@@ -21,7 +21,7 @@ public class IpQuoteRequestScheduler {
         list.forEach(qr -> ipQuoteRequestService.unlockIpQuoteRequest(qr.getId()));
     }
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 5 0 * * *")
     private void cronAutoRejectStaleIpQuoteRequests() {
         log.info("Iniciando rechazo automatico de Quote Requests vencidas");
         var rejected = ipQuoteRequestService.autoRejectStaleQuoteRequests();

@@ -1,5 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.service.impl;
 
+import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
+import com.itradingsolutions.itex.api.common.service.IMessageService;
 import com.itradingsolutions.itex.api.common.service.impl.HistoryServiceImpl;
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
@@ -8,6 +10,7 @@ import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationHistoryEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationHistoryMapper;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationHistoryRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
@@ -29,6 +32,7 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
 
     private final IIpQuotationHistoryRepository repository;
     private final IpQuotationHistoryMapper mapper;
+    private final IMessageService messageService;
 
     @Override
     @Transactional
@@ -58,6 +62,31 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
         entity.setIpQuotation(quotationId);
         entity.setData(resolveHistoryOtherChargeData(action, oldDto, newDto));
         addHistoryCommon(action, entity);
+    }
+
+    @Override
+    @Transactional
+    public void addHistoryAutoStatusChange(IpQuotationHistoryAction action, UUID quotationId,
+                                           IpQuotationStatus oldStatus, IpQuotationStatus newStatus,
+                                           UserEntity user) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("status", getChangeItem(oldStatus.getName(), newStatus.getName()));
+        data.put("message", resolveAutoStatusChangeMessage(action, oldStatus));
+
+        var entity = new IpQuotationHistoryEntity();
+        entity.setIpQuotation(quotationId);
+        entity.setData(data);
+        entity.setUser(user);
+        entity.setAction(action);
+        repository.save(entity);
+    }
+
+    private String resolveAutoStatusChangeMessage(IpQuotationHistoryAction action, IpQuotationStatus oldStatus) {
+        return switch (action) {
+            case AUTO_REJECTED_TIME -> messageService.compositeMessage(
+                    "ip.q.auto-rejected-time", new String[]{oldStatus.getName()});
+            default -> throw new BadRequestException("Invalid action");
+        };
     }
 
     @Override

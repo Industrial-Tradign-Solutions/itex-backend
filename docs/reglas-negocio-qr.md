@@ -1,7 +1,7 @@
 # Manual de Reglas de Negocio — Quote Request (QR)
 
 > **Módulo:** `IP_QUOTE_REQUESTS`
-> **Estado del documento:** Estable (refleja el comportamiento actual del backend al 2026-09-05)
+> **Estado del documento:** Actualizado al 2026-09-08
 > **Base:** `src/main/java/com/itradingsolutions/itex/api/ip/qr/`
 
 ## 1. Propósito del módulo y su lugar en el flujo IP
@@ -117,6 +117,10 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 - `quantity` y `unitType`: obligatorios.
 - `leadTime`, `leadTimeType`, `unitPrice`: opcionales en edición, **pero requeridos por todas las líneas** para poder pasar a `ANSWERED` (`isValidAnswered()`).
 - No se admite **duplicar el mismo producto** en la QR → `ip.qr.product.exist`.
+- Estado del producto maestro al agregar/editar:
+  - `CREATED`/`SENT`: se permite `ACTIVE` o `DRAFT`; se rechaza `INACTIVE` → `ip.qr.product.inactive-not-allowed`.
+  - `ANSWERED`: solo se permite `ACTIVE` → `ip.qr.product.draft-not-allowed`.
+- Al pasar a `ANSWERED` todos los productos deben estar `ACTIVE` → `ip.qr.products-not-active`.
 
 ### 6.2 Other charges
 
@@ -135,7 +139,7 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 | 6 | Job diario 00:00 ET | QR `ANSWERED` con `answeredAt` ≤ hoy−30 **y sin Q asociada** → `REJECTED`. Si está asociada a una Q **no** se auto-rechaza. |
 | 7 | **Job diario 23:50:30** | Desbloquear **todas** las QRs abiertas (`openBy`/`openAt = null`). |
 
-Cron literal de los jobs en `IpQuoteRequestScheduler`: unlock `30 50 23 * * *`; auto-rechazo `0 0 0 * * *`.
+Cron literal de los jobs en `IpQuoteRequestScheduler`: unlock `30 50 23 * * *`; auto-rechazo `0 5 0 * * *`.
 
 > El corte de los 30 días es **fecha pura**: una QR vence cuando su fecha de referencia es `hoy − 30` o anterior.
 
@@ -181,6 +185,8 @@ Cron literal de los jobs en `IpQuoteRequestScheduler`: unlock `30 50 23 * * *`; 
 | `ip.qr.not-block` / `ip.qr.not-block-by` | Operación con open-lock sin abrir / abierta por otro usuario. |
 | `ip.qr.not-open-max` | Alcanzar el tope de pestañas abiertas por usuario. |
 | `ip.qr.product.exist` / `ip.qr.other-charges.exist` | Producto/descripción duplicado en la QR. |
+| `ip.qr.product.draft-not-allowed` | Agregar/editar un producto `DRAFT` en una QR en `ANSWERED`. |
+| `ip.qr.product.inactive-not-allowed` | Agregar/editar un producto `INACTIVE` en una QR. |
 | `ip.qr.not-generate-doc` | Imprimir sin productos. |
 | `ip.qr.not-exist` | QR inexistente (o línea que no pertenece a la QR). |
 | `ip.qr.not-valid-complete` (reemplazada) | Sustituida por la lógica de `no-manual-complete`. |

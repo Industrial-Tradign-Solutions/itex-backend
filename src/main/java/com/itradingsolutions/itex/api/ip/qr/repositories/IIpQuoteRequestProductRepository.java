@@ -31,6 +31,13 @@ public interface IIpQuoteRequestProductRepository extends JpaRepository<IpQuoteR
     Optional<IpQuoteRequestProductEntity> fetchOneById(UUID id, UUID qrId);
 
     @Query("""
+           SELECT p FROM IpQuoteRequestProductEntity p
+           JOIN FETCH p.ipProduct
+           WHERE p.id IN :ids
+           """)
+    List<IpQuoteRequestProductEntity> findByIdsWithProduct(@Param("ids") Set<UUID> ids);
+
+    @Query("""
            SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END
            FROM IpQuoteRequestProductEntity p
            WHERE p.ipProduct.id = ?1 AND p.ipQuoteRequest.id = ?2

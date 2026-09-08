@@ -1,14 +1,17 @@
 package com.itradingsolutions.itex.api.ip.po.repository;
 
 import com.itradingsolutions.itex.api.ip.po.models.entities.IpPurchaseOrderEntity;
+import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.q.models.dto.BasicPurchaseOrderDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -17,10 +20,10 @@ public interface IIpPurchaseOrderRepository extends JpaRepository<IpPurchaseOrde
     @Query("SELECT COUNT(c.id) FROM IpPurchaseOrderEntity c WHERE c.openBy.id = ?1")
     int countByOpenUserId(UUID userId);
 
-    @Query("SELECT c FROM IpPurchaseOrderEntity c WHERE c.openBy.user = ?1")
+    @Query("SELECT c FROM IpPurchaseOrderEntity c JOIN FETCH c.openBy WHERE c.openBy.user = ?1")
     List<IpPurchaseOrderEntity> fetchAllOpenByUsername(String username);
 
-    @Query("SELECT c FROM IpPurchaseOrderEntity c WHERE c.openBy IS NOT NULL")
+    @Query("SELECT c FROM IpPurchaseOrderEntity c JOIN FETCH c.openBy WHERE c.openBy IS NOT NULL")
     List<IpPurchaseOrderEntity> fetchAllOpen();
 
     @Modifying
@@ -34,4 +37,17 @@ public interface IIpPurchaseOrderRepository extends JpaRepository<IpPurchaseOrde
             ORDER BY po.number ASC
             """)
     List<BasicPurchaseOrderDTO> fetchSummaryByQuotationId(UUID quotationId);
+
+    boolean existsByQuotation_Id(UUID quotationId);
+
+    @Query("SELECT po.status FROM IpPurchaseOrderEntity po WHERE po.quotation.id = ?1")
+    List<IpPurchaseOrderStatus> fetchStatusesByQuotationId(UUID quotationId);
+
+    @Query("""
+           SELECT DISTINCT po.quotation.id
+           FROM IpPurchaseOrderEntity po
+           WHERE po.quotation.id IN :quotationIds AND po.status <> :rejectedStatus
+           """)
+    Set<UUID> findQuotationIdsWithNonRejectedPurchaseOrders(@Param("quotationIds") List<UUID> quotationIds,
+                                                            @Param("rejectedStatus") IpPurchaseOrderStatus rejectedStatus);
 }

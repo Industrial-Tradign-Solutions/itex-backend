@@ -1,10 +1,12 @@
 package com.itradingsolutions.itex.api.ip.q.service;
 
+import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationHistoryDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationHistoryAction;
+import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,4 +52,17 @@ public interface IIpQuotationHistoryService {
      * @return list of history DTOs
      */
     List<IpQuotationHistoryDTO> getHistoryById(UUID quotationId);
+
+    /**
+     * Records an automatic status change (e.g. auto-rejection by scheduler).
+     *
+     * @param action the automatic action performed
+     * @param quotationId the ID of the Quotation
+     * @param oldStatus the status before the change
+     * @param newStatus the status after the change
+     * @param user the user to attribute the entry to (normally the sales rep)
+     */
+    void addHistoryAutoStatusChange(IpQuotationHistoryAction action, UUID quotationId,
+                                    IpQuotationStatus oldStatus, IpQuotationStatus newStatus,
+                                    UserEntity user);
 }

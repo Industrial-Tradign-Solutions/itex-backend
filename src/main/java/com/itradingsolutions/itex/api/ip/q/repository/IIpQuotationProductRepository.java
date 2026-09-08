@@ -1,5 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.repository;
 
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
+import com.itradingsolutions.itex.api.ip.q.models.dto.QuotationProductStatusProjection;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -35,6 +37,36 @@ public interface IIpQuotationProductRepository extends JpaRepository<IpQuotation
            """)
     Set<UUID> findExistingProductIdsByQuotationId(@Param("quotationId") UUID quotationId);
 
+    @Query("""
+           SELECT qp FROM IpQuotationProductEntity qp
+           JOIN FETCH qp.quoteRequestProduct qrp
+           JOIN FETCH qrp.ipProduct
+           JOIN FETCH qp.quotationsQuoteRequest qqr
+           JOIN FETCH qqr.quoteRequest
+           WHERE qqr.quotation.id = :quotationId AND qqr.quoteRequest.supplier.id = :supplierId
+           """)
     List<IpQuotationProductEntity> findByQuotationsQuoteRequest_Quotation_IdAndQuotationsQuoteRequest_QuoteRequest_Supplier_Id(
-            UUID quotationId, UUID supplierId);
+            @Param("quotationId") UUID quotationId, @Param("supplierId") UUID supplierId);
+
+    @Query("""
+           SELECT new com.itradingsolutions.itex.api.ip.q.models.dto.QuotationProductStatusProjection(
+               qp.quoteRequestProduct.ipProduct.mfrReference,
+               qp.quoteRequestProduct.ipProduct.description,
+               qp.quoteRequestProduct.ipProduct.status)
+           FROM IpQuotationProductEntity qp
+           JOIN qp.quotationsQuoteRequest qqr
+           WHERE qqr.quotation.id = :quotationId AND qp.quoteRequestProduct.ipProduct.status <> :status
+           """)
+    List<QuotationProductStatusProjection> fetchProductsNotInStatus(@Param("quotationId") UUID quotationId,
+                                                                    @Param("status") IpProductStatus status);
+
+    @Query("""
+           SELECT qp FROM IpQuotationProductEntity qp
+           JOIN FETCH qp.quoteRequestProduct qrp
+           JOIN FETCH qrp.ipQuoteRequest qr
+           JOIN FETCH qr.supplier
+           JOIN FETCH qp.quotationsQuoteRequest qqr
+           WHERE qqr.quotation.id IN :quotationIds
+           """)
+    List<IpQuotationProductEntity> fetchByQuotationIds(@Param("quotationIds") List<UUID> quotationIds);
 }

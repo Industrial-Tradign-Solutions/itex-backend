@@ -1,16 +1,15 @@
 package com.itradingsolutions.itex.api.ip.qr.schedulers;
 
-import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
-
 @Component
 @EnableScheduling
+@Slf4j
 @RequiredArgsConstructor
 public class IpQuoteRequestScheduler {
 
@@ -22,34 +21,10 @@ public class IpQuoteRequestScheduler {
         list.forEach(qr -> ipQuoteRequestService.unlockIpQuoteRequest(qr.getId()));
     }
 
-    @Scheduled(cron = "30 50 23 * * *")
-    private void cronRejectIpQuoteRequestCreated() {
-        final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
-
-        ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.CREATED)
-                .stream()
-                .filter(qr -> qr.getCreatedAt().isBefore(limit))
-                .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
-    }
-
-    @Scheduled(cron = "30 50 23 * * *")
-    private void cronRejectIpQuoteRequestSent() {
-        final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
-
-        ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.SENT)
-                .stream()
-                .filter(qr -> qr.getSentAt().isBefore(limit))
-                .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
-    }
-
-    @Scheduled(cron = "30 50 23 * * *")
-    private void cronRejectIpQuoteRequestAnswered() {
-        final ZonedDateTime limit = ZonedDateTime.now().minusDays(45);
-
-        ipQuoteRequestService.listAllQuoteRequestsByStatus(IpQuoteRequestStatus.ANSWERED)
-                .stream()
-                .filter(qr -> qr.getAnsweredAt().isBefore(limit))
-                .filter(qr -> qr.getListQuotations() != null && !qr.getListQuotations().isEmpty())
-                .forEach(qr -> ipQuoteRequestService.rejectQuoteRequest(qr.getId()));
+    @Scheduled(cron = "0 5 0 * * *")
+    private void cronAutoRejectStaleIpQuoteRequests() {
+        log.info("Iniciando rechazo automatico de Quote Requests vencidas");
+        var rejected = ipQuoteRequestService.autoRejectStaleQuoteRequests();
+        log.info("Rechazo automatico de Quote Requests finalizado: {} rechazadas", rejected);
     }
 }

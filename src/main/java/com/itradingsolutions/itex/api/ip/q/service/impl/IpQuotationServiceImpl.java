@@ -1,5 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.service.impl;
 
+import com.itradingsolutions.itex.api.admin.role.models.enums.ModuleAction;
+import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveDepartment;
 import com.itradingsolutions.itex.api.common.consecutive.models.enums.ConsecutiveModule;
@@ -16,6 +18,8 @@ import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.common.util.models.enums.Language;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.po.repository.IIpPurchaseOrderRepository;
+import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
+import com.itradingsolutions.itex.api.ip.q.models.dto.QuotationProductStatusProjection;
 import com.itradingsolutions.itex.api.ip.q.models.dto.reports.IpQuotationReportDTO;
 import com.itradingsolutions.itex.api.ip.q.exceptions.QuotationClientMismatchException;
 import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationException;
@@ -41,6 +45,7 @@ import com.itradingsolutions.itex.api.ip.q.models.response.AvailableForPurchaseO
 import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationClonedRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationOtherChargeRepository;
+import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationProductRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IpQuotationRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationHistoryService;
@@ -53,7 +58,9 @@ import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProduc
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
 import com.itradingsolutions.itex.api.partners.suppliers.models.responses.BasicSupplierResponse;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestHistoryAction;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
+import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestHistoryService;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.repository.IClientContactRepository;
@@ -71,6 +78,7 @@ import net.sf.jasperreports.engine.JRException;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +88,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -94,6 +103,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IClientContactRepository clientContactRepository;
     private final IClientContactService clientContactService;
+    private final IIpQuoteRequestHistoryService qrHistoryService;
     private final IIpQuotationHistoryService historyService;
     private final IpQuotationOtherChargeMapper otherChargeMapper;
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
@@ -101,9 +111,12 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final JasperService jasperService;
     private final SupplierMapper supplierMapper;
     private final IIpPurchaseOrderRepository purchaseOrderRepository;
+    private final IIpQuotationProductRepository qProductRepository;
 
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.Q;
+    private static final ZoneId QUOTATION_ZONE_ID = ZoneId.of("America/New_York");
+    private static final int AUTO_REJECT_DAYS = 30;
 
     private static final Predicate<IpQuotationEntity> HAS_QUOTE_REQUESTS =
             quotation -> Optional.ofNullable(quotation.getQuoteRequestsQuotations())
@@ -121,18 +134,18 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                     .isPresent();
 
     private static final Consumer<IpQuotationEntity> STAMP_REJECT =
-            quotation -> quotation.setRejectAt(ZonedDateTime.now());
+            quotation -> quotation.setRejectAt(ZonedDateTime.now(QUOTATION_ZONE_ID));
 
     private static final Map<TransitionKey<IpQuotationStatus>, StatusTransition<IpQuotationEntity>> TRANSITIONS = Map.ofEntries(
             Map.entry(new TransitionKey<>(IpQuotationStatus.CREATED, IpQuotationStatus.SENT),
                     new StatusTransition<>(HAS_QUOTE_REQUESTS.and(HAS_PRODUCTS),
-                            "ip.q.not-valid-sent", quotation -> quotation.setSentAt(ZonedDateTime.now()))),
+                            "ip.q.not-valid-sent", quotation -> quotation.setSentAt(ZonedDateTime.now(QUOTATION_ZONE_ID)))),
             Map.entry(new TransitionKey<>(IpQuotationStatus.SENT, IpQuotationStatus.ANSWERED),
                     new StatusTransition<>(HAS_PRODUCTS.and(quotation -> quotation.getSentAt() != null),
-                            "ip.q.not-valid-answered", quotation -> quotation.setAnsweredAt(ZonedDateTime.now()))),
+                            "ip.q.not-valid-answered", quotation -> quotation.setAnsweredAt(ZonedDateTime.now(QUOTATION_ZONE_ID)))),
             Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.COMPLETE),
                     new StatusTransition<>(HAS_PRODUCTS.and(quotation -> quotation.getAnsweredAt() != null),
-                            "ip.q.not-valid-complete", quotation -> quotation.setCompleteAt(ZonedDateTime.now()))),
+                            "ip.q.not-valid-complete", quotation -> quotation.setCompleteAt(ZonedDateTime.now(QUOTATION_ZONE_ID)))),
             Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.SENT),
                     StatusTransition.unrestricted(quotation -> quotation.setAnsweredAt(null))),
             Map.entry(new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.CREATED),
@@ -235,13 +248,15 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return toDto(quotation);
     }
 
-@Override
+    @Override
     @Transactional
     public IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request) {
         var quotation = findById(id);
-        validateEditable(quotation);
+        var user = userService.getUserAuthenticated();
+        validateQuotationEditable(quotation, user);
         
         var oldDto = quotationMapper.entityToDTO(quotation);
+
         var oldConsecutive = quotation.getNumber();
 
         Optional.ofNullable(request.clientId())
@@ -307,7 +322,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if (request.validity() != null) quotation.setValidity(request.validity());
         if (request.validityType() != null) quotation.setValidityType(request.validityType());
         if (request.incoterms() != null) quotation.setIncoterms(request.incoterms());
-        if (request.paymentTerms() != null) quotation.setPaymentTerms(request.paymentTerms());
+        if (validateAction(user, ModuleAction.EDIT_PAYMENT_TERMS_IP_QUOTATIONS) && request.paymentTerms() != null)
+            quotation.setPaymentTerms(request.paymentTerms());
 
         if (request.applicationAt() != null
                 && !request.applicationAt().equals(quotation.getApplicationAt())) {
@@ -355,15 +371,63 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         validateApplicationAtForStatus(quotation, newStatus);
         validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
         validatePurchaseOrderForReject(quotation, newStatus);
+        validatePurchaseOrderForComplete(quotation, newStatus);
+        validateQuoteRequestsForReject(quotation, newStatus);
+        validateManualComplete(currentStatus, newStatus);
+        validateProductsActiveForStatusChange(quotation, newStatus);
 
         var transition = resolveTransition(currentStatus, newStatus);
         validateRequirement(transition, quotation);
         transition.sideEffect().accept(quotation);
         quotation.setStatus(newStatus);
+        clearOpenLockOnFinalStatus(quotation);
 
-        var newQuotation = toDto(quotationRepository.save(quotation));
+        var savedQuotation = quotationRepository.save(quotation);
+        if (newStatus == IpQuotationStatus.ANSWERED) {
+            processQuoteRequestsOnAnswered(savedQuotation);
+        }
+
+        var newQuotation = toDto(savedQuotation);
         historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldQuotation, newQuotation);
         return newQuotation;
+    }
+
+    /**
+     * When a Quotation is ANSWERED, each linked Quote Request is transitioned automatically:
+     * QRs contributing at least one product to the Quotation are marked COMPLETE, while
+     * QRs with no products in the Quotation are marked REJECTED (this automatic flow is
+     * allowed to reject QRs even while linked to a Quotation, unlike the manual flow).
+     * Other Charges imported from a QR do not influence this decision.
+     */
+    private void processQuoteRequestsOnAnswered(IpQuotationEntity quotation) {
+        var qqrList = qqrRepository.findByQuotationIdWithQuoteRequestsAndProducts(quotation.getId());
+        if (qqrList.isEmpty()) return;
+
+        var user = userService.getUserAuthenticated();
+
+        for (var qqr : qqrList) {
+            var qr = qqr.getQuoteRequest();
+            if (qr == null) continue;
+
+            boolean hasProductsInQuotation = qqr.getQuotationProducts() != null
+                    && !qqr.getQuotationProducts().isEmpty();
+
+            var targetStatus = hasProductsInQuotation
+                    ? IpQuoteRequestStatus.COMPLETE
+                    : IpQuoteRequestStatus.REJECTED;
+
+            var oldStatus = qr.getStatus();
+            qrService.changeStatusInternal(qr.getId(), targetStatus);
+
+            qrHistoryService.addHistoryAutoStatusChange(
+                    IpQuoteRequestHistoryAction.STATUS_CHANGE_BY_Q,
+                    qr.getId(),
+                    oldStatus,
+                    targetStatus,
+                    quotation.getNumber(),
+                    user
+            );
+        }
     }
 
     private void validateNotSameStatus(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
@@ -412,41 +476,98 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     private void validatePurchaseOrderChangeStatus(IpQuotationEntity quotation) {
-        //TODO, validamos que el no tenga ninguna PO asignada
-        /*
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(list -> {
-                    throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
-                });
-
-         */
+        if (purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.cannot-revert-with-po"));
+        }
     }
 
+    /**
+     * A Quotation can only be manually REJECTED when it has no Purchase Orders associated,
+     * or when every associated Purchase Order is already REJECTED.
+     */
     private void validatePurchaseOrderForReject(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
         if (newStatus != IpQuotationStatus.REJECTED) return;
-        //TODO, validamos que todas las PO esten en rejected
 
-        /*
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(quotations -> {
-                    boolean allQuotationsRejected = quotations.stream()
-                            .map(IpQuotationsQuoteRequestEntity::getQuotation)
-                            .map(IpQuotationEntity::getStatus)
-                            .allMatch(status -> status == IpQuotationStatus.REJECTED);
+        var poStatuses = purchaseOrderRepository.fetchStatusesByQuotationId(quotation.getId());
+        if (poStatuses.isEmpty()) return;
 
-                    if (!allQuotationsRejected)
-                        throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
-                });
-         */
+        var allRejected = poStatuses.stream()
+                .allMatch(status -> status == com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus.REJECTED);
+        if (!allRejected) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.po-not-all-rejected"));
+        }
+    }
+
+    /**
+     * A Quotation can only be COMPLETED when it has at least one Purchase Order associated.
+     */
+    private void validatePurchaseOrderForComplete(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus != IpQuotationStatus.COMPLETE) return;
+        if (!purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.complete-requires-po"));
+        }
+    }
+
+    /**
+     * A Quotation can only be manually REJECTED when every linked Quote Request is COMPLETE or REJECTED.
+     */
+    private void validateQuoteRequestsForReject(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus != IpQuotationStatus.REJECTED) return;
+
+        var allowedStatuses = List.of(IpQuoteRequestStatus.COMPLETE, IpQuoteRequestStatus.REJECTED);
+        var countNotAllowed = qqrRepository.countQuoteRequestsNotInStatuses(quotation.getId(), allowedStatuses);
+        if (countNotAllowed > 0) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.qr-not-completed-or-rejected"));
+        }
+    }
+
+    /**
+     * Manual completion is only allowed from ANSWERED and requires the COMPLETE_IP_QUOTATIONS permission.
+     */
+    private void validateManualComplete(IpQuotationStatus currentStatus, IpQuotationStatus newStatus) {
+        if (newStatus != IpQuotationStatus.COMPLETE) return;
+
+        var user = userService.getUserAuthenticated();
+        if (!validateAction(user, ModuleAction.COMPLETE_IP_QUOTATIONS)) {
+            throw new NotChangeStatusException(simpleMessage("ip.q.no-manual-complete"));
+        }
+        if (currentStatus != IpQuotationStatus.ANSWERED) {
+            throw new NotChangeStatusException(simpleMessage("ip.q.manual-complete-requires-answered"));
+        }
+    }
+
+    /**
+     * All products in the Quotation must be ACTIVE for any status change except REJECTED.
+     */
+    private void validateProductsActiveForStatusChange(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus == IpQuotationStatus.REJECTED) return;
+
+        var notActiveProducts = qProductRepository.fetchProductsNotInStatus(quotation.getId(), IpProductStatus.ACTIVE);
+        if (!notActiveProducts.isEmpty()) {
+            throw new NotChangeStatusException(compositeMessage(
+                    "ip.q.product.not-active",
+                    new String[]{formatNotActiveProducts(notActiveProducts)}
+            ));
+        }
+    }
+
+    private static String formatNotActiveProducts(List<QuotationProductStatusProjection> notActiveProducts) {
+        return notActiveProducts.stream()
+                .map(projection -> {
+                    var mfrReference = projection.mfrReference();
+                    var description = projection.description();
+                    var status = projection.status().name();
+                    var label = mfrReference != null && !mfrReference.isBlank() ? mfrReference : description;
+                    return label + " (" + status + ")";
+                })
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 
     @Override
     @Transactional
     public void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId) {
         var quotation = findById(quotationId);
-        validateQuotationForQRDeletion(quotation);
+        validateQuoteRequestModificationAllowed(quotation, "ip.q.qr.cannot-delete");
         var exists = qqrRepository.existsByIdAndQuotation_Id(qqrId, quotationId);
         if (!exists) {
             throw new NotExistIpQuotationException(simpleMessage("ip.q.qr.not-exist"));
@@ -460,7 +581,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds) {
         var quotation = findById(quotationId);
-        validateEditable(quotation);
+        validateQuoteRequestModificationAllowed(quotation, "ip.q.qr.cannot-add");
 
         // Initialize the list if it's null
         if (quotation.getQuoteRequestsQuotations() == null) {
@@ -573,15 +694,17 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return quotationMapper.entityToDTO(saved);
     }
 
-    private void validateEditable(IpQuotationEntity quotation) {
-        if (quotation.getStatus() == IpQuotationStatus.COMPLETE || quotation.getStatus() == IpQuotationStatus.REJECTED)
-            throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
-    }
-
-    private void validateQuotationForQRDeletion(IpQuotationEntity quotation) {
-        if (quotation.getStatus() != IpQuotationStatus.CREATED &&
-            quotation.getStatus() != IpQuotationStatus.SENT) {
-            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.qr.cannot-delete"));
+    /**
+     * Quote Requests can only be added to or removed from a Quotation while it is in
+     * CREATED status. In any other status the linked QRs become immutable; the Quotation
+     * must be moved back to CREATED first in order to modify its Quote Requests.
+     */
+    private void validateQuoteRequestModificationAllowed(IpQuotationEntity quotation, String messageKey) {
+        if (isFinalStatus(quotation.getStatus())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.not-editable-by-status"));
+        }
+        if (quotation.getStatus() != IpQuotationStatus.CREATED) {
+            throw new QuotationStatusRestrictionException(simpleMessage(messageKey));
         }
     }
 
@@ -646,28 +769,35 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         statuses.add(IpQuotationStatus.ANSWERED);
         if (viewCompleted) statuses.add(IpQuotationStatus.COMPLETE);
 
-        return quotationRepository.fetchByClientAndStatus(clientId, statuses, currency)
-                .stream()
-                .map(this::toAvailableForPurchaseOrderResponse)
+        var quotations = quotationRepository.fetchByClientAndStatus(clientId, statuses, currency);
+        if (quotations.isEmpty()) {
+            return List.of();
+        }
+
+        var quotationIds = quotations.stream()
+                .map(IpQuotationEntity::getId)
+                .toList();
+        var productsByQuotationId = qProductRepository.fetchByQuotationIds(quotationIds).stream()
+                .collect(Collectors.groupingBy(qp -> qp.getQuotationsQuoteRequest().getQuotation().getId()));
+
+        return quotations.stream()
+                .map(quotation -> toAvailableForPurchaseOrderResponse(quotation, productsByQuotationId.getOrDefault(quotation.getId(), List.of())))
                 .toList();
     }
 
-    private AvailableForPurchaseOrderResponse toAvailableForPurchaseOrderResponse(IpQuotationEntity entity) {
-        var suppliers = entity.getQuoteRequestsQuotations() == null
-                ? List.<BasicSupplierResponse>of()
-                : entity.getQuoteRequestsQuotations().stream()
-                        .filter(qqr -> qqr.getQuotationProducts() != null)
-                        .flatMap(qqr -> qqr.getQuotationProducts().stream())
-                        .map(IpQuotationProductEntity::getQuoteRequestProduct)
-                        .filter(qrp -> qrp != null)
-                        .map(IpQuoteRequestProductEntity::getIpQuoteRequest)
-                        .filter(qr -> qr != null)
-                        .map(IpQuoteRequestEntity::getSupplier)
-                        .filter(s -> s != null)
-                        .distinct()
-                        .map(supplierMapper::entityToDto)
-                        .map(supplierMapper::dtoToBasicResponse)
-                        .toList();
+    private AvailableForPurchaseOrderResponse toAvailableForPurchaseOrderResponse(IpQuotationEntity entity,
+                                                                                  List<IpQuotationProductEntity> products) {
+        var suppliers = products.stream()
+                .map(IpQuotationProductEntity::getQuoteRequestProduct)
+                .filter(qrp -> qrp != null)
+                .map(IpQuoteRequestProductEntity::getIpQuoteRequest)
+                .filter(qr -> qr != null)
+                .map(IpQuoteRequestEntity::getSupplier)
+                .filter(s -> s != null)
+                .distinct()
+                .map(supplierMapper::entityToDto)
+                .map(supplierMapper::dtoToBasicResponse)
+                .toList();
 
         return new AvailableForPurchaseOrderResponse(
                 entity.getId(),
@@ -680,9 +810,53 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     @Override
-    public void validateQuotationInCreatedStatus(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
-        if (entity.getStatus() != IpQuotationStatus.CREATED) {
-            throw new NotOpenQuoteRequestException(simpleMessage("ip.q.not-created-status"));
+    public void validateQuotationEditable(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
+        if (isFinalStatus(entity.getStatus()))
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.not-editable-by-status"));
+        validateOpenQuotation(entity, user);
+    }
+
+    /**
+     * Internal status change used by automated flows (scheduler, QR auto-completion).
+     * Does not enforce manual business validations and does not write history itself.
+     */
+    @Override
+    @Transactional
+    public void changeStatusInternal(UUID qId, IpQuotationStatus newStatus) {
+        var quotation = findById(qId);
+        var currentStatus = quotation.getStatus();
+
+        if (currentStatus == newStatus || isFinalStatus(currentStatus)) {
+            return;
+        }
+
+        setStatusTimestamp(quotation, newStatus);
+        if (newStatus.ordinal() < currentStatus.ordinal()) {
+            clearFutureTimestamps(quotation, newStatus);
+        }
+        quotation.setStatus(newStatus);
+        clearOpenLockOnFinalStatus(quotation);
+        quotationRepository.save(quotation);
+    }
+
+    private void setStatusTimestamp(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        var now = ZonedDateTime.now(zoneId);
+        switch (newStatus) {
+            case SENT -> quotation.setSentAt(now);
+            case ANSWERED -> quotation.setAnsweredAt(now);
+            case COMPLETE -> quotation.setCompleteAt(now);
+            case REJECTED -> quotation.setRejectAt(now);
+            case CREATED -> { /* no timestamp */ }
+        }
+    }
+
+    private void clearFutureTimestamps(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        switch (newStatus) {
+            case CREATED -> {
+                quotation.setSentAt(null);
+                quotation.setAnsweredAt(null);
+            }
+            case SENT -> quotation.setAnsweredAt(null);
         }
     }
 
@@ -693,34 +867,58 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Override
     @Transactional
     public void unlockAllOpenQuotations() {
-        var openQuotations = quotationRepository.fetchAllOpen();
-        
-        openQuotations.forEach(quotation -> {
-            quotation.setOpenBy(null);
-            quotation.setOpenAt(null);
-            quotationRepository.save(quotation);
-        });
+        quotationRepository.clearAllOpenLocks();
     }
 
     /**
-     * Auto-rejects CREATED Quotations older than 45 days.
+     * Auto-rejects Quotations that have been in CREATED, SENT or ANSWERED status for more than 30 days.
      * Called by scheduler to maintain data hygiene.
      */
     @Override
     @Transactional
-    public void autoRejectOldCreatedQuotations() {
-        var cutoffDate = ZonedDateTime.now().minusDays(45);
-        
-        var oldQuotations = quotationRepository.findAll().stream()
-                .filter(q -> q.getStatus() == IpQuotationStatus.CREATED)
-                .filter(q -> q.getCreatedAt().isBefore(cutoffDate))
+    public int autoRejectStaleQuotations() {
+        var cutoff = LocalDate.now(zoneId).minusDays(AUTO_REJECT_DAYS - 1L).atStartOfDay(zoneId);
+
+        var staleCreated = quotationRepository.fetchStaleCreated(IpQuotationStatus.CREATED, cutoff);
+        var staleSent = quotationRepository.fetchStaleSent(IpQuotationStatus.SENT, cutoff);
+        var staleAnswered = filterAnsweredRejectable(quotationRepository.fetchStaleAnswered(IpQuotationStatus.ANSWERED, cutoff));
+
+        return rejectStale(staleCreated) + rejectStale(staleSent) + rejectStale(staleAnswered);
+    }
+
+    private List<IpQuotationEntity> filterAnsweredRejectable(List<IpQuotationEntity> quotations) {
+        if (quotations.isEmpty()) {
+            return List.of();
+        }
+
+        var quotationIds = quotations.stream()
+                .map(IpQuotationEntity::getId)
                 .toList();
-        
-        oldQuotations.forEach(quotation -> {
-            quotation.setStatus(IpQuotationStatus.REJECTED);
-            quotation.setRejectAt(ZonedDateTime.now());
-            quotationRepository.save(quotation);
-        });
+        var idsWithNonRejectedPos = purchaseOrderRepository.findQuotationIdsWithNonRejectedPurchaseOrders(
+                quotationIds,
+                com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus.REJECTED
+        );
+
+        return quotations.stream()
+                .filter(quotation -> !idsWithNonRejectedPos.contains(quotation.getId()))
+                .toList();
+    }
+
+    private int rejectStale(List<IpQuotationEntity> staleQuotations) {
+        staleQuotations.forEach(this::rejectStaleExpired);
+        return staleQuotations.size();
+    }
+
+    private void rejectStaleExpired(IpQuotationEntity quotation) {
+        var oldStatus = quotation.getStatus();
+        changeStatusInternal(quotation.getId(), IpQuotationStatus.REJECTED);
+        historyService.addHistoryAutoStatusChange(
+                IpQuotationHistoryAction.AUTO_REJECTED_TIME,
+                quotation.getId(),
+                oldStatus,
+                IpQuotationStatus.REJECTED,
+                quotation.getSalesRep()
+        );
     }
 
     @Override
@@ -833,6 +1031,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private boolean isFinalStatus(IpQuotationStatus status) {
         return status == IpQuotationStatus.COMPLETE
                 || status == IpQuotationStatus.REJECTED;
+    }
+
+    private void clearOpenLockOnFinalStatus(IpQuotationEntity quotation) {
+        if (isFinalStatus(quotation.getStatus())) {
+            quotation.setOpenBy(null);
+            quotation.setOpenAt(null);
+        }
     }
 
     private JasperReport getReportTemplateFor(IpQuotationEntity quotation) {

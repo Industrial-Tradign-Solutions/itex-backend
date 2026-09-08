@@ -20,7 +20,7 @@ public class FilterListSuppliers extends PartnerFilter<SupplierStatus, SupplierE
     public Specification<SupplierEntity> filterSuppliers() {
         Specification<SupplierEntity> spec = filter();
 
-        if (!getBrand().isBlank())
+        if (getBrand() != null && !getBrand().isBlank())
             spec = spec.and(hasBrand());
 
         return spec;

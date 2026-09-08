@@ -20,8 +20,9 @@ import java.util.UUID;
  * Implementation of {@link IIpQuotationOtherChargeService}.
  * <p>
  * Handles business logic for creating, updating, retrieving, and removing
- * other charges from quotations. Validates that quotations are in CREATED status
- * before allowing modifications.
+ * other charges from quotations. Validates that quotations are editable
+ * (CREATED, SENT or ANSWERED) and locked by the current user before allowing
+ * modifications.
  * </p>
  */
 @Service
@@ -62,18 +63,21 @@ public class IpQuotationOtherChargeServiceImpl extends UtilServiceAbs implements
     @Override
     @Transactional
     public void remove(UUID otherChargeId, UUID quotationId) {
+        var entity = findById(otherChargeId, quotationId);
+        quotationService.validateQuotationEditable(entity.getIpQuotation(), userService.getUserAuthenticated());
         otherChargeRepository.deleteById(quotationId, otherChargeId);
     }
 
     /**
-     * Saves an other charge entity after validating that the quotation is in CREATED status.
+     * Saves an other charge entity after validating that the quotation is editable
+     * (CREATED, SENT or ANSWERED) and locked by the current user.
      *
      * @param request the other charge data
      * @param entity the entity to save
      * @return the saved other charge DTO
      */
     private IpQuotationOtherChargeDTO saveOtherCharge(IpQuotationOtherChargeDTO request, IpQuotationOtherChargeEntity entity) {
-        quotationService.validateQuotationInCreatedStatus(entity.getIpQuotation(), userService.getUserAuthenticated());
+        quotationService.validateQuotationEditable(entity.getIpQuotation(), userService.getUserAuthenticated());
         entity.setDescription(request.getDescription());
         entity.setValue(request.getValue());
         return otherChargeMapper.entityToDto(otherChargeRepository.save(entity));

@@ -53,7 +53,9 @@ import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProduc
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
 import com.itradingsolutions.itex.api.partners.suppliers.models.responses.BasicSupplierResponse;
+import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestHistoryAction;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
+import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestHistoryService;
 import com.itradingsolutions.itex.api.ip.qr.service.IIpQuoteRequestService;
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.repository.IClientContactRepository;
@@ -94,6 +96,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IClientContactRepository clientContactRepository;
     private final IClientContactService clientContactService;
+    private final IIpQuoteRequestHistoryService qrHistoryService;
     private final IIpQuotationHistoryService historyService;
     private final IpQuotationOtherChargeMapper otherChargeMapper;
     private final IIpQuotationOtherChargeRepository otherChargeRepository;
@@ -239,7 +242,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request) {
         var quotation = findById(id);
-        validateEditable(quotation);
+        validateQuotationEditable(quotation, userService.getUserAuthenticated());
         
         var oldDto = quotationMapper.entityToDTO(quotation);
         var oldConsecutive = quotation.getNumber();
@@ -355,15 +358,60 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         validateApplicationAtForStatus(quotation, newStatus);
         validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
         validatePurchaseOrderForReject(quotation, newStatus);
+        validatePurchaseOrderForComplete(quotation, newStatus);
 
         var transition = resolveTransition(currentStatus, newStatus);
         validateRequirement(transition, quotation);
         transition.sideEffect().accept(quotation);
         quotation.setStatus(newStatus);
+        clearOpenLockOnFinalStatus(quotation);
 
-        var newQuotation = toDto(quotationRepository.save(quotation));
+        var savedQuotation = quotationRepository.save(quotation);
+        if (newStatus == IpQuotationStatus.ANSWERED) {
+            processQuoteRequestsOnAnswered(savedQuotation);
+        }
+
+        var newQuotation = toDto(savedQuotation);
         historyService.addHistory(IpQuotationHistoryAction.STATUS_CHANGE, oldQuotation, newQuotation);
         return newQuotation;
+    }
+
+    /**
+     * When a Quotation is ANSWERED, each linked Quote Request is transitioned automatically:
+     * QRs contributing at least one product to the Quotation are marked COMPLETE, while
+     * QRs with no products in the Quotation are marked REJECTED (this automatic flow is
+     * allowed to reject QRs even while linked to a Quotation, unlike the manual flow).
+     * Other Charges imported from a QR do not influence this decision.
+     */
+    private void processQuoteRequestsOnAnswered(IpQuotationEntity quotation) {
+        var qqrList = quotation.getQuoteRequestsQuotations();
+        if (qqrList == null || qqrList.isEmpty()) return;
+
+        var user = userService.getUserAuthenticated();
+
+        for (var qqr : qqrList) {
+            var qr = qqr.getQuoteRequest();
+            if (qr == null) continue;
+
+            boolean hasProductsInQuotation = qqr.getQuotationProducts() != null
+                    && !qqr.getQuotationProducts().isEmpty();
+
+            var targetStatus = hasProductsInQuotation
+                    ? IpQuoteRequestStatus.COMPLETE
+                    : IpQuoteRequestStatus.REJECTED;
+
+            var oldStatus = qr.getStatus();
+            qrService.changeStatusInternal(qr.getId(), targetStatus);
+
+            qrHistoryService.addHistoryAutoStatusChange(
+                    IpQuoteRequestHistoryAction.STATUS_CHANGE_BY_Q,
+                    qr.getId(),
+                    oldStatus,
+                    targetStatus,
+                    quotation.getNumber(),
+                    user
+            );
+        }
     }
 
     private void validateNotSameStatus(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
@@ -412,41 +460,36 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     private void validatePurchaseOrderChangeStatus(IpQuotationEntity quotation) {
-        //TODO, validamos que el no tenga ninguna PO asignada
-        /*
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(list -> {
-                    throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
-                });
-
-         */
+        if (purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.cannot-revert-with-po"));
+        }
     }
 
+    /**
+     * A Quotation can only be REJECTED when it has no Purchase Orders associated.
+     */
     private void validatePurchaseOrderForReject(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
         if (newStatus != IpQuotationStatus.REJECTED) return;
-        //TODO, validamos que todas las PO esten en rejected
+        if (purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.cannot-reject-with-po"));
+        }
+    }
 
-        /*
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(quotations -> {
-                    boolean allQuotationsRejected = quotations.stream()
-                            .map(IpQuotationsQuoteRequestEntity::getQuotation)
-                            .map(IpQuotationEntity::getStatus)
-                            .allMatch(status -> status == IpQuotationStatus.REJECTED);
-
-                    if (!allQuotationsRejected)
-                        throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
-                });
-         */
+    /**
+     * A Quotation can only be COMPLETED when it has at least one Purchase Order associated.
+     */
+    private void validatePurchaseOrderForComplete(IpQuotationEntity quotation, IpQuotationStatus newStatus) {
+        if (newStatus != IpQuotationStatus.COMPLETE) return;
+        if (!purchaseOrderRepository.existsByQuotation_Id(quotation.getId())) {
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.complete-requires-po"));
+        }
     }
 
     @Override
     @Transactional
     public void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId) {
         var quotation = findById(quotationId);
-        validateQuotationForQRDeletion(quotation);
+        validateQuoteRequestModificationAllowed(quotation, "ip.q.qr.cannot-delete");
         var exists = qqrRepository.existsByIdAndQuotation_Id(qqrId, quotationId);
         if (!exists) {
             throw new NotExistIpQuotationException(simpleMessage("ip.q.qr.not-exist"));
@@ -460,7 +503,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     @Transactional
     public IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds) {
         var quotation = findById(quotationId);
-        validateEditable(quotation);
+        validateQuoteRequestModificationAllowed(quotation, "ip.q.qr.cannot-add");
 
         // Initialize the list if it's null
         if (quotation.getQuoteRequestsQuotations() == null) {
@@ -573,15 +616,14 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         return quotationMapper.entityToDTO(saved);
     }
 
-    private void validateEditable(IpQuotationEntity quotation) {
-        if (quotation.getStatus() == IpQuotationStatus.COMPLETE || quotation.getStatus() == IpQuotationStatus.REJECTED)
-            throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
-    }
-
-    private void validateQuotationForQRDeletion(IpQuotationEntity quotation) {
-        if (quotation.getStatus() != IpQuotationStatus.CREATED &&
-            quotation.getStatus() != IpQuotationStatus.SENT) {
-            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.qr.cannot-delete"));
+    /**
+     * Quote Requests can only be added to or removed from a Quotation while it is in
+     * CREATED status. In any other status the linked QRs become immutable; the Quotation
+     * must be moved back to CREATED first in order to modify its Quote Requests.
+     */
+    private void validateQuoteRequestModificationAllowed(IpQuotationEntity quotation, String messageKey) {
+        if (quotation.getStatus() != IpQuotationStatus.CREATED) {
+            throw new QuotationStatusRestrictionException(simpleMessage(messageKey));
         }
     }
 
@@ -680,10 +722,10 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     }
 
     @Override
-    public void validateQuotationInCreatedStatus(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
-        if (entity.getStatus() != IpQuotationStatus.CREATED) {
-            throw new NotOpenQuoteRequestException(simpleMessage("ip.q.not-created-status"));
-        }
+    public void validateQuotationEditable(IpQuotationEntity entity, com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity user) {
+        if (isFinalStatus(entity.getStatus()))
+            throw new QuotationStatusRestrictionException(simpleMessage("ip.q.not-editable-by-status"));
+        validateOpenQuotation(entity, user);
     }
 
     /**
@@ -833,6 +875,13 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
     private boolean isFinalStatus(IpQuotationStatus status) {
         return status == IpQuotationStatus.COMPLETE
                 || status == IpQuotationStatus.REJECTED;
+    }
+
+    private void clearOpenLockOnFinalStatus(IpQuotationEntity quotation) {
+        if (isFinalStatus(quotation.getStatus())) {
+            quotation.setOpenBy(null);
+            quotation.setOpenAt(null);
+        }
     }
 
     private JasperReport getReportTemplateFor(IpQuotationEntity quotation) {

@@ -56,4 +56,26 @@ public class IpQuotationProductDTO extends BaseDTO {
         if (quoteRequestProduct == null) return BigDecimal.ZERO;
         return quoteRequestProduct.getGrossWeightLbs();
     }
+
+    /**
+     * Profit on the unit price: selling unit price minus the QR purchase unit price.
+     */
+    public BigDecimal getUnitProfit() {
+        if (quoteRequestProduct == null || quoteRequestProduct.getUnitPrice() == null)
+            return BigDecimal.ZERO;
+        return getSellingUnitPrice()
+                .subtract(quoteRequestProduct.getUnitPrice())
+                .setScale(5, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Profit on the extended (total) price: selling extended price minus the QR purchase extended price.
+     */
+    public BigDecimal getTotalProfit() {
+        if (quoteRequestProduct == null || quoteRequestProduct.getExtendedPrice() == null)
+            return BigDecimal.ZERO;
+        return getSellingExtendedPrice()
+                .subtract(quoteRequestProduct.getExtendedPrice())
+                .setScale(2, RoundingMode.HALF_UP);
+    }
 }

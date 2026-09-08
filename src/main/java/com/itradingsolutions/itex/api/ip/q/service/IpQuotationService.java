@@ -33,7 +33,7 @@ public interface IpQuotationService {
     IpQuotationDTO cloneQuotation(UUID id);
     IpQuotationDTO getQuotationForHistory(UUID id);
     IpQuotationEntity getEntityById(UUID id);
-    void validateQuotationInCreatedStatus(IpQuotationEntity entity, UserEntity user);
+    void validateQuotationEditable(IpQuotationEntity entity, UserEntity user);
     
     // Scheduler methods
     void unlockAllOpenQuotations();

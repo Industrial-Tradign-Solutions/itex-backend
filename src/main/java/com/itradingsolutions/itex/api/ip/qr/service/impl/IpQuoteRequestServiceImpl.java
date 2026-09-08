@@ -16,6 +16,7 @@ import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
+import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotChangeStatusException;
 import com.itradingsolutions.itex.api.ip.qr.exceptions.NotExistIpQuoteRequestException;
@@ -56,6 +57,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -78,6 +80,7 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
 
     private final IIpQuoteRequestProductRepository productRepository;
     private final IpQuoteRequestProductMapper productMapper;
+    private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IIpQuoteRequestClonedRepository clonedRepository;
 
     private final IpQuoteRequestOtherChargeMapper qrOtherChargesMapper;
@@ -88,6 +91,7 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     private static final ConsecutiveDepartment CONSECUTIVE_DEPARTMENT = ConsecutiveDepartment.IP;
     private static final ConsecutiveModule CONSECUTIVE_TYPE = ConsecutiveModule.QR;
     private static final int AUTO_REJECT_DAYS = 30;
+    private static final ZoneId QR_ZONE_ID = ZoneId.of("America/New_York");
 
     private final JasperService jasperService;
 
@@ -148,13 +152,13 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
         for (IpQuoteRequestProductEntity item : original.getProducts()) {
             var cloneItem = productMapper.clone(item);
             cloneItem.setIpQuoteRequest(clone);
-            cloneItem.setCreatedAt(ZonedDateTime.now());
+            cloneItem.setCreatedAt(ZonedDateTime.now(QR_ZONE_ID));
             productRepository.save(cloneItem);
         }
         for (IpQuoteRequestOtherChargesEntity item : original.getOtherCharges()) {
             var cloneItem = qrOtherChargesMapper.clone(item);
             cloneItem.setIpQuoteRequest(clone);
-            cloneItem.setCreatedAt(ZonedDateTime.now());
+            cloneItem.setCreatedAt(ZonedDateTime.now(QR_ZONE_ID));
             qrOtherChargesRepository.save(cloneItem);
         }
         var clonedItem = new IpQuoteRequestsClonedEntity();
@@ -521,27 +525,17 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     }
 
     private void validateQuotationChangeStatus(IpQuoteRequestEntity qr) {
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(list -> {
-                    throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
-                });
+        if (qqrRepository.existsByQuoteRequest_Id(qr.getId())) {
+            throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q"));
+        }
     }
 
     private void validateQuotationForReject(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
         if (newStatus != IpQuoteRequestStatus.REJECTED) return;
 
-        Optional.ofNullable(qr.getQuotationsQuoteRequests())
-                .filter(list -> !list.isEmpty())
-                .ifPresent(quotations -> {
-                    boolean allQuotationsRejected = quotations.stream()
-                            .map(IpQuotationsQuoteRequestEntity::getQuotation)
-                            .map(IpQuotationEntity::getStatus)
-                            .allMatch(status -> status == IpQuotationStatus.REJECTED);
-
-                    if (!allQuotationsRejected)
-                        throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
-                });
+        if (qqrRepository.countByQuoteRequestIdAndQuotationStatusNot(qr.getId(), IpQuotationStatus.REJECTED) > 0) {
+            throw new NotChangeStatusException(simpleMessage("ip.qr.assigned-to-q-rejected"));
+        }
     }
 
     private void clearOpenLockOnFinalStatus(IpQuoteRequestEntity qr) {
@@ -564,7 +558,7 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
     }
 
     private void setStatusTimestamp(IpQuoteRequestEntity qr, IpQuoteRequestStatus newStatus) {
-        var now = ZonedDateTime.now();
+        var now = ZonedDateTime.now(QR_ZONE_ID);
         switch (newStatus) {
             case ANSWERED -> qr.setAnsweredAt(now);
             case SENT -> qr.setSentAt(now);

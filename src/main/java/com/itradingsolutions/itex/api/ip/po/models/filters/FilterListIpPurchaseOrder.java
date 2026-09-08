@@ -27,7 +27,7 @@ public class FilterListIpPurchaseOrder extends BaseFilter<IpPurchaseOrderEntity>
     private UUID clientId;
     private UUID supplierId;
     private String remarks;
-    private IpPurchaseOrderStatus status;
+    private List<IpPurchaseOrderStatus> status;
     private UUID salesRepId;
     private String clientRef;
     private String supplierRef;
@@ -48,7 +48,7 @@ public class FilterListIpPurchaseOrder extends BaseFilter<IpPurchaseOrderEntity>
         if (getRemarks() != null && !getRemarks().isBlank())
             spec = spec.and(hasRemarks());
 
-        if (getStatus() != null)
+        if (getStatus() != null && !getStatus().isEmpty())
             spec = spec.and(hasStatus());
 
         if (getSalesRepId() != null)
@@ -100,7 +100,7 @@ public class FilterListIpPurchaseOrder extends BaseFilter<IpPurchaseOrderEntity>
 
     private Specification<IpPurchaseOrderEntity> hasStatus() {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("status"), getStatus());
+                root.get("status").in(getStatus());
     }
 
     private Specification<IpPurchaseOrderEntity> hasSalesRepId() {

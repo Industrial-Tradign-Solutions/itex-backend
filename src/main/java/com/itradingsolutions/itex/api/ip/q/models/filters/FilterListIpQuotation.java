@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -17,7 +18,7 @@ public class FilterListIpQuotation extends BaseFilter<IpQuotationEntity> {
     private String number;
     private UUID clientId;
     private String remarks;
-    private IpQuotationStatus status;
+    private List<IpQuotationStatus> status;
     private UUID salesRepId;
 
     public Specification<IpQuotationEntity> filter() {
@@ -32,7 +33,7 @@ public class FilterListIpQuotation extends BaseFilter<IpQuotationEntity> {
         if (getRemarks() != null && !getRemarks().isBlank())
             spec = spec.and(hasRemarks());
 
-        if (getStatus() != null)
+        if (getStatus() != null && !getStatus().isEmpty())
             spec = spec.and(hasStatus());
 
         if (getSalesRepId() != null)
@@ -70,7 +71,7 @@ public class FilterListIpQuotation extends BaseFilter<IpQuotationEntity> {
 
     private Specification<IpQuotationEntity> hasStatus() {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("status"), getStatus());
+                root.get("status").in(getStatus());
     }
 
     private Specification<IpQuotationEntity> hasSalesRepId() {

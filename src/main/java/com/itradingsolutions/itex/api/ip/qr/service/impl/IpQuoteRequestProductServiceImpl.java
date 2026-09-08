@@ -30,10 +30,12 @@ public class IpQuoteRequestProductServiceImpl extends UtilServiceAbs implements 
     @Override
     @Transactional
     public IpQuoteRequestProductDTO createIpQuoteRequestProduct(IpQuoteRequestProductDTO productRequest, UUID qrId) {
+        var qr = qrService.getEntityById(qrId);
+        qrService.validateEditableStatus(qr);
         if (qrProductRepository.existsProductById(productRequest.getIpProduct().getId(), qrId))
             throw new QrProductExistException(simpleMessage("ip.qr.product.exist"));
         var entity = new IpQuoteRequestProductEntity();
-        entity.setIpQuoteRequest(qrService.getEntityById(qrId));
+        entity.setIpQuoteRequest(qr);
         entity.setNumber(entity.getIpQuoteRequest().getMaxNumberOfProducts());
         return saveQrProduct(productRequest, entity);
     }
@@ -42,6 +44,7 @@ public class IpQuoteRequestProductServiceImpl extends UtilServiceAbs implements 
     @Transactional
     public IpQuoteRequestProductDTO updateIpQuoteRequestProduct(IpQuoteRequestProductDTO productRequest, UUID qrProductId, UUID qrId) {
         var entity = findById(qrProductId, qrId);
+        qrService.validateEditableStatus(entity.getIpQuoteRequest());
         if (qrProductRepository.existsProductById(productRequest.getIpProduct().getId(), qrId, qrProductId))
             throw new QrProductExistException(simpleMessage("ip.qr.product.exist"));
         return saveQrProduct(productRequest, entity);
@@ -56,6 +59,7 @@ public class IpQuoteRequestProductServiceImpl extends UtilServiceAbs implements 
     @Override
     @Transactional
     public void removeIpQuoteRequestProduct(UUID qrProductId, UUID qrId) {
+        qrService.validateEditableStatus(qrService.getEntityById(qrId));
         qrProductRepository.deleteProductById(qrId, qrProductId);
     }
 

@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.service.impl;
 
+import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
@@ -12,6 +13,7 @@ import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMappe
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationProductRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationProductService;
+import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.QuoteRequestProductIdProjection;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,8 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IIpQuoteRequestProductRepository qrProductRepository;
     private final IIpProductRepository ipProductRepository;
+    private final IpQuotationService quotationService;
+    private final IUserService userService;
 
     @Override
     @Transactional
@@ -42,6 +46,11 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         if (productRequests.isEmpty()) {
             return List.of();
         }
+
+        quotationService.validateQuotationEditable(
+                quotationService.getEntityById(quotationId),
+                userService.getUserAuthenticated()
+        );
 
         // 1. Validate no duplicate quoteRequestProductId within request
         var qrProductIds = productRequests.stream()
@@ -139,6 +148,10 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     @Transactional
     public IpQuotationProductDTO updateIpQuotationProduct(IpQuotationProductDTO productRequest, UUID qProductId, UUID quotationId) {
         var entity = findById(qProductId, quotationId);
+        quotationService.validateQuotationEditable(
+                entity.getQuotationsQuoteRequest().getQuotation(),
+                userService.getUserAuthenticated()
+        );
 
         if (productRequest.getQuoteRequestProduct() != null && productRequest.getQuoteRequestProduct().getId() != null) {
             if (qProductRepository.existsByQuoteRequestProduct_IdAndQuotationsQuoteRequest_IdAndIdNot(
@@ -158,6 +171,11 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     @Override
     @Transactional
     public void removeIpQuotationProduct(UUID qProductId, UUID quotationId) {
+        var entity = findById(qProductId, quotationId);
+        quotationService.validateQuotationEditable(
+                entity.getQuotationsQuoteRequest().getQuotation(),
+                userService.getUserAuthenticated()
+        );
         qProductRepository.deleteByIdAndQuotationsQuoteRequest_Quotation_Id(qProductId, quotationId);
     }
 

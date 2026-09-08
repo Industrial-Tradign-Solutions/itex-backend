@@ -34,4 +34,6 @@ public interface IIpPurchaseOrderRepository extends JpaRepository<IpPurchaseOrde
             ORDER BY po.number ASC
             """)
     List<BasicPurchaseOrderDTO> fetchSummaryByQuotationId(UUID quotationId);
+
+    boolean existsByQuotation_Id(UUID quotationId);
 }

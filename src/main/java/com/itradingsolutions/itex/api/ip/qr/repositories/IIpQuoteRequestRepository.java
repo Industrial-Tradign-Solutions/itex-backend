@@ -32,4 +32,13 @@ public interface IIpQuoteRequestRepository extends JpaRepository<IpQuoteRequestE
 
     @Query("SELECT c FROM IpQuoteRequestEntity c WHERE c.id = ?1 AND c.client.id = ?2")
     Optional<IpQuoteRequestEntity> fetchAllByIdAndClient(UUID id, UUID clientId);
+
+    @Query("SELECT c FROM IpQuoteRequestEntity c JOIN FETCH c.salesRep WHERE c.status = ?1 AND c.createdAt < ?2")
+    List<IpQuoteRequestEntity> fetchStaleCreated(IpQuoteRequestStatus status, java.time.ZonedDateTime cutoff);
+
+    @Query("SELECT c FROM IpQuoteRequestEntity c JOIN FETCH c.salesRep WHERE c.status = ?1 AND c.sentAt IS NOT NULL AND c.sentAt < ?2")
+    List<IpQuoteRequestEntity> fetchStaleSent(IpQuoteRequestStatus status, java.time.ZonedDateTime cutoff);
+
+    @Query("SELECT c FROM IpQuoteRequestEntity c JOIN FETCH c.salesRep WHERE c.status = ?1 AND c.answeredAt IS NOT NULL AND c.answeredAt < ?2 AND c.quotationsQuoteRequests IS EMPTY")
+    List<IpQuoteRequestEntity> fetchStaleAnsweredWithoutQuotation(IpQuoteRequestStatus status, java.time.ZonedDateTime cutoff);
 }

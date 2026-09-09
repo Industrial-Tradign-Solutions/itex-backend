@@ -15,8 +15,6 @@ import com.itradingsolutions.itex.api.admin.user.models.responses.UserResponse;
 import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessage;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
@@ -87,7 +85,6 @@ public class UserController extends CommonController {
                 @PathVariable UUID userId
         ) {
                 userService.disable(userId);
-                sendMessageSocket();
                 historyService.saveHistory(HistoryActions.DISABLE, ModuleOption.USERS, userId, null, null);
                 return ResponseEntity
                         .ok(
@@ -106,7 +103,6 @@ public class UserController extends CommonController {
                 @PathVariable UUID userId
         ) {
                 userService.enable(userId);
-                sendMessageSocket();
                 historyService.saveHistory(HistoryActions.ENABLE, ModuleOption.USERS, userId, null, null);
                 return ResponseEntity
                         .ok(
@@ -125,7 +121,6 @@ public class UserController extends CommonController {
                 @RequestBody @Valid UserRequest user
         ) {
                 var userDTO = userService.create(user);
-                sendMessageSocket();
                 historyService.saveHistory(HistoryActions.CREATE, ModuleOption.USERS, userDTO.getId(), null, userDTO);
                 return ResponseEntity
                         .status(HttpStatus.CREATED)
@@ -147,7 +142,6 @@ public class UserController extends CommonController {
         ) {
                 var oldUser = userService.findById(userId, true);
                 var userDto = userService.update(user, userId);
-                sendMessageSocket();
 
                 historyService.saveHistory(HistoryActions.UPDATE, ModuleOption.USERS, userId, oldUser, userDto);
                 return ResponseEntity
@@ -249,10 +243,6 @@ public class UserController extends CommonController {
                                 return userMapper.dtoToBasicResponse(user);
                         }).toList()
                 );
-        }
-
-        private void sendMessageSocket() {
-                new Thread(() -> socketHandler.sendMessage(new WebSocketMessage<>(getListsUsers(), WebSocketMessageValue.LIST_USERS))).start();
         }
 
 }

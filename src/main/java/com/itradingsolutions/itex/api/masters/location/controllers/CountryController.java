@@ -13,7 +13,6 @@ import com.itradingsolutions.itex.api.masters.location.models.responses.ListsCou
 import com.itradingsolutions.itex.api.masters.location.services.ICountryService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -93,11 +92,6 @@ public class CountryController extends CommonMasterController<
                 .enables(enables)
                 .disables(disables)
                 .build();
-    }
-
-    @Override
-    public WebSocketMessageValue getWebSocketMessageValue() {
-        return WebSocketMessageValue.LIST_COUNTRIES;
     }
 
     @Override

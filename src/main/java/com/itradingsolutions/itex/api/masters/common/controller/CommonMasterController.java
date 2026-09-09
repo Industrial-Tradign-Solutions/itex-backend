@@ -10,8 +10,6 @@ import com.itradingsolutions.itex.api.masters.common.models.dto.BaseMasterDTO;
 import com.itradingsolutions.itex.api.masters.common.models.mappers.CommonMasterMapper;
 import com.itradingsolutions.itex.api.masters.common.models.requests.BaseMasterRequest;
 import com.itradingsolutions.itex.api.masters.common.models.responses.BaseBasicMasterResponse;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessage;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +36,6 @@ extends CommonController {
 
     protected ResponseEntity<MessageResponse<UUID>> disable(UUID id) {
         service.disable(id);
-        sendMessageSocket();
         historyService.saveHistory(HistoryActions.DISABLE, getModuleOption(), id, null, null);
         return ResponseEntity
                 .status(HttpStatus.OK).body(
@@ -52,7 +49,6 @@ extends CommonController {
 
     protected ResponseEntity<MessageResponse<UUID>> enable(UUID id) {
         service.enable(id);
-        sendMessageSocket();
         historyService.saveHistory(HistoryActions.ENABLE, getModuleOption(), id, null, null);
         return ResponseEntity
                 .status(HttpStatus.OK).body(
@@ -84,7 +80,6 @@ extends CommonController {
     protected ResponseEntity<MessageResponse<R>> create(Q request) {
         var dto = mapper.requestToDTO(request);
         var resp = service.create(dto);
-        sendMessageSocket();
         historyService.saveHistory(HistoryActions.CREATE, getModuleOption(), resp.getId(), null, resp);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -101,7 +96,6 @@ extends CommonController {
         var old = service.findById(id, true);
         var dto = mapper.requestToDTO(request);
         var resp = service.update(dto, id);
-        sendMessageSocket();
         historyService.saveHistory(HistoryActions.UPDATE, getModuleOption(), id, old, resp);
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -126,11 +120,6 @@ extends CommonController {
         return createListsResponse(enables, disables);
     }
 
-    private void sendMessageSocket() {
-        new Thread(() -> socketHandler.sendMessage(new WebSocketMessage<>(getBasic(), getWebSocketMessageValue()))).start();
-    }
-
     public abstract L createListsResponse(List<B> enables, List<B> disables);
-    public abstract WebSocketMessageValue getWebSocketMessageValue();
     public abstract ModuleOption getModuleOption();
 }

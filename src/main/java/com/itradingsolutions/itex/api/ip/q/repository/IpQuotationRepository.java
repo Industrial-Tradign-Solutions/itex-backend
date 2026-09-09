@@ -3,6 +3,10 @@ package com.itradingsolutions.itex.api.ip.q.repository;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -25,6 +29,9 @@ public interface IpQuotationRepository extends JpaRepository<IpQuotationEntity, 
 
     @Query("SELECT COUNT(c.id) FROM IpQuotationEntity c WHERE c.openBy.id = ?1")
     int countByOpenUserId(UUID userOpenById);
+
+    @EntityGraph(attributePaths = {"client", "salesRep"})
+    Page<IpQuotationEntity> findAll(Specification<IpQuotationEntity> spec, Pageable pageable);
 
     @Query("SELECT q FROM IpQuotationEntity q WHERE q.id = ?1 AND q.client.id = ?2")
     Optional<IpQuotationEntity> fetchByIdAndClient(UUID id, UUID clientId);

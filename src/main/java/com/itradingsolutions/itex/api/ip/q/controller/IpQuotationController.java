@@ -28,7 +28,6 @@ import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -131,9 +130,7 @@ public class IpQuotationController extends CommonController {
             @ModelAttribute FilterListIpQuotation filters
     ) {
         var resp = quotationService.listAllQuotations(filters.getPageRequest(page, size), filters);
-        var list = resp.getContent().stream()
-                .map(quotationMapper::dtoToListResponse).toList();
-        return ResponseEntity.ok(new PageImpl<>(list, resp.getPageable(),resp.getTotalElements()));
+        return ResponseEntity.ok(resp);
     }
 
     @PatchMapping("/open-lock/{id_quotation}")

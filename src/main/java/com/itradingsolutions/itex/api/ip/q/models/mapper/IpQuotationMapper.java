@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.models.mapper;
 
+import com.itradingsolutions.itex.api.admin.user.models.mappers.UserMapper;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargesQuoteRequestDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
@@ -25,10 +26,13 @@ import java.util.Comparator;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {IpQuotationOtherChargeMapper.class, IpQuotationOtherChargesQuoteRequestMapper.class})
+        uses = {IpQuotationOtherChargeMapper.class, IpQuotationOtherChargesQuoteRequestMapper.class, UserMapper.class})
 public interface IpQuotationMapper {
 
     ListIpQuotationResponse dtoToListResponse(IpQuotationDTO dto);
+
+    @Mapping(target = "name", source = "number")
+    ListIpQuotationResponse entityToListResponse(IpQuotationEntity entity);
 
     @Mapping(target = "listQuoteRequests", source = "quoteRequestsQuotations")
     @Mapping(target = "products", expression = "java(mapProducts(entity))")

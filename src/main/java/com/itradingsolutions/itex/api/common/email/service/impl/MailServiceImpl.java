@@ -55,12 +55,12 @@ public class MailServiceImpl extends UtilServiceAbs implements IMailService {
 
     @Override
     public void sendEmail(EmailRequest email, UserDTO user) {
-        sendEmailAction(email, null, user);
+        Thread.startVirtualThread(() -> sendEmailAction(email, null, user));
     }
 
     @Override
     public void sendEmailAttachments(EmailRequest email, List<MultipartFile> attachments, UserDTO user) {
-        sendEmailAction(email, attachments, user);
+        Thread.startVirtualThread(() -> sendEmailAction(email, attachments, user));
     }
 
     private void sendEmailAction(EmailRequest email, List<MultipartFile> attachments, UserDTO user) {

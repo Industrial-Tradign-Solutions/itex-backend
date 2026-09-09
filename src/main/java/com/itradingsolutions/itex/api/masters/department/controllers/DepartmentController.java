@@ -13,7 +13,6 @@ import com.itradingsolutions.itex.api.masters.department.models.responses.ListsD
 import com.itradingsolutions.itex.api.masters.department.services.IDepartmentService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -130,11 +129,6 @@ public class DepartmentController extends CommonMasterController<
                 .disables(disables)
                 .enables(enables)
                 .build();
-    }
-
-    @Override
-    public WebSocketMessageValue getWebSocketMessageValue() {
-        return WebSocketMessageValue.LIST_DEPARTMENTS;
     }
 
     @Override

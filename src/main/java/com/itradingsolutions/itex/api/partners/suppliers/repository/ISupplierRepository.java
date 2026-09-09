@@ -3,7 +3,6 @@ package com.itradingsolutions.itex.api.partners.suppliers.repository;
 import com.itradingsolutions.itex.api.partners.suppliers.models.entities.SupplierEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.enums.SupplierStatus;
 import com.itradingsolutions.itex.api.partners.suppliers.models.projections.SupplierBrandName;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,7 +26,6 @@ public interface ISupplierRepository extends JpaRepository<SupplierEntity, UUID>
     @Query("SELECT s FROM SupplierEntity s WHERE s.openBy IS NOT NULL")
     List<SupplierEntity> fetchAllOpen();
 
-    @EntityGraph(attributePaths = {"infoByDepartment.listContacts.listPhones"})
     @Query("SELECT s FROM SupplierEntity s WHERE s.status = ?1")
     List<SupplierEntity> fetchAllByStatus(SupplierStatus status);
 

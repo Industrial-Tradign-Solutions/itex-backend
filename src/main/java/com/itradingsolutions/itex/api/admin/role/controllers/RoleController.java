@@ -13,7 +13,6 @@ import com.itradingsolutions.itex.api.admin.role.services.IRoleService;
 import com.itradingsolutions.itex.api.masters.common.controller.CommonMasterController;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -113,11 +112,6 @@ public class RoleController extends CommonMasterController<
                 .disables(disables)
                 .enables(enables)
                 .build();
-    }
-
-    @Override
-    public WebSocketMessageValue getWebSocketMessageValue() {
-        return WebSocketMessageValue.LIST_ROLES;
     }
 
     @Override

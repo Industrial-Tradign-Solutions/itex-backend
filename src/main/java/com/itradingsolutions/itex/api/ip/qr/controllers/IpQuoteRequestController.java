@@ -24,7 +24,6 @@ import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -191,9 +190,7 @@ public class IpQuoteRequestController extends CommonController {
             @ModelAttribute FilterListIpQuoteRequest filters
     ) {
         var resp = qrService.listAllQuoteRequests(filters.getPageRequest(page, size), filters);
-        var list = resp.getContent().stream()
-                .map(qrMapper::dtoToListResponse).toList();
-        return ResponseEntity.ok(new PageImpl<>(list, resp.getPageable(),resp.getTotalElements()));
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/print/{id_quote_request}")

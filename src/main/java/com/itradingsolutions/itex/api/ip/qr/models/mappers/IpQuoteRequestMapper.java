@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.qr.models.mappers;
 
+import com.itradingsolutions.itex.api.admin.user.models.mappers.UserMapper;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationEntity;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
@@ -13,12 +14,16 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = SupplierMapper.class)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {SupplierMapper.class, UserMapper.class})
 public interface IpQuoteRequestMapper {
 
     IpQuoteRequestResponse dtoToResponse(IpQuoteRequestDTO dto);
     IpQuoteRequestDTO requestToDTO(IpQuoteRequestRequest request);
     ListIpQuoteRequestResponse dtoToListResponse(IpQuoteRequestDTO dto);
+
+    @Mapping(target = "name", source = "number")
+    ListIpQuoteRequestResponse entityToListResponse(IpQuoteRequestEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "number", ignore = true)

@@ -251,7 +251,7 @@ public class UserServiceIml extends UtilServiceAbs implements IUserService {
     @Override
     public void closeAllSessions(int offlineMinutes) {
         int timeout = 120000;
-        int period = 120000;
+        int period = 30000;
         int maxCount = 10;
 
         Timer timer = new Timer(true);

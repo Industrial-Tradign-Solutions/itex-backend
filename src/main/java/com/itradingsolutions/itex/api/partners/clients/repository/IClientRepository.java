@@ -2,7 +2,6 @@ package com.itradingsolutions.itex.api.partners.clients.repository;
 
 import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEntity;
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,7 +26,6 @@ public interface IClientRepository extends JpaRepository<ClientEntity, UUID>, Jp
     @Query("SELECT COUNT(c.id) FROM ClientEntity c WHERE c.openBy.id = ?1")
     int countByOpenUserId(UUID userOpenById);
 
-    @EntityGraph(attributePaths = {"infoByDepartment.listContacts.listPhones"})
     @Query("SELECT DISTINCT c FROM ClientEntity c WHERE c.status =?1")
     List<ClientEntity> fetchAllByStatus(ClientStatus status);
 }

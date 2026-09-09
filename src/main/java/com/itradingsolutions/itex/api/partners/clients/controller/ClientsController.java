@@ -6,7 +6,6 @@ import com.itradingsolutions.itex.api.common.controller.CommonController;
 import com.itradingsolutions.itex.api.common.models.enums.OpenAndLockType;
 import com.itradingsolutions.itex.api.common.util.models.enums.HistoryActions;
 import com.itradingsolutions.itex.api.common.util.models.responses.MessageResponse;
-import com.itradingsolutions.itex.api.masters.industry.models.responses.BasicIndustryResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.dto.ClientDTO;
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.filter.FilterListClients;
@@ -22,7 +21,6 @@ import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -192,10 +190,9 @@ public class ClientsController extends CommonController {
     @GetMapping("/list-active")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<List<BasicClientResponse>> listAllActive() {
-        var resp = clientService.listAllActive();
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(resp.stream().map(clientMapper::dtoToBasicResponse).toList());
+                .body(clientService.listAllActive());
     }
 
         @GetMapping
@@ -210,25 +207,6 @@ public class ClientsController extends CommonController {
 
                 return ResponseEntity
                         .status(HttpStatus.OK)
-                        .body(
-                                new PageImpl<>(resp.getContent().stream().map(client ->
-                                        new ListClientResponse(
-                                                client.getId(),
-                                                client.getCode(),
-                                                client.getName(),
-                                                client.getTaxId(),
-                                                client.getCity() != null ? client.getCity().getFullName() : null,
-                                                client.getAddress(),
-                                                client.getIndustry() != null ?
-                                                BasicIndustryResponse.builder()
-                                                        .id(client.getIndustry().getId())
-                                                        .name(client.getIndustry().getName())
-                                                        .active(client.getIndustry().isActive())
-                                                        .build()
-                                                : null,
-                                                client.getStatus()
-                                        )
-                                ).toList(),resp.getPageable(),resp.getTotalElements())
-                        );
+                        .body(resp);
         }
 }

@@ -10,6 +10,7 @@ import com.itradingsolutions.itex.api.ip.q.models.filters.FilterListIpQuotation;
 import com.itradingsolutions.itex.api.ip.q.models.requests.CreateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.requests.UpdateIpQuotationRequest;
 import com.itradingsolutions.itex.api.ip.q.models.response.AvailableForPurchaseOrderResponse;
+import com.itradingsolutions.itex.api.ip.q.models.response.ListIpQuotationResponse;
 import com.itradingsolutions.itex.api.ip.q.models.response.QuotationQuoteRequestOtherChargeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +23,7 @@ public interface IpQuotationService {
     void unlockIpQuotation(UUID idQuotation);
     List<IpQuotationDTO> listAllOpenIpQuotation(String username);
     List<IpQuotationDTO> listAllOpenIpQuotation();
-    Page<IpQuotationDTO> listAllQuotations(Pageable pageable, FilterListIpQuotation filters);
+    Page<ListIpQuotationResponse> listAllQuotations(Pageable pageable, FilterListIpQuotation filters);
     IpQuotationDTO createQuotation(CreateIpQuotationRequest request);
     IpQuotationDTO openAndLockIpQuotation(UUID id, OpenAndLockType type);
     IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request);

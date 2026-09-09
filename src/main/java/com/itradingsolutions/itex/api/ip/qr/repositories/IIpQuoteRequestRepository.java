@@ -3,6 +3,10 @@ package com.itradingsolutions.itex.api.ip.qr.repositories;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -32,6 +36,9 @@ public interface IIpQuoteRequestRepository extends JpaRepository<IpQuoteRequestE
 
     @Query("SELECT c FROM IpQuoteRequestEntity c WHERE c.id = ?1 AND c.client.id = ?2")
     Optional<IpQuoteRequestEntity> fetchAllByIdAndClient(UUID id, UUID clientId);
+
+    @EntityGraph(attributePaths = {"client", "supplier", "salesRep"})
+    Page<IpQuoteRequestEntity> findAll(Specification<IpQuoteRequestEntity> spec, Pageable pageable);
 
     @Query("SELECT c FROM IpQuoteRequestEntity c JOIN FETCH c.salesRep WHERE c.status = ?1 AND c.createdAt < ?2")
     List<IpQuoteRequestEntity> fetchStaleCreated(IpQuoteRequestStatus status, java.time.ZonedDateTime cutoff);

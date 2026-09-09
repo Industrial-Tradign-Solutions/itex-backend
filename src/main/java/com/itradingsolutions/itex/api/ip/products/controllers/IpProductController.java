@@ -29,7 +29,6 @@ import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -265,16 +264,13 @@ public class IpProductController extends CommonController {
             @ModelAttribute FilterListIpProducts filters
     ) {
         var resp = productService.listAllProducts(filters.getPageRequest(page, size), filters);
-        var list = resp.getContent().stream()
-                .map(productMapper::dtoToListResponse).toList();
-        return ResponseEntity.ok(new PageImpl<>(list, resp.getPageable(),resp.getTotalElements()));
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/basic")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<List<BasicIpProductResponse>> listAllActiveProducts() {
-        var resp = productService.listAllActiveProducts();
-        return ResponseEntity.ok(resp.stream().map(productMapper::dtoToBasicResponse).toList());
+        return ResponseEntity.ok(productService.listAllActiveProducts());
     }
 
     @PatchMapping("/validate-import")

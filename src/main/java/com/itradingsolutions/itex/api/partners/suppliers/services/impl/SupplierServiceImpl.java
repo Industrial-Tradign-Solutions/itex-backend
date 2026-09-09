@@ -14,7 +14,10 @@ import com.itradingsolutions.itex.api.partners.suppliers.exceptions.SupplierErro
 import com.itradingsolutions.itex.api.partners.suppliers.models.dto.SupplierContactDTO;
 import com.itradingsolutions.itex.api.partners.suppliers.models.enums.SupplierStatus;
 import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
+import com.itradingsolutions.itex.api.partners.suppliers.models.projections.SupplierBrandName;
 import com.itradingsolutions.itex.api.partners.suppliers.models.requests.SupplierInfoDepRequest;
+import com.itradingsolutions.itex.api.partners.suppliers.models.responses.BasicSupplierResponse;
+import com.itradingsolutions.itex.api.partners.suppliers.models.responses.ListSupplierResponse;
 import com.itradingsolutions.itex.api.partners.suppliers.repository.ISupplierRepository;
 import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierInfoDepService;
 import com.itradingsolutions.itex.api.partners.suppliers.models.dto.SupplierDTO;
@@ -33,7 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -109,10 +114,31 @@ public class SupplierServiceImpl extends UtilServiceAbs implements ISupplierServ
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SupplierDTO> listAllSupplier(Pageable pageable, FilterListSuppliers filters) {
+    public Page<ListSupplierResponse> listAllSupplier(Pageable pageable, FilterListSuppliers filters) {
         Specification<SupplierEntity> spec = (filters == null ? Specification.where(null) : filters.filterSuppliers());
         Page<SupplierEntity> resp = supplierRepository.findAll(spec, pageable);
-        return new PageImpl<>(resp.getContent().stream().map(supplierMapper::entityToDto).toList(),resp.getPageable(),resp.getTotalElements());
+
+        List<UUID> supplierIds = resp.getContent().stream().map(SupplierEntity::getId).toList();
+        Map<UUID, List<String>> brandsBySupplier = supplierIds.isEmpty() ? Map.of() : supplierRepository
+                .fetchActiveBrandNames(supplierIds).stream()
+                .collect(Collectors.groupingBy(
+                        SupplierBrandName::supplierId,
+                        Collectors.mapping(SupplierBrandName::name, Collectors.toList())
+                ));
+
+        List<ListSupplierResponse> content = resp.getContent().stream()
+                .map(supplier -> new ListSupplierResponse(
+                        supplier.getId(),
+                        supplier.getName(),
+                        supplier.getTaxId(),
+                        supplier.getCity() != null ? supplier.getCity().getFullName() : null,
+                        supplier.getAddress(),
+                        supplier.getStatus(),
+                        brandsBySupplier.getOrDefault(supplier.getId(), List.of())
+                ))
+                .toList();
+
+        return new PageImpl<>(content, resp.getPageable(), resp.getTotalElements());
     }
 
     @Override
@@ -130,9 +156,9 @@ public class SupplierServiceImpl extends UtilServiceAbs implements ISupplierServ
 
     @Override
     @Transactional(readOnly = true)
-    public List<SupplierDTO> listAllActive() {
+    public List<BasicSupplierResponse> listAllActive() {
         var items = supplierRepository.fetchAllByStatus(SupplierStatus.ACTIVE);
-        return items.stream().map(supplierMapper::entityToDto).toList();
+        return items.stream().map(supplierMapper::entityToBasicResponse).toList();
     }
 
     @Override

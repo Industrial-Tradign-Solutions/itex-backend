@@ -6,6 +6,7 @@ import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.request.CreateIpPurchaseOrderRequest;
 import com.itradingsolutions.itex.api.ip.po.models.request.UpdateIpPurchaseOrderRequest;
+import com.itradingsolutions.itex.api.ip.po.models.response.ListIpPurchaseOrderResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,7 +41,7 @@ public interface IIpPurchaseOrderService {
 
     int batchUnlock(List<UUID> ids);
 
-    Page<IpPurchaseOrderDTO> listAll(Pageable pageable, FilterListIpPurchaseOrder filters);
+    Page<ListIpPurchaseOrderResponse> listAll(Pageable pageable, FilterListIpPurchaseOrder filters);
 
     List<IpPurchaseOrderDTO> listAllOpenByUser(String username);
 

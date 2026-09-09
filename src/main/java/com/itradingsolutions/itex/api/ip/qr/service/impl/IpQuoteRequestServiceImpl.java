@@ -35,6 +35,7 @@ import com.itradingsolutions.itex.api.ip.qr.models.filters.FilterListIpQuoteRequ
 import com.itradingsolutions.itex.api.ip.qr.models.mappers.IpQuoteRequestMapper;
 import com.itradingsolutions.itex.api.ip.qr.models.mappers.IpQuoteRequestOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.qr.models.mappers.IpQuoteRequestProductMapper;
+import com.itradingsolutions.itex.api.ip.qr.models.responses.ListIpQuoteRequestResponse;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestClonedRepository;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestOtherChargesRepository;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
@@ -219,10 +220,10 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
 
     @Override
     @Transactional(readOnly = true)
-    public Page<IpQuoteRequestDTO> listAllQuoteRequests(Pageable pageable, FilterListIpQuoteRequest filters) {
+    public Page<ListIpQuoteRequestResponse> listAllQuoteRequests(Pageable pageable, FilterListIpQuoteRequest filters) {
         Specification<IpQuoteRequestEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
         Page<IpQuoteRequestEntity> resp = qrRepository.findAll(spec, pageable);
-        return new PageImpl<>(resp.getContent().stream().map(qrMapper::entityToDTO).toList(),resp.getPageable(),resp.getTotalElements());
+        return new PageImpl<>(resp.getContent().stream().map(qrMapper::entityToListResponse).toList(), resp.getPageable(), resp.getTotalElements());
     }
 
     @Override

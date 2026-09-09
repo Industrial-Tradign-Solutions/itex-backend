@@ -7,6 +7,8 @@ import com.itradingsolutions.itex.api.ip.products.models.dto.IpProductSurplusDTO
 import com.itradingsolutions.itex.api.ip.products.models.entity.IpProductEntity;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.products.models.filter.FilterListIpProducts;
+import com.itradingsolutions.itex.api.ip.products.models.responses.BasicIpProductResponse;
+import com.itradingsolutions.itex.api.ip.products.models.responses.ListIpProductResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -26,8 +28,8 @@ public interface IIpProductService {
     IpProductDTO disableIpProductById(UUID id);
     IpProductDTO changeStatusIpProductById(UUID id, IpProductStatus newStatus);
     IpProductDTO replaceProduct(UUID productId, UUID newProductId);
-    Page<IpProductDTO> listAllProducts(Pageable pageable, FilterListIpProducts filters);
-    List<IpProductDTO> listAllActiveProducts();
+    Page<ListIpProductResponse> listAllProducts(Pageable pageable, FilterListIpProducts filters);
+    List<BasicIpProductResponse> listAllActiveProducts();
 
     IpProductEntity getProductById(UUID id);
 

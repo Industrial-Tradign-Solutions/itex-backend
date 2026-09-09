@@ -13,6 +13,7 @@ import com.itradingsolutions.itex.api.ip.products.models.responses.IpProductImpo
 import com.itradingsolutions.itex.api.ip.products.models.responses.IpProductResponse;
 import com.itradingsolutions.itex.api.ip.products.models.responses.ListIpProductResponse;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -24,6 +25,12 @@ public interface IpProductMapper {
     IpProductSurplusDTO addRequestToDTO(IpProductAddSurplusRequest request);
     IpProductSurplusDTO outRequestToDTO(IpProductOutSurplusRequest request);
     BasicIpProductResponse dtoToBasicResponse(IpProductDTO dto);
+
+    @Mapping(target = "name", source = "description")
+    ListIpProductResponse entityToListResponse(IpProductEntity entity);
+
+    @Mapping(target = "name", source = "description")
+    BasicIpProductResponse entityToBasicResponse(IpProductEntity entity);
 
     IpImportProductDTO importToDTO(IpProductsImportRequest request);
     IpProductImportResponse dtoToImportResponse(IpImportProductDTO dto);

@@ -26,7 +26,6 @@ import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -295,8 +294,6 @@ public class IpPurchaseOrderController extends CommonController {
             @ModelAttribute FilterListIpPurchaseOrder filters
     ) {
         var resp = purchaseOrderService.listAll(filters.getPageRequest(page, size), filters);
-        var list = resp.getContent().stream()
-                .map(poMapper::dtoToListResponse).toList();
-        return ResponseEntity.ok(new PageImpl<>(list, resp.getPageable(), resp.getTotalElements()));
+        return ResponseEntity.ok(resp);
     }
 }

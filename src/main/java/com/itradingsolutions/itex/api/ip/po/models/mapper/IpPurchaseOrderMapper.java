@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.po.models.mapper;
 
+import com.itradingsolutions.itex.api.admin.user.models.mappers.UserMapper;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderOtherChargeDTO;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderOtherChargesQuotationDTO;
@@ -29,10 +30,13 @@ import java.util.List;
         uses = {IpPurchaseOrderProductMapper.class, IpPurchaseOrderOtherChargeMapper.class,
                 IpPurchaseOrderOtherChargesQuotationMapper.class, IpPurchaseOrderOtherChargesQuotationQrMapper.class,
                 IpQuotationProductMapper.class, IpQuotationOtherChargeMapper.class,
-                IpQuotationOtherChargesQuoteRequestMapper.class, SupplierMapper.class})
+                IpQuotationOtherChargesQuoteRequestMapper.class, SupplierMapper.class, UserMapper.class})
 public interface IpPurchaseOrderMapper {
 
     IpPurchaseOrderDTO entityToDTO(IpPurchaseOrderEntity entity);
+
+    @Mapping(target = "name", source = "number")
+    ListIpPurchaseOrderResponse entityToListResponse(IpPurchaseOrderEntity entity);
 
     @Mapping(target = "products", expression = "java(mapProductsResponse(dto))")
     @Mapping(target = "otherCharges", expression = "java(mapOtherChargesResponse(dto))")

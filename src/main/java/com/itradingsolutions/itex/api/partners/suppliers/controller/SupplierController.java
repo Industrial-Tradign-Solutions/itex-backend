@@ -20,7 +20,6 @@ import com.itradingsolutions.itex.config.security.auth.AccessToModule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -181,10 +180,9 @@ public class SupplierController extends CommonController {
     @GetMapping("/list-active")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<List<BasicSupplierResponse>> listAllActive() {
-        var resp = supplierService.listAllActive();
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(resp.stream().map(supplierMapper::dtoToBasicResponse).toList());
+                .body(supplierService.listAllActive());
     }
 
     @GetMapping
@@ -196,22 +194,9 @@ public class SupplierController extends CommonController {
             @ModelAttribute FilterListSuppliers filters
     ) {
         var resp = supplierService.listAllSupplier(filters.getPageRequest(page, size), filters);
-
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(
-                        new PageImpl<>(resp.getContent().stream().map(supplier ->
-                                new ListSupplierResponse(
-                                        supplier.getId(),
-                                        supplier.getName(),
-                                        supplier.getTaxId(),
-                                        supplier.getCity() != null ? supplier.getCity().getFullName() : null,
-                                        supplier.getAddress(),
-                                        supplier.getStatus(),
-                                        supplier.getBrands()
-                                )
-                        ).toList(),resp.getPageable(),resp.getTotalElements())
-                );
+                .body(resp);
     }
 
     private void saveHistoryStatus(SupplierDTO newSupplier, SupplierDTO oldSupplier) {

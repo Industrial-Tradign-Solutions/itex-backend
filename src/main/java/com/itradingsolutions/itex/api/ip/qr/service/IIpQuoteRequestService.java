@@ -7,11 +7,11 @@ import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestDTO;
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.qr.models.enums.IpQuoteRequestStatus;
 import com.itradingsolutions.itex.api.ip.qr.models.filters.FilterListIpQuoteRequest;
+import com.itradingsolutions.itex.api.ip.qr.models.responses.ListIpQuoteRequestResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface IIpQuoteRequestService {
@@ -23,7 +23,7 @@ public interface IIpQuoteRequestService {
     void unlockIpQuoteRequest(UUID idQuoteRequest);
     List<IpQuoteRequestDTO> listAllOpenIpQuoteRequest(String username);
     List<IpQuoteRequestDTO> listAllOpenIpQuoteRequests();
-    Page<IpQuoteRequestDTO> listAllQuoteRequests(Pageable pageable, FilterListIpQuoteRequest filters);
+    Page<ListIpQuoteRequestResponse> listAllQuoteRequests(Pageable pageable, FilterListIpQuoteRequest filters);
     List<IpQuoteRequestDTO> listAllQuoteRequestsByStatus(IpQuoteRequestStatus status);
     IpQuoteRequestEntity getEntityById(UUID id);
     void validateOpenQR(IpQuoteRequestEntity entity, UserEntity userAuthenticated);

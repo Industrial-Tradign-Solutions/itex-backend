@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.partners.suppliers.models.mappers;
 
+import com.itradingsolutions.itex.api.admin.user.models.mappers.UserMapper;
 import com.itradingsolutions.itex.api.masters.brand.models.entities.BrandEntity;
 import com.itradingsolutions.itex.api.masters.brand.models.entities.BrandSupplierEntity;
 import com.itradingsolutions.itex.api.partners.suppliers.models.dto.SupplierDTO;
@@ -12,9 +13,11 @@ import org.mapstruct.ReportingPolicy;
 import java.util.List;
 import java.util.Objects;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = UserMapper.class)
 public interface SupplierMapper {
     SupplierDTO entityToDto(SupplierEntity entity);
+    SupplierResponse entityToResponse(SupplierEntity entity);
+    BasicSupplierResponse entityToBasicResponse(SupplierEntity entity);
     SupplierResponse dtoToResponse(SupplierDTO dto);
     BasicSupplierResponse dtoToBasicResponse(SupplierDTO dto);
 

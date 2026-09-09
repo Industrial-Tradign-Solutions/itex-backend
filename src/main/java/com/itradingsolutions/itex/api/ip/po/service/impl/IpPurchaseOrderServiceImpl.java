@@ -30,6 +30,7 @@ import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.po.models.dto.reports.IpPurchaseOrderReportDTO;
 import com.itradingsolutions.itex.api.ip.po.models.filters.FilterListIpPurchaseOrder;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderMapper;
+import com.itradingsolutions.itex.api.ip.po.models.response.ListIpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderOtherChargesQuotationMapper;
 import com.itradingsolutions.itex.api.ip.po.models.mapper.IpPurchaseOrderOtherChargesQuotationQrMapper;
@@ -453,11 +454,11 @@ public class IpPurchaseOrderServiceImpl extends UtilServiceAbs implements IIpPur
 
     @Override
     @Transactional(readOnly = true)
-    public Page<IpPurchaseOrderDTO> listAll(Pageable pageable, FilterListIpPurchaseOrder filters) {
+    public Page<ListIpPurchaseOrderResponse> listAll(Pageable pageable, FilterListIpPurchaseOrder filters) {
         Specification<IpPurchaseOrderEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
         Page<IpPurchaseOrderEntity> resp = repository.findAll(spec, pageable);
         return new PageImpl<>(
-                resp.getContent().stream().map(mapper::entityToDTO).toList(),
+                resp.getContent().stream().map(mapper::entityToListResponse).toList(),
                 resp.getPageable(),
                 resp.getTotalElements()
         );

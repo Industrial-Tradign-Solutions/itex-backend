@@ -3,6 +3,10 @@ package com.itradingsolutions.itex.api.ip.po.repository;
 import com.itradingsolutions.itex.api.ip.po.models.entities.IpPurchaseOrderEntity;
 import com.itradingsolutions.itex.api.ip.po.models.enums.IpPurchaseOrderStatus;
 import com.itradingsolutions.itex.api.ip.q.models.dto.BasicPurchaseOrderDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -29,6 +33,9 @@ public interface IIpPurchaseOrderRepository extends JpaRepository<IpPurchaseOrde
     @Modifying
     @Query("UPDATE IpPurchaseOrderEntity c SET c.openBy = NULL, c.openAt = NULL WHERE c.id IN (?1)")
     int batchUnlockOpenBy(List<UUID> ids);
+
+    @EntityGraph(attributePaths = {"client", "supplier", "salesRep"})
+    Page<IpPurchaseOrderEntity> findAll(Specification<IpPurchaseOrderEntity> spec, Pageable pageable);
 
     @Query("""
             SELECT new com.itradingsolutions.itex.api.ip.q.models.dto.BasicPurchaseOrderDTO(po.id, po.number)

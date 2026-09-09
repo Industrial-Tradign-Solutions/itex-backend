@@ -3,7 +3,6 @@ package com.itradingsolutions.itex.api.admin.user.services.impl;
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserDepartmentEntity;
 import com.itradingsolutions.itex.api.admin.user.models.entities.UserDepartmentEntityId;
 import com.itradingsolutions.itex.api.admin.user.repositories.IUserDepartmentRepository;
-import com.itradingsolutions.itex.api.common.util.exceptions.NotFoundException;
 import com.itradingsolutions.itex.api.admin.user.exceptions.NotEqualPasswordException;
 import com.itradingsolutions.itex.api.admin.user.exceptions.NotExistUserException;
 import com.itradingsolutions.itex.api.admin.user.exceptions.NotUserActiveException;
@@ -20,9 +19,9 @@ import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.masters.department.services.IDepartmentService;
 import com.itradingsolutions.itex.api.common.email.service.IMailService;
 import com.itradingsolutions.itex.config.websocket.WebSocketHandlerItex;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessage;
 import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,6 +38,7 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceIml extends UtilServiceAbs implements IUserService {
@@ -189,7 +189,7 @@ public class UserServiceIml extends UtilServiceAbs implements IUserService {
         var userEntity = getUserById(userId, true);
         userEntity.setActive(false);
         userRepository.save(userEntity);
-        new Thread(() -> socketHandler.closeSessionUser(null, userId, WebSocketMessageValue.DISABLE_USER)).start();
+        Thread.startVirtualThread(() -> socketHandler.sendLogoutEvent(null, userId, WebSocketMessageValue.DISABLE_USER));
     }
 
     @Override
@@ -251,35 +251,36 @@ public class UserServiceIml extends UtilServiceAbs implements IUserService {
     @Override
     public void closeAllSessions(int offlineMinutes) {
         int timeout = 300000;
-        int period  = 30000;
+        int period = 30000;
+        int maxCount = 10;
 
-        Timer timer = new Timer();
-        TimerTask task = new TimerTask() {
+        Timer timer = new Timer(true);
+        timer.schedule(new TimerTask() {
             private int count = 0;
 
             @Override
             public void run() {
-                int maxCount = 10;
-                if (count < maxCount) {
-                    int countMills = count * period;
-                    float minutes = (float) (timeout - countMills) / 60000;
-                    socketHandler.sendMessage(new WebSocketMessage<>("The system will be offline in [" + minutes +"] minutes", WebSocketMessageValue.NOTIFICATION_LOGOUT));
-                    count++;
-                } else {
+                if (count >= maxCount) {
                     timer.cancel();
+                    return;
                 }
+                int countMills = count * period;
+                float minutes = (float) (timeout - countMills) / 60000;
+                socketHandler.sendSystemNotification("The system will be offline in [" + minutes + "] minutes", WebSocketMessageValue.NOTIFICATION_LOGOUT);
+                count++;
             }
-        };
-        timer.schedule(task, 0, period);
-        new Thread(() -> {
+        }, 0, period);
+        log.info("Scheduling offline notifications: message every {} ms during the next {} minutes", period, timeout / 60000);
+        Thread.startVirtualThread(() -> {
             try {
-              Thread.sleep(timeout);
-              socketHandler.sendMessage(new WebSocketMessage<>("Your session has ended, the system will be offline for " + offlineMinutes +" minutes;", WebSocketMessageValue.CLOSE_ALL_SESSIONS));
+                Thread.sleep(timeout);
+                socketHandler.sendSystemNotification("Your session has ended, the system will be offline for " + offlineMinutes + " minutes;", WebSocketMessageValue.CLOSE_ALL_SESSIONS);
+                log.info("Sent session end notification: system will be offline for {} minutes", offlineMinutes);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new NotFoundException("Error when sending the logout notification", e);
+                log.warn("Session end notification task interrupted", e);
             }
-        }).start();
+        });
     }
 
 
@@ -347,6 +348,6 @@ public class UserServiceIml extends UtilServiceAbs implements IUserService {
         data.put("url", webUrl);
         data.put("message", message);
 
-        mailService.sendTemplate(mailTo, subject, data, false, MailTemplates.REGISTER_USER);
+        mailService.sendTemplate(mailTo, subject, data,  MailTemplates.REGISTER_USER);
     }
 }

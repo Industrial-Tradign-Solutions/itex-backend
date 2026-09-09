@@ -34,12 +34,12 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final WebSocketHandlerItex socketHandler;
     private final IHistoryService historyService;
 
-    public JWTAuthenticationFilter(AuthenticationManager authenticationManager, JWTService jwtService, IHistoryService historyService) {
+    public JWTAuthenticationFilter(AuthenticationManager authenticationManager, JWTService jwtService, IHistoryService historyService, WebSocketHandlerItex socketHandler) {
         this.authManager = authenticationManager;
         this.historyService = historyService;
         setRequiresAuthenticationRequestMatcher(new AntPathRequestMatcher("/login", "POST"));
         this.jwtService = jwtService;
-        this.socketHandler = new WebSocketHandlerItex(this.jwtService);
+        this.socketHandler = socketHandler;
     }
     
     private void validateSystemOut() {
@@ -105,7 +105,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Date expirationToken = new Date(jwtService.getExpirationTokenMillis());
 
         body.setExpirationToken(sdf.format(expirationToken));
-        new Thread(() -> socketHandler.closeSessionUser(token, userData.getId(), WebSocketMessageValue.NEW_LOGIN)).start();
+        Thread.startVirtualThread(() -> socketHandler.sendLogoutEvent(token, userData.getId(), WebSocketMessageValue.NEW_LOGIN));
         return body;
     }
 

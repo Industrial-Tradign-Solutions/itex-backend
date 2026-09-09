@@ -11,6 +11,7 @@ spring:
     properties:
       hibernate:
         format_sql: ${DEVELOP_MODE:false}
+        default_batch_fetch_size: 100
   servlet:
     multipart:
       enabled: true

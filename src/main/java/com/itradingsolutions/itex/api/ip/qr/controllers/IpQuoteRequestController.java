@@ -211,7 +211,7 @@ public class IpQuoteRequestController extends CommonController {
     @PatchMapping("/{id_quote_request}/change-status")
     @ResponseStatus(HttpStatus.OK)
     @AccessToModule(option = ModuleOption.IP_QUOTE_REQUESTS)
-    public ResponseEntity<MessageResponse<ListIpQuoteRequestResponse>> changeStatusQuoteRequest(
+    public ResponseEntity<MessageResponse<IpQuoteRequestResponse>> changeStatusQuoteRequest(
             @PathVariable("id_quote_request") UUID idQuoteRequest,
             @RequestParam(name = "status") IpQuoteRequestStatus status
     ) {
@@ -225,7 +225,7 @@ public class IpQuoteRequestController extends CommonController {
                         new MessageResponse<>(
                                 SUCCESS_TITLE,
                                 simpleMessage("ip.qr.change-status"),
-                                qrMapper.dtoToListResponse(resp)
+                                qrMapper.dtoToResponse(resp)
                         )
                 );
     }

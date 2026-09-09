@@ -31,13 +31,13 @@ public class IpQuotationScheduler {
     }
 
     /**
-     * Auto-rejects CREATED Quotations older than 45 days daily at 11:54 PM.
+     * Auto-rejects CREATED/SENT/ANSWERED Quotations older than 30 days daily at 12:10 AM.
      * This helps maintain data hygiene by automatically closing stale quotations.
      */
-    @Scheduled(cron = "0 54 23 * * *")
-    public void cronRejectOldQuotations() {
-        log.info("Starting scheduled auto-reject of old CREATED Quotations");
-        quotationService.autoRejectOldCreatedQuotations();
-        log.info("Finished scheduled auto-reject of old CREATED Quotations");
+    @Scheduled(cron = "0 10 0 * * *")
+    public void cronRejectStaleQuotations() {
+        log.info("Starting scheduled auto-reject of stale Quotations");
+        var rejected = quotationService.autoRejectStaleQuotations();
+        log.info("Finished scheduled auto-reject of stale Quotations: {} rejected", rejected);
     }
 }

@@ -8,11 +8,12 @@ import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestEntity
 import com.itradingsolutions.itex.api.ip.qr.models.requests.IpQuoteRequestRequest;
 import com.itradingsolutions.itex.api.ip.qr.models.responses.IpQuoteRequestResponse;
 import com.itradingsolutions.itex.api.ip.qr.models.responses.ListIpQuoteRequestResponse;
+import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = SupplierMapper.class)
 public interface IpQuoteRequestMapper {
 
     IpQuoteRequestResponse dtoToResponse(IpQuoteRequestDTO dto);

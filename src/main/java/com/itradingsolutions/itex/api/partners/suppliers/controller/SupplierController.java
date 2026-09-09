@@ -70,7 +70,8 @@ public class SupplierController extends CommonController {
                                 null,
                                 null,
                                 null,
-                                null
+                                null,
+                                supplier.getBrands()
                         )
                 ).toList()
         );
@@ -206,7 +207,8 @@ public class SupplierController extends CommonController {
                                         supplier.getTaxId(),
                                         supplier.getCity() != null ? supplier.getCity().getFullName() : null,
                                         supplier.getAddress(),
-                                        supplier.getStatus()
+                                        supplier.getStatus(),
+                                        supplier.getBrands()
                                 )
                         ).toList(),resp.getPageable(),resp.getTotalElements())
                 );

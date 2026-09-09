@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.q.service.impl;
 
+import com.itradingsolutions.itex.api.admin.user.services.IUserService;
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.common.util.services.UtilServiceAbs;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
@@ -8,11 +9,14 @@ import com.itradingsolutions.itex.api.ip.q.exceptions.NotExistIpQuotationExcepti
 import com.itradingsolutions.itex.api.ip.q.exceptions.QProductExistException;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
+import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationsQuoteRequestEntity;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMapper;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationProductRepository;
 import com.itradingsolutions.itex.api.ip.q.repository.IIpQuotationsQuoteRequestRepository;
 import com.itradingsolutions.itex.api.ip.q.service.IIpQuotationProductService;
+import com.itradingsolutions.itex.api.ip.q.service.IpQuotationService;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.QuoteRequestProductIdProjection;
+import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +26,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +42,8 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     private final IIpQuotationsQuoteRequestRepository qqrRepository;
     private final IIpQuoteRequestProductRepository qrProductRepository;
     private final IIpProductRepository ipProductRepository;
+    private final IpQuotationService quotationService;
+    private final IUserService userService;
 
     @Override
     @Transactional
@@ -42,6 +51,11 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         if (productRequests.isEmpty()) {
             return List.of();
         }
+
+        quotationService.validateQuotationEditable(
+                quotationService.getEntityById(quotationId),
+                userService.getUserAuthenticated()
+        );
 
         // 1. Validate no duplicate quoteRequestProductId within request
         var qrProductIds = productRequests.stream()
@@ -64,21 +78,21 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
             throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
         }
 
-        // 2.1 Block products in DRAFT status
-        var hasDraftProduct = ipProductRepository.fetchStatusByIds(Set.copyOf(idToProductId.values()))
+        // 2.1 Block products not in ACTIVE status
+        var notActiveProducts = ipProductRepository.fetchStatusByIds(Set.copyOf(idToProductId.values()))
                 .stream()
-                .anyMatch(projection -> projection.status() == IpProductStatus.DRAFT);
-        if (hasDraftProduct) {
-            throw new BadRequestException(simpleMessage("ip.q.product.draft-not-allowed"));
+                .filter(projection -> projection.status() != IpProductStatus.ACTIVE)
+                .toList();
+        if (!notActiveProducts.isEmpty()) {
+            throw new BadRequestException(simpleMessage("ip.q.product.not-active-create"));
         }
 
-        // 3. Deduplicate by productId within request (first wins, rest skipped)
+        // 3. Validate no duplicate productId within request
         var seenProductIds = new HashSet<UUID>();
-        var deduplicated = new ArrayList<IpQuotationProductDTO>();
         for (var dto : productRequests) {
             var productId = idToProductId.get(dto.getQuoteRequestProduct().getId());
-            if (seenProductIds.add(productId)) {
-                deduplicated.add(dto);
+            if (!seenProductIds.add(productId)) {
+                throw new BadRequestException(simpleMessage("ip.q.product.product-already-in-quotation"));
             }
         }
 
@@ -86,32 +100,56 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         var existingQrProductIds = qProductRepository.findQuoteRequestProductIdsByQuotationId(quotationId);
         var existingProductIds = qProductRepository.findExistingProductIdsByQuotationId(quotationId);
 
-        // 5. Validate & build entities
+        // 5. Bulk-load supporting entities
+        var qqrIds = productRequests.stream()
+                .map(IpQuotationProductDTO::getQuotationsQuoteRequestId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        var qqrById = qqrRepository.findByQuotationIdAndIdsIn(quotationId, qqrIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        IpQuotationsQuoteRequestEntity::getId,
+                        Function.identity()
+                ));
+
+        var qrProductById = qrProductRepository.findByIdsWithProduct(uniqueQrProductIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        IpQuoteRequestProductEntity::getId,
+                        Function.identity()
+                ));
+
+        // 6. Validate & build entities
         var entities = new ArrayList<IpQuotationProductEntity>();
         var nextNumberByQqr = new HashMap<UUID, Integer>();
 
-        for (var dto : deduplicated) {
+        for (var dto : productRequests) {
             var qrProductId = dto.getQuoteRequestProduct().getId();
             var productId = idToProductId.get(qrProductId);
 
-            // Already exists in quotation by quoteRequestProductId → skip
+            // Already exists in quotation by quoteRequestProductId -> skip
             if (existingQrProductIds.contains(qrProductId)) {
                 continue;
             }
 
-            // Same underlying product already in quotation → error
+            // Same underlying product already in quotation -> error
             if (existingProductIds.contains(productId)) {
                 throw new BadRequestException(simpleMessage("ip.q.product.product-already-in-quotation"));
             }
 
-            var qqr = qqrRepository.findByIdAndQuotation_Id(dto.getQuotationsQuoteRequestId(), quotationId)
-                    .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
+            var qqr = qqrById.get(dto.getQuotationsQuoteRequestId());
+            if (qqr == null) {
+                throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
+            }
 
-            var qrProductEntity = qrProductRepository.findById(qrProductId)
-                    .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
+            var qrProductEntity = qrProductById.get(qrProductId);
+            if (qrProductEntity == null) {
+                throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
+            }
 
             var entity = new IpQuotationProductEntity();
             entity.setQuotationsQuoteRequest(qqr);
+
 
             var qqrId = qqr.getId();
             var nextNumber = nextNumberByQqr.computeIfAbsent(qqrId, id -> qqr.getMaxNumberOfProducts());
@@ -139,14 +177,50 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     @Transactional
     public IpQuotationProductDTO updateIpQuotationProduct(IpQuotationProductDTO productRequest, UUID qProductId, UUID quotationId) {
         var entity = findById(qProductId, quotationId);
+        quotationService.validateQuotationEditable(
+                entity.getQuotationsQuoteRequest().getQuotation(),
+                userService.getUserAuthenticated()
+        );
 
         if (productRequest.getQuoteRequestProduct() != null && productRequest.getQuoteRequestProduct().getId() != null) {
             if (qProductRepository.existsByQuoteRequestProduct_IdAndQuotationsQuoteRequest_IdAndIdNot(
                     productRequest.getQuoteRequestProduct().getId(), entity.getQuotationsQuoteRequest().getId(), qProductId))
                 throw new QProductExistException(simpleMessage("ip.q.product.exist"));
+
+            validateUnderlyingProductNotDuplicate(productRequest, entity, quotationId);
         }
 
         return saveQProduct(productRequest, entity);
+    }
+
+    private void validateUnderlyingProductNotDuplicate(IpQuotationProductDTO productRequest,
+                                                       IpQuotationProductEntity entity,
+                                                       UUID quotationId) {
+        var requestedQrProductId = productRequest.getQuoteRequestProduct().getId();
+        var idToProductId = qrProductRepository.findProductIdsByIds(Set.of(requestedQrProductId))
+                .stream()
+                .collect(Collectors.toMap(
+                        QuoteRequestProductIdProjection::id,
+                        QuoteRequestProductIdProjection::productId
+                ));
+
+        if (idToProductId.size() != 1) {
+            throw new NotExistIpQuotationException(simpleMessage("ip.q.not-exist"));
+        }
+
+        var newProductId = idToProductId.get(requestedQrProductId);
+        var currentProductId = Optional.ofNullable(entity.getQuoteRequestProduct())
+                .map(qrp -> qrp.getIpProduct().getId())
+                .orElse(null);
+
+        if (Objects.equals(newProductId, currentProductId)) {
+            return;
+        }
+
+        var existingProductIds = qProductRepository.findExistingProductIdsByQuotationId(quotationId);
+        if (existingProductIds.contains(newProductId)) {
+            throw new BadRequestException(simpleMessage("ip.q.product.product-already-in-quotation"));
+        }
     }
 
     @Override
@@ -158,6 +232,11 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     @Override
     @Transactional
     public void removeIpQuotationProduct(UUID qProductId, UUID quotationId) {
+        var entity = findById(qProductId, quotationId);
+        quotationService.validateQuotationEditable(
+                entity.getQuotationsQuoteRequest().getQuotation(),
+                userService.getUserAuthenticated()
+        );
         qProductRepository.deleteByIdAndQuotationsQuoteRequest_Quotation_Id(qProductId, quotationId);
     }
 
@@ -168,8 +247,8 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         if (productRequest.getQuoteRequestProduct() != null && productRequest.getQuoteRequestProduct().getId() != null) {
             var qrProduct = qrProductRepository.findById(productRequest.getQuoteRequestProduct().getId())
                     .orElseThrow(() -> new NotExistIpQuotationException(simpleMessage("ip.q.not-exist")));
-            if (qrProduct.getIpProduct().getStatus() == IpProductStatus.DRAFT)
-                throw new BadRequestException(simpleMessage("ip.q.product.draft-not-allowed"));
+            if (qrProduct.getIpProduct().getStatus() != IpProductStatus.ACTIVE)
+                throw new BadRequestException(simpleMessage("ip.q.product.not-active-create"));
             entity.setQuoteRequestProduct(qrProduct);
         } else {
             entity.setQuoteRequestProduct(null);

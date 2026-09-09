@@ -2,6 +2,7 @@ package com.itradingsolutions.itex.api.partners.suppliers.models.responses;
 
 import com.itradingsolutions.itex.api.partners.suppliers.models.enums.SupplierStatus;
 
+import java.util.List;
 import java.util.UUID;
 
 public record ListSupplierResponse(
@@ -10,6 +11,7 @@ public record ListSupplierResponse(
         String taxId,
         String city,
         String address,
-        SupplierStatus status
+        SupplierStatus status,
+        List<String> brands
 ) {
 }

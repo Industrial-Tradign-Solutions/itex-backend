@@ -14,6 +14,7 @@ import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderOther
 import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderProductResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.IpPurchaseOrderResponse;
 import com.itradingsolutions.itex.api.ip.po.models.response.ListIpPurchaseOrderResponse;
+import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargeMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationOtherChargesQuoteRequestMapper;
 import com.itradingsolutions.itex.api.ip.q.models.mapper.IpQuotationProductMapper;
@@ -28,7 +29,7 @@ import java.util.List;
         uses = {IpPurchaseOrderProductMapper.class, IpPurchaseOrderOtherChargeMapper.class,
                 IpPurchaseOrderOtherChargesQuotationMapper.class, IpPurchaseOrderOtherChargesQuotationQrMapper.class,
                 IpQuotationProductMapper.class, IpQuotationOtherChargeMapper.class,
-                IpQuotationOtherChargesQuoteRequestMapper.class})
+                IpQuotationOtherChargesQuoteRequestMapper.class, SupplierMapper.class})
 public interface IpPurchaseOrderMapper {
 
     IpPurchaseOrderDTO entityToDTO(IpPurchaseOrderEntity entity);

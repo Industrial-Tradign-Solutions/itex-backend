@@ -170,7 +170,7 @@ public class IpQuotationController extends CommonController {
     @PatchMapping("/{id_quotation}/change-status")
     @ResponseStatus(HttpStatus.OK)
     @AccessToModule(option = ModuleOption.IP_QUOTATIONS)
-    public ResponseEntity<MessageResponse<ListIpQuotationResponse>> changeStatusQuotation(
+    public ResponseEntity<MessageResponse<IpQuotationResponse>> changeStatusQuotation(
             @PathVariable(name = "id_quotation") UUID idQuotation,
             @RequestParam IpQuotationStatus status
     ) {
@@ -180,7 +180,7 @@ public class IpQuotationController extends CommonController {
         return ResponseEntity.ok(new MessageResponse<>(
                 SUCCESS_TITLE,
                 simpleMessage("ip.q.change-status"),
-                quotationMapper.dtoToListResponse(resp)
+                quotationMapper.dtoToResponse(resp)
         ));
     }
 

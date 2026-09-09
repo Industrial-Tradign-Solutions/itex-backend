@@ -28,16 +28,17 @@ public interface IpQuotationService {
     IpQuotationDTO updateQuotation(UUID id, UpdateIpQuotationRequest request);
     IpQuotationDTO changeStatusQuotation(UUID id, IpQuotationStatus status);
     IpQuotationDTO rejectQuotation(UUID id);
+    void changeStatusInternal(UUID id, IpQuotationStatus status);
     void removeQuoteRequestFromQuotation(UUID quotationId, UUID qqrId);
     IpQuotationDTO addQuoteRequestsToQuotation(UUID quotationId, List<UUID> quoteRequestIds);
     IpQuotationDTO cloneQuotation(UUID id);
     IpQuotationDTO getQuotationForHistory(UUID id);
     IpQuotationEntity getEntityById(UUID id);
-    void validateQuotationInCreatedStatus(IpQuotationEntity entity, UserEntity user);
+    void validateQuotationEditable(IpQuotationEntity entity, UserEntity user);
     
     // Scheduler methods
     void unlockAllOpenQuotations();
-    void autoRejectOldCreatedQuotations();
+    int autoRejectStaleQuotations();
 
     // Other Charges
     List<AvailableForPurchaseOrderResponse> getAvailableForPurchaseOrder(UUID clientId, boolean viewCompleted, Currency currency);

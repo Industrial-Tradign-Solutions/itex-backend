@@ -24,6 +24,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Getter
@@ -92,10 +95,23 @@ public class IpQuotationDTO extends BaseDTO {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Sums the freight charges of the linked Quote Requests that actually
+     * contribute at least one product to this Quotation. If a QR does not
+     * supply any product to the Q, its freight charges are not billed.
+     */
     public BigDecimal getFreightCharges() {
+        Set<UUID> qqrIdsWithProducts = Optional.ofNullable(products)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(IpQuotationProductDTO::getQuotationsQuoteRequestId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
         return Optional.ofNullable(listQuoteRequests)
                 .orElse(Collections.emptyList())
                 .stream()
+                .filter(qr -> qr.getQqrId() != null && qqrIdsWithProducts.contains(qr.getQqrId()))
                 .map(IpQuotationsQuoteRequestSummaryDTO::getFreightCharges)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

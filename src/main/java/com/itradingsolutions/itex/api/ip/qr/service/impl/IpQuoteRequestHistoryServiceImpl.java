@@ -1,7 +1,9 @@
 package com.itradingsolutions.itex.api.ip.qr.service.impl;
 
 import com.itradingsolutions.itex.api.admin.user.models.dto.UserDTO;
+import com.itradingsolutions.itex.api.admin.user.models.entities.UserEntity;
 import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
+import com.itradingsolutions.itex.api.common.service.IMessageService;
 import com.itradingsolutions.itex.api.common.service.impl.HistoryServiceImpl;
 import com.itradingsolutions.itex.api.common.util.exceptions.BadRequestException;
 import com.itradingsolutions.itex.api.common.util.models.enums.Currency;
@@ -39,6 +41,7 @@ public class IpQuoteRequestHistoryServiceImpl extends HistoryServiceImpl impleme
 
     private final IIpQuoteRequestHistoryRepository repository;
     private final IpQuoteRequestHistoryMapper mapper;
+    private final IMessageService messageService;
 
     @Override
     @Transactional
@@ -70,6 +73,34 @@ public class IpQuoteRequestHistoryServiceImpl extends HistoryServiceImpl impleme
         addHistoryCommon(action, entity);
     }
 
+    @Override
+    @Transactional
+    public void addHistoryAutoStatusChange(IpQuoteRequestHistoryAction action, UUID qrId, IpQuoteRequestStatus oldStatus,
+                                           IpQuoteRequestStatus newStatus, String quotationNumber, UserEntity user) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("status", getChangeItem(oldStatus.getName(), newStatus.getName()));
+        if (quotationNumber != null && !quotationNumber.isBlank()) {
+            data.put("quotationNumber", quotationNumber);
+        }
+        data.put("message", resolveAutoStatusChangeMessage(action, oldStatus, newStatus, quotationNumber));
+
+        var entity = new IpQuoteRequestHistoryEntity();
+        entity.setIpQuoteRequest(qrId);
+        entity.setData(data);
+        addHistoryCommonWithUser(action, entity, user);
+    }
+
+    private String resolveAutoStatusChangeMessage(IpQuoteRequestHistoryAction action, IpQuoteRequestStatus oldStatus,
+                                                  IpQuoteRequestStatus newStatus, String quotationNumber) {
+        return switch (action) {
+            case AUTO_REJECTED_TIME -> messageService.compositeMessage(
+                    "ip.qr.history.auto-rejected-time", new String[]{oldStatus.getName()});
+            case STATUS_CHANGE_BY_Q -> messageService.compositeMessage(
+                    "ip.qr.history.status-change-by-q", new String[]{newStatus.getName(), quotationNumber});
+            default -> throw new BadRequestException("Invalid action");
+        };
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -79,7 +110,11 @@ public class IpQuoteRequestHistoryServiceImpl extends HistoryServiceImpl impleme
     }
 
     private void addHistoryCommon(IpQuoteRequestHistoryAction action, IpQuoteRequestHistoryEntity entity) {
-        entity.setUser(getUserAuthUser());
+        addHistoryCommonWithUser(action, entity, getUserAuthUser());
+    }
+
+    private void addHistoryCommonWithUser(IpQuoteRequestHistoryAction action, IpQuoteRequestHistoryEntity entity, UserEntity user) {
+        entity.setUser(user);
         entity.setAction(action);
         if (action.equals(IpQuoteRequestHistoryAction.UPDATE) || action.equals(IpQuoteRequestHistoryAction.UPDATE_PRODUCT)) {
             if (!entity.getData().isEmpty())

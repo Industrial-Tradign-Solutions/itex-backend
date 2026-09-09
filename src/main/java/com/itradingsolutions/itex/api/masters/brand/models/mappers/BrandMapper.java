@@ -7,10 +7,11 @@ import com.itradingsolutions.itex.api.masters.brand.models.entities.BrandSupplie
 import com.itradingsolutions.itex.api.masters.brand.models.requests.BrandRequest;
 import com.itradingsolutions.itex.api.masters.brand.models.responses.BasicBrandResponse;
 import com.itradingsolutions.itex.api.masters.brand.models.responses.BrandResponse;
+import com.itradingsolutions.itex.api.partners.suppliers.models.mappers.SupplierMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = SupplierMapper.class)
 public interface BrandMapper {
 
     BrandDTO entityToDto(BrandEntity entity);

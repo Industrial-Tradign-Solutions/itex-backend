@@ -169,7 +169,7 @@ public class ClientSchedule {
         data.put("message", message);
         data.put("name", userFullName);
         log.info("Sent mail to {} whit subject {}", userMail, subject);
-        mailService.sendTemplate(userMail, subject, data, false, MailTemplates.CLIENT_NOTIFICATION);
+        mailService.sendTemplate(userMail, subject, data, MailTemplates.CLIENT_NOTIFICATION);
     }
 
     @NonNull

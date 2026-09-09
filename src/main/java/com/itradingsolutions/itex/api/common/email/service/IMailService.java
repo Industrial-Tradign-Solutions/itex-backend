@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface IMailService {
-    void sendBasic(String to, String subject, String body, boolean isNecessaryWait);
-    void sendTemplate(String to, String subject, Map<String, Object> templateModel, boolean isNecessaryWait, MailTemplates template);
+    void sendBasic(String to, String subject, String body);
+    void sendTemplate(String to, String subject, Map<String, Object> templateModel, MailTemplates template);
     void sendEmail(EmailRequest email, UserDTO user);
     void sendEmailAttachments(EmailRequest email, List<MultipartFile> attachments, UserDTO user);
 }

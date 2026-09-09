@@ -44,31 +44,23 @@ public class MailServiceImpl extends UtilServiceAbs implements IMailService {
     private static final String TEMPLATE_ERROR_MESSAGE = "emails.error.send";
 
     @Override
-    public void sendBasic(String to, String subject, String body, boolean isNecessaryWait) {
-        if (isNecessaryWait) {
-            sendBasicAction(to, subject, body);
-        } else {
-            new Thread(() -> sendBasicAction(to, subject, body)).start();
-        }
+    public void sendBasic(String to, String subject, String body) {
+        Thread.startVirtualThread(() -> sendBasicAction(to, subject, body));
     }
 
     @Override
-    public void sendTemplate(String to, String subject, Map<String, Object> templateModel, boolean isNecessaryWait, MailTemplates template) {
-        if (isNecessaryWait) {
-            sendBasicMailTemplate(to, subject, templateModel, template);
-        } else {
-            new Thread(() -> sendBasicMailTemplate(to, subject, templateModel, template)).start();
-        }
+    public void sendTemplate(String to, String subject, Map<String, Object> templateModel, MailTemplates template) {
+        Thread.startVirtualThread(() -> sendBasicMailTemplate(to, subject, templateModel, template));
     }
 
     @Override
     public void sendEmail(EmailRequest email, UserDTO user) {
-        sendEmailAction(email, null, user);
+        Thread.startVirtualThread(() -> sendEmailAction(email, null, user));
     }
 
     @Override
     public void sendEmailAttachments(EmailRequest email, List<MultipartFile> attachments, UserDTO user) {
-        sendEmailAction(email, attachments, user);
+        Thread.startVirtualThread(() -> sendEmailAction(email, attachments, user));
     }
 
     private void sendEmailAction(EmailRequest email, List<MultipartFile> attachments, UserDTO user) {

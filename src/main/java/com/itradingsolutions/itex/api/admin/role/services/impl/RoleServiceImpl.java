@@ -12,12 +12,14 @@ import com.itradingsolutions.itex.api.admin.role.services.IRoleService;
 import com.itradingsolutions.itex.config.websocket.WebSocketHandlerItex;
 import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl extends UtilServiceAbs implements IRoleService {
@@ -66,10 +68,11 @@ public class RoleServiceImpl extends UtilServiceAbs implements IRoleService {
         var role = getRoleById(roleId, true);
         role.setActive(false);
         roleRepository.save(role);
-        new Thread(() -> {
+        Thread.startVirtualThread(() -> {
             var listUsers = userRepository.fetchAllByRoleId(roleId);
-            listUsers.forEach(userId -> socketHandler.closeSessionUser(null, userId, WebSocketMessageValue.DISABLE_ROLE));
-        }).start();
+            listUsers.forEach(userId -> socketHandler.sendLogoutEvent(null, userId, WebSocketMessageValue.DISABLE_ROLE));
+            log.info("Notified session close to {} user(s) of disabled role {}", listUsers.size(), roleId);
+        });
     }
 
     @Override

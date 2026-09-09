@@ -13,7 +13,6 @@ import com.itradingsolutions.itex.api.masters.industry.models.responses.ListsInd
 import com.itradingsolutions.itex.api.masters.industry.services.IIndustryService;
 import com.itradingsolutions.itex.config.security.auth.AccessToAction;
 import com.itradingsolutions.itex.config.security.auth.AccessToModule;
-import com.itradingsolutions.itex.config.websocket.WebSocketMessageValue;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -118,11 +117,6 @@ public class IndustryController extends CommonMasterController<
                 .enables(enables)
                 .disables(disables)
                 .build();
-    }
-
-    @Override
-    public WebSocketMessageValue getWebSocketMessageValue() {
-        return WebSocketMessageValue.LIST_INDUSTRIES;
     }
 
     @Override

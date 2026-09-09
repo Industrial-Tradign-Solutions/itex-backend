@@ -4,6 +4,7 @@ import com.itradingsolutions.itex.api.common.util.services.IHistoryService;
 import com.itradingsolutions.itex.config.security.jwt.filter.JWTAuthenticationFilter;
 import com.itradingsolutions.itex.config.security.jwt.filter.JWTAuthorizationFilter;
 import com.itradingsolutions.itex.config.security.jwt.service.JWTService;
+import com.itradingsolutions.itex.config.websocket.WebSocketHandlerItex;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -25,11 +26,13 @@ public class SecurityConfiguration {
 
     private final JWTService jwtService;
     private final IHistoryService historyService;
+    private final WebSocketHandlerItex webSocketHandlerItex;
     private final AuthenticationConfiguration authConfig;
 
-    public SecurityConfiguration(JWTService jwtService, IHistoryService historyService, AuthenticationConfiguration authConfig) {
+    public SecurityConfiguration(JWTService jwtService, IHistoryService historyService, WebSocketHandlerItex webSocketHandlerItex, AuthenticationConfiguration authConfig) {
         this.jwtService = jwtService;
         this.historyService = historyService;
+        this.webSocketHandlerItex = webSocketHandlerItex;
         this.authConfig = authConfig;
     }
 
@@ -55,7 +58,7 @@ public class SecurityConfiguration {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorize -> authorize.requestMatchers(freePaths).permitAll().anyRequest().authenticated())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(new JWTAuthenticationFilter(authConfig.getAuthenticationManager(), jwtService, historyService), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JWTAuthenticationFilter(authConfig.getAuthenticationManager(), jwtService, historyService, webSocketHandlerItex), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new JWTAuthorizationFilter(authConfig.getAuthenticationManager(), jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

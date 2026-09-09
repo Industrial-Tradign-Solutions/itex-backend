@@ -20,6 +20,8 @@ import com.itradingsolutions.itex.api.ip.products.models.mappers.IpProductMapper
 import com.itradingsolutions.itex.api.ip.products.repositories.IIpProductRepository;
 import com.itradingsolutions.itex.api.ip.products.repositories.IIpProductSurplusRepository;
 import com.itradingsolutions.itex.api.ip.products.services.IIpProductService;
+import com.itradingsolutions.itex.api.ip.products.models.responses.BasicIpProductResponse;
+import com.itradingsolutions.itex.api.ip.products.models.responses.ListIpProductResponse;
 import com.itradingsolutions.itex.api.masters.brand.services.IBrandService;
 import com.itradingsolutions.itex.api.masters.location.services.ICountryService;
 import com.itradingsolutions.itex.api.partners.clients.exceptions.NotOpenClientException;
@@ -228,17 +230,17 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
 
     @Override
     @Transactional(readOnly = true)
-    public Page<IpProductDTO> listAllProducts(Pageable pageable, FilterListIpProducts filters) {
+    public Page<ListIpProductResponse> listAllProducts(Pageable pageable, FilterListIpProducts filters) {
         Specification<IpProductEntity> spec = (filters == null ? Specification.where(null) : filters.filter());
         Page<IpProductEntity> resp = ipProductRepository.findAll(spec, pageable);
-        return new PageImpl<>(resp.getContent().stream().map(ipProductMapper::entityToDTO).toList(),resp.getPageable(),resp.getTotalElements());
+        return new PageImpl<>(resp.getContent().stream().map(ipProductMapper::entityToListResponse).toList(), resp.getPageable(), resp.getTotalElements());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<IpProductDTO> listAllActiveProducts() {
+    public List<BasicIpProductResponse> listAllActiveProducts() {
         var list = ipProductRepository.fetchAllByStatusIn(List.of(IpProductStatus.ACTIVE, IpProductStatus.DRAFT));
-        return list.stream().map(ipProductMapper::entityToDTO).toList();
+        return list.stream().map(ipProductMapper::entityToBasicResponse).toList();
     }
 
     @Override

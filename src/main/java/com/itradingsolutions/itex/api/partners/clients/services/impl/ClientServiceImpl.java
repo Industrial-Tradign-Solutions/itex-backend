@@ -20,7 +20,9 @@ import com.itradingsolutions.itex.api.partners.clients.models.filter.FilterListC
 import com.itradingsolutions.itex.api.partners.clients.models.mappers.ClientMapper;
 import com.itradingsolutions.itex.api.partners.clients.models.requests.ClientInfoDepRequest;
 import com.itradingsolutions.itex.api.partners.clients.models.requests.ClientRequest;
+import com.itradingsolutions.itex.api.partners.clients.models.responses.BasicClientResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientDashboardResponse;
+import com.itradingsolutions.itex.api.partners.clients.models.responses.ListClientResponse;
 import com.itradingsolutions.itex.api.partners.clients.repository.IClientRepository;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientInfoDepService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
@@ -126,10 +128,10 @@ public class ClientServiceImpl extends UtilServiceAbs implements IClientService 
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ClientDTO> listAllClients(Pageable pageable, FilterListClients filters) {
+    public Page<ListClientResponse> listAllClients(Pageable pageable, FilterListClients filters) {
         Specification<ClientEntity> spec = (filters == null ? Specification.where(null) : filters.filterClient());
         Page<ClientEntity> resp = clientRepository.findAll(spec, pageable);
-        return new PageImpl<>(resp.getContent().stream().map(clientMapper::entityToDto).toList(),resp.getPageable(),resp.getTotalElements());
+        return new PageImpl<>(resp.getContent().stream().map(clientMapper::entityToListResponse).toList(), resp.getPageable(), resp.getTotalElements());
     }
 
     @Override
@@ -165,9 +167,9 @@ public class ClientServiceImpl extends UtilServiceAbs implements IClientService 
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClientDTO> listAllActive() {
+    public List<BasicClientResponse> listAllActive() {
         var items = clientRepository.fetchAllByStatus(ClientStatus.ACTIVE);
-        return items.stream().map(clientMapper::entityToDto).toList();
+        return items.stream().map(clientMapper::entityToBasicResponse).toList();
     }
 
     private ClientDTO saveClientInfo(ClientRequest request, ClientEntity clientEntity, boolean isUpdate) {

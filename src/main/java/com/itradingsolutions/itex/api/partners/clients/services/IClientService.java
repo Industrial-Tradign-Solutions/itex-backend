@@ -6,7 +6,9 @@ import com.itradingsolutions.itex.api.partners.clients.models.entities.ClientEnt
 import com.itradingsolutions.itex.api.partners.clients.models.enums.ClientStatus;
 import com.itradingsolutions.itex.api.partners.clients.models.filter.FilterListClients;
 import com.itradingsolutions.itex.api.partners.clients.models.requests.ClientRequest;
+import com.itradingsolutions.itex.api.partners.clients.models.responses.BasicClientResponse;
 import com.itradingsolutions.itex.api.partners.clients.models.responses.ClientDashboardResponse;
+import com.itradingsolutions.itex.api.partners.clients.models.responses.ListClientResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,7 +21,7 @@ public interface IClientService {
     ClientDTO updateClient(ClientRequest request, UUID prospectId);
     ClientDTO openAndLockClient(UUID clientId, OpenAndLockType type);
     void unlockClient(UUID clientId);
-    Page<ClientDTO> listAllClients(Pageable pageable, FilterListClients filters);
+    Page<ListClientResponse> listAllClients(Pageable pageable, FilterListClients filters);
     List<ClientDTO> listAllOpenClients(String username);
     ClientEntity findClientById(UUID clientId, boolean validateActive);
 
@@ -27,5 +29,5 @@ public interface IClientService {
     ClientDashboardResponse dashboardClients();
 
     List<ClientDTO> listAllByStatus(ClientStatus status);
-    List<ClientDTO> listAllActive();
+    List<BasicClientResponse> listAllActive();
 }

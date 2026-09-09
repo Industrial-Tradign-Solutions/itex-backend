@@ -34,9 +34,10 @@ public class FilterListSuppliers extends PartnerFilter<SupplierStatus, SupplierE
             Join<SupplierEntity, BrandSupplierEntity> brandsJoin = root.join("brands", JoinType.INNER);
 
             Expression<String> brandDesc = cb.upper(brandsJoin.get("brand").get("name"));
-            String pattern = "%" + getBrand().toUpperCase().trim() + "%";
+            return cb.equal(brandDesc, getBrand().toUpperCase().trim());
 
-            return cb.like(brandDesc, pattern);
+            //String pattern = "%" + getBrand().toUpperCase().trim() + "%";
+            //return cb.like(brandDesc, pattern);
         };
     }
 }

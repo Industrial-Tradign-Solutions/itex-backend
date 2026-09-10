@@ -127,6 +127,12 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 - Campos: `description` (obligatoria) + `value`.
 - No se admite **descripción duplicada** → `ip.qr.other-charges.exist`.
 
+### 6.3 Precisión y escalado (regla 2026-09-10)
+
+- **Almacenamiento completo:** `quantity`, `unit_price`, `value` (other charges) y `freight_charges` se guardan en DB a 5 decimales (`numeric(15,5)`, migraciones V1.2.9 / V1.2.15). Al grabar, los setters del DTO normalizan a escala 5 (`HALF_UP`), que es la precisión real de la columna — no se pierde información.
+- **Front sin redondeo:** los cálculos expuestos por API (`subTotal`, `total`, `totalOtherCharges`, `extendedPrice`, `grossWeightLbs`) se devuelven **crudos**, con toda la escala resultante.
+- **Escalado solo en el PDF:** el reporte (`IpQuoteRequestProductReportDTO`) escala la `quantity` con `ReportFormatUtil.quantity()` → `BigDecimal.setScale(5, HALF_UP)` antes del `DecimalFormat`. Regla global IP: **todo `BigDecimal` (monetario, cantidad, peso) se escala a 5 decimales**; `ReportFormatUtil` unifica esa escala para Q, QR y PO. Se usa `HALF_UP` explícito porque `DecimalFormat` redondea por defecto con `HALF_EVEN` (banca), que es más laxo.
+
 ## 7. Procesos automáticos (el sistema, no el usuario)
 
 | # | Disparador | Acción |
@@ -146,6 +152,7 @@ Cron literal de los jobs en `IpQuoteRequestScheduler`: unlock `30 50 23 * * *`; 
 ## 8. Relación QR ↔ Q
 
 - Una QR `ANSWERED` (o `COMPLETE` si se pasa `viewCompletedQR=true`) es candidata a enlazarse a una **Q del mismo cliente y misma moneda** (endpoint `GET /ip/qr/available-for-quotation/{id_client}`).
+  - Filtro opcional `sales-rep-id` (UUID): si se envía, solo devuelve las QR de ese representante (`null` = todos); reduce filas y hace más liviana la consulta. El endpoint responde el item ligero de lista (`ListIpQuoteRequestResponse`) sin materializar productos/cargos/clones/cotizaciones de cada QR.
 - Al enlazarse: se exige **mismo client** (`findByIdAndClient`) y **misma currency**.
 - Mientras esté enlazada a una Q (cualquier estado de la Q que no sea `REJECTED`):
   - **No** puede hacer rollback (`ANSWERED → SENT/CREATED`) → `ip.qr.assigned-to-q`.

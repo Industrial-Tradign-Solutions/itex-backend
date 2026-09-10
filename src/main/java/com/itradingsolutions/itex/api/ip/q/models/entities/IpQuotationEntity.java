@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serial;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -101,6 +102,12 @@ public class IpQuotationEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_terms", length = 40, nullable = false)
     private PaymentTerms paymentTerms;
+
+    @Column(name = "profit_margin_freight_charges", precision = 15, scale = 5, nullable = false)
+    private BigDecimal profitMarginFreightCharges;
+
+    @Column(name = "freight_charge_miami_its", precision = 15, scale = 5, nullable = false)
+    private BigDecimal freightChargeMiamiITS;
 
     @Column(name = "application_at")
     private LocalDate applicationAt;

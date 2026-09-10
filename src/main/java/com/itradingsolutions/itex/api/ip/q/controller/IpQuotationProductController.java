@@ -121,6 +121,7 @@ public class IpQuotationProductController extends CommonController {
         dto.setQuotationsQuoteRequestId(request.quotationsQuoteRequestId());
         dto.setProfitMargin(request.profitMargin());
         dto.setCondition(request.condition());
+        dto.setItsLeadTime(request.itsLeadTime());
         if (request.quoteRequestProductId() != null) {
             var qrProductDTO = new IpQuoteRequestProductDTO();
             qrProductDTO.setId(request.quoteRequestProductId());

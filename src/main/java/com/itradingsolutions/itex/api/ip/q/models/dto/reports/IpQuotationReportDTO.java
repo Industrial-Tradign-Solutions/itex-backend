@@ -1,15 +1,12 @@
 package com.itradingsolutions.itex.api.ip.q.models.dto.reports;
 
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationDTO;
-import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargeDTO;
-import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationOtherChargesQuoteRequestDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -22,6 +19,7 @@ import java.util.Optional;
 public class IpQuotationReportDTO {
 
     private String number;
+    private String clientQNumber;
     private String paymentTerms;
     private String notes;
     private String date;
@@ -44,6 +42,7 @@ public class IpQuotationReportDTO {
     private String subTotal;
     private String totalOtherCharges;
     private String freightCharges;
+    private String freightChargeMiamiITS;
     private String total;
 
     private JRBeanCollectionDataSource products;
@@ -57,6 +56,7 @@ public class IpQuotationReportDTO {
         this.date = now.format(formatter);
 
         this.number = quotation.getNumber();
+        this.clientQNumber = Optional.ofNullable(quotation.getClientQNumber()).orElse("").toUpperCase();
         this.paymentTerms = quotation.getPaymentTerms() != null ? quotation.getPaymentTerms().getName() : "";
         this.notes = quotation.getRemarks() != null ? quotation.getRemarks() : "";
 
@@ -134,15 +134,20 @@ public class IpQuotationReportDTO {
                     }
                 }));
 
+        if (list.isEmpty()) {
+            log.debug("Quotation {} has no other charges; adding blank placeholder row for PDF", quotation.getNumber());
+            list.add(IpQuotationOtherChargeReportDTO.blank());
+        }
+
         this.otherCharges = new JRBeanCollectionDataSource(list);
     }
 
     private void configTotals(IpQuotationDTO quotation) {
-        DecimalFormat format = new DecimalFormat("#,##0.00");
-        this.subTotal = quotation.getSubTotal() != null ? format.format(quotation.getSubTotal()) : format.format(BigDecimal.ZERO);
-        this.totalOtherCharges = quotation.getTotalOtherCharges() != null ? format.format(quotation.getTotalOtherCharges()) : format.format(BigDecimal.ZERO);
-        this.freightCharges = quotation.getFreightCharges() != null ? format.format(quotation.getFreightCharges()) : format.format(BigDecimal.ZERO);
-        this.total = quotation.getTotal() != null ? format.format(quotation.getTotal()) : format.format(BigDecimal.ZERO);
+        this.subTotal = ReportFormatUtil.money(quotation.getSubTotal());
+        this.totalOtherCharges = ReportFormatUtil.money(quotation.getTotalOtherCharges());
+        this.freightCharges = ReportFormatUtil.money(quotation.getFreightCharges().add(quotation.getProfitMarginFreightCharges()));
+        this.freightChargeMiamiITS = ReportFormatUtil.money(quotation.getFreightChargeMiamiITS());
+        this.total = ReportFormatUtil.money(quotation.getTotal());
     }
 
     private void configQFields(IpQuotationDTO quotation) {
@@ -172,8 +177,7 @@ public class IpQuotationReportDTO {
         var products = quotation.getProducts();
         this.totalItems = products != null ? String.valueOf(products.size()) : "0";
 
-        DecimalFormat weightFormat = new DecimalFormat("#,##0.00");
-        this.grossWeightLbs = weightFormat.format(quotation.getGrossWeightLbs());
+        this.grossWeightLbs = ReportFormatUtil.weight(quotation.getGrossWeightLbs());
 
         if (quotation.getSalesRep() != null) {
             this.salesRepName = quotation.getSalesRep().getFullName() != null

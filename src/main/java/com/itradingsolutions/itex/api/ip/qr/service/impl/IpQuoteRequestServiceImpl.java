@@ -47,6 +47,7 @@ import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
 import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierContactService;
 import com.itradingsolutions.itex.api.partners.suppliers.services.ISupplierService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -65,6 +66,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuoteRequestService {
@@ -411,11 +413,15 @@ public class IpQuoteRequestServiceImpl extends UtilServiceAbs implements IIpQuot
 
     @Override
     @Transactional(readOnly = true)
-    public List<IpQuoteRequestDTO> getListQuoteRequestByClientAvailableToQuotation(UUID clientId, boolean viewCompletedQR, Currency currency) {
+    public List<ListIpQuoteRequestResponse> getListQuoteRequestByClientAvailableToQuotation(UUID clientId, boolean viewCompletedQR, Currency currency, UUID salesRepId) {
         List<IpQuoteRequestStatus> status = new java.util.ArrayList<>(List.of(IpQuoteRequestStatus.ANSWERED));
         if (viewCompletedQR) status.add(IpQuoteRequestStatus.COMPLETE);
-        var resp = qrRepository.fetchAllByClientAndStatus(clientId, status, currency);
-        return resp.stream().map(qrMapper::entityToDTO).toList();
+        var resp = qrRepository.fetchAllByClientAndStatus(clientId, status, currency, salesRepId);
+        if (salesRepId != null) {
+            log.info("Available QR for quotation | clientId={} currency={} salesRepId={} -> {} QR(s)",
+                    clientId, currency, salesRepId, resp.size());
+        }
+        return resp.stream().map(qrMapper::entityToListResponse).toList();
     }
 
     @Override

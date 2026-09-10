@@ -1,10 +1,10 @@
 package com.itradingsolutions.itex.api.ip.q.models.dto.reports;
 
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 
 @Getter
 public class IpQuotationProductReportDTO {
@@ -26,19 +26,16 @@ public class IpQuotationProductReportDTO {
 
         var qrProduct = product.getQuoteRequestProduct();
         if (qrProduct == null) {
-            this.quantity = "0.00000";
+            this.quantity = ReportFormatUtil.quantity(BigDecimal.ZERO);
             this.unit = "";
             this.leadTime = "";
             this.condition = product.getCondition() != null ? product.getCondition().getName() : "";
-            DecimalFormat priceFormat = new DecimalFormat("#,##0.00000");
-            DecimalFormat extPriceFormat = new DecimalFormat("#,##0.00");
-            this.unitPrice = priceFormat.format(BigDecimal.ZERO);
-            this.extendedPrice = extPriceFormat.format(BigDecimal.ZERO);
+            this.unitPrice = ReportFormatUtil.price(BigDecimal.ZERO);
+            this.extendedPrice = ReportFormatUtil.money(BigDecimal.ZERO);
             return;
         }
 
-        DecimalFormat qtyFormat = new DecimalFormat("#,##0.00000");
-        this.quantity = qrProduct.getQuantity() != null ? qtyFormat.format(qrProduct.getQuantity()) : "0.00000";
+        this.quantity = ReportFormatUtil.quantity(qrProduct.getQuantity());
         this.unit = qrProduct.getUnitType() != null ? qrProduct.getUnitType().getName() : "";
 
         var ipProduct = qrProduct.getIpProduct();
@@ -47,17 +44,15 @@ public class IpQuotationProductReportDTO {
             this.clientRef = ipProduct.getClientReference() != null ? ipProduct.getClientReference() : "";
         }
 
-        if (qrProduct.getLeadTime() != null && qrProduct.getLeadTimeType() != null) {
-            this.leadTime = qrProduct.getLeadTime() + " " + qrProduct.getLeadTimeType().getName();
+        if (qrProduct.getLeadTimeType() != null) {
+            this.leadTime = product.getTotalLeadTime() + " " + qrProduct.getLeadTimeType().getName();
         } else {
             this.leadTime = "";
         }
 
         this.condition = product.getCondition() != null ? product.getCondition().getName() : "";
 
-        DecimalFormat priceFormat = new DecimalFormat("#,##0.00000");
-        DecimalFormat extPriceFormat = new DecimalFormat("#,##0.00");
-        this.unitPrice = priceFormat.format(product.getSellingUnitPrice());
-        this.extendedPrice = extPriceFormat.format(product.getSellingExtendedPrice());
+        this.unitPrice = ReportFormatUtil.price(product.getSellingUnitPrice());
+        this.extendedPrice = ReportFormatUtil.money(product.getSellingExtendedPrice());
     }
 }

@@ -182,6 +182,8 @@ public class IpQuotationHistoryServiceImpl extends HistoryServiceImpl implements
         compareEnum(data, "validityType", oldDto.getValidityType(), newDto.getValidityType());
         putIfChanged(data, "incoterms", oldDto.getIncoterms(), newDto.getIncoterms());
         putIfChanged(data, "paymentTerms", oldDto.getPaymentTerms(), newDto.getPaymentTerms());
+        putIfChangedBigDecimal(data, "profitMarginFreightCharges", oldDto.getProfitMarginFreightCharges(), newDto.getProfitMarginFreightCharges());
+        putIfChangedBigDecimal(data, "freightChargeMiamiITS", oldDto.getFreightChargeMiamiITS(), newDto.getFreightChargeMiamiITS());
         putIfChanged(data, "applicationAt", oldDto.getApplicationAt(), newDto.getApplicationAt());
         return data;
     }

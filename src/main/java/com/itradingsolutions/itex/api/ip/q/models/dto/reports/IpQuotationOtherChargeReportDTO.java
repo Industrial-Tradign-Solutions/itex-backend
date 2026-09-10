@@ -1,9 +1,9 @@
 package com.itradingsolutions.itex.api.ip.q.models.dto.reports;
 
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 
 @Getter
 public class IpQuotationOtherChargeReportDTO {
@@ -15,7 +15,17 @@ public class IpQuotationOtherChargeReportDTO {
 
     public IpQuotationOtherChargeReportDTO(String description, BigDecimal value) {
         this.description = description != null ? description : "";
-        DecimalFormat format = new DecimalFormat("#,##0.00");
-        this.value = value != null ? format.format(value) : format.format(BigDecimal.ZERO);
+        this.value = ReportFormatUtil.money(value);
+    }
+
+    /**
+     * Creates an empty charge line (blank description and value) used as a
+     * placeholder in the report when the Quotation has no other charges.
+     */
+    public static IpQuotationOtherChargeReportDTO blank() {
+        var report = new IpQuotationOtherChargeReportDTO();
+        report.description = "";
+        report.value = "";
+        return report;
     }
 }

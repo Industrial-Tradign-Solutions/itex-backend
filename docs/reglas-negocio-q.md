@@ -1,7 +1,7 @@
 # Manual de Reglas de Negocio — Quotation (Q)
 
 > **Módulo:** `IP_QUOTATIONS`
-> **Estado del documento:** Actualizado al 2026-09-08.
+> **Estado del documento:** Actualizado al 2026-09-10.
 > **Base:** `src/main/java/com/itradingsolutions/itex/api/ip/q/`
 
 ## 1. Propósito del módulo y su lugar en el flujo IP
@@ -33,8 +33,10 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 | `internalRemarks` | No | Usuario | Notas internas. |
 | `leadTime` + `leadTimeType` | Sí | Usuario (default `0` / `DAYS` en creación) | Plazo de entrega ofrecido. |
 | `validity` + `validityType` | Sí | Usuario (default `0` / `DAYS` en creación) | Vigencia de la cotización. |
-| `incoterms` | No | Usuario | Incoterm del documento. |
+| `incoterms` | Condicional | Usuario | Incoterm del documento. **Obligatorio** para avanzar a `SENT`, `ANSWERED` o `COMPLETE` → `ip.q.incoterms-required`. |
 | `paymentTerms` | Sí | **Auto: desde el client** en creación; editable en `PUT` | Sobrescritura manual solo con el permiso `EDIT_PAYMENT_TERMS_IP_QUOTATIONS` (4003006); si no, se ignora silenciosamente. |
+| `profitMarginFreightCharges` | No | Usuario (solo `PUT`) | Margen de ganancia (valor monetario) aplicado a los cargos de flete del proveedor. Nace en `0` al crear. **Suma a `freightCharges`.** |
+| `freightChargeMiamiITS` | No | Usuario (solo `PUT`) | Flete para envíos a ubicaciones específicas (Miami ITS). Nace en `0` al crear. Se gestiona por separado: **no suma a `freightCharges`, pero sí al `total`.** |
 | `applicationAt` | Sí (para `SENT`/`ANSWERED`) | Usuario | Fecha de aplicación ofrecida, **solo fecha (sin hora)**. Es **requerida** para poder pasar a `SENT` o `ANSWERED` → `ip.q.application-at-required`. |
 | `pdfUrl` | No | Sistema (al imprimir) | PDF generado; en estados **finales** se **reutiliza**. |
 | `openBy` / `openAt` | No | Sistema (open-lock) | Lock de edición (ver §5). Se limpia en estados finales y con el unlock nocturno. |
@@ -63,9 +65,9 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 
 | Transición | Tipo | Requisitos | Effecto en fechas | Error si falla |
 |------------|------|------------|-------------------|----------------|
-| `CREATED → SENT` | Manual (`PATCH /ip/q/{id}/change-status?status=SENT`) | **≥1 QR enlazada** y **≥1 producto** (`HAS_QUOTE_REQUESTS` + `HAS_PRODUCTS`); `applicationAt` presente | `sentAt = ahora` | `ip.q.not-valid-sent`; `ip.q.application-at-required` |
-| `SENT → ANSWERED` | Manual | ≥1 producto; `sentAt` presente; `applicationAt` presente | `answeredAt = ahora`; **dispara transiciones automáticas de las QR** (§7, que las deja inmutables) | `ip.q.not-valid-answered`; `ip.q.application-at-required` |
-| `ANSWERED → COMPLETE` | Manual | ≥1 producto; `answeredAt` presente; **≥1 PO asociada**; permiso `COMPLETE_IP_QUOTATIONS` (4003007) | `completeAt = ahora` | `ip.q.not-valid-complete`; `ip.q.complete-requires-po`; `ip.q.no-manual-complete`; `ip.q.manual-complete-requires-answered` |
+| `CREATED → SENT` | Manual (`PATCH /ip/q/{id}/change-status?status=SENT`) | **≥1 QR enlazada** y **≥1 producto** (`HAS_QUOTE_REQUESTS` + `HAS_PRODUCTS`); `applicationAt` presente; `incoterms` presente | `sentAt = ahora` | `ip.q.not-valid-sent`; `ip.q.application-at-required`; `ip.q.incoterms-required` |
+| `SENT → ANSWERED` | Manual | ≥1 producto; `sentAt` presente; `applicationAt` presente; `incoterms` presente | `answeredAt = ahora`; **dispara transiciones automáticas de las QR** (§7, que las deja inmutables) | `ip.q.not-valid-answered`; `ip.q.application-at-required`; `ip.q.incoterms-required` |
+| `ANSWERED → COMPLETE` | Manual | ≥1 producto; `answeredAt` presente; **≥1 PO asociada**; `incoterms` presente; permiso `COMPLETE_IP_QUOTATIONS` (4003007) | `completeAt = ahora` | `ip.q.not-valid-complete`; `ip.q.complete-requires-po`; `ip.q.no-manual-complete`; `ip.q.manual-complete-requires-answered`; `ip.q.incoterms-required` |
 | `ANSWERED → SENT` (rollback) | Manual | **Sin PO asociada** | `answeredAt = null` | `ip.q.cannot-revert-with-po` |
 | `ANSWERED → CREATED` (rollback) | Manual | Sin PO asociada | `answeredAt = null`, `sentAt = null` | `ip.q.cannot-revert-with-po` |
 | `SENT → CREATED` (rollback) | Manual | — (no valida PO asociada en este caso) | `sentAt = null` | — |
@@ -74,6 +76,7 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 **Reglas transversales:**
 - **Mismo estado:** no se permite → `ip.q.equal-status`.
 - **Estados terminales (`COMPLETE` / `REJECTED`):** inmutables → `ip.q.cannot-change-complete-status` / `ip.q.cannot-change-rejected-status`.
+- **Incoterms obligatorio:** avanzar a `SENT`, `ANSWERED` o `COMPLETE` exige `incoterms` no nulo → `ip.q.incoterms-required`. Los rollbacks (p. ej. `ANSWERED → SENT`) **no** lo validan.
 - Al pasar a estado terminal se **cierra el open-lock**.
 - `change-status` con `REJECTED` **no está permitido**: el controlador lo rechaza (`IllegalArgumentException`); el rechazo va por `DELETE`.
 - **`change-status` NO exige open-lock.** Sí exige status no terminal (los cambios de estado no pasan por `validateQuotationEditable`).
@@ -120,7 +123,9 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 
 - **Manuales:** cargos propios de la Q (valor + descripción); se manejan con el permiso genérico de actualización.
 - **Importados desde QR:** se pueden listar `GET /ip/q/{id}/other_charges/available-from-qr`, importarse en lote (`import-from-qr`) y eliminarse (`imported-from-qr/{id}`). Cada cargo importado queda ligado a su QR.
-- Totales: `freightCharges`/`total` del response suman solo los cargos y productos de QR que tienen productos en la Q.
+- Totales: `freightCharges` = flete de las QR con productos en la Q; `totalFreightCharges` = `freightCharges` + `profitMarginFreightCharges`; `total` = `subTotal` + `totalFreightCharges` + `totalOtherCharges` + `freightChargeMiamiITS`. El `freightChargeMiamiITS` **no** se suma a los fletes.
+- **Precisión (regla global de BigDecimal):** todo valor monetario, de cantidad y de peso se maneja con **5 decimales de almacenamiento**: la DB los guarda completos (`numeric(15,5)`; V2.0.5 también amplió `t_ip_quotation_other_charges.value`) y los cálculos del DTO se devuelven al frontend **crudos, sin redondear** (incluida la `quantity`, los importes de producto/cargos y el peso). El PDF muestra **2 decimales**: `ReportFormatUtil` (`api/common/util`) aplica `setScale(2, HALF_UP)` **antes** del `DecimalFormat` (patrón `#,##0.00`) — nunca se depende del redondeo propio de `DecimalFormat`, que usa `HALF_EVEN` (más laxo). Única excepción de almacenamiento: `profit_margin` de producto (porcentaje, escala 2 por su dominio 0.01–100).
+- **PDF sin cargos:** si la Q no tiene other charges (ni propios ni importados), la tabla del reporte muestra una **fila en blanco** para conservar la estructura del documento.
 
 ## 7. Procesos automáticos (el sistema, no el usuario)
 
@@ -169,6 +174,7 @@ Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 
 | `ip.q.not-valid-answered` | `SENT→ANSWERED` sin productos o sin `sentAt`. |
 | `ip.q.not-valid-complete` | `ANSWERED→COMPLETE` sin `answeredAt`/sin productos. |
 | `ip.q.application-at-required` | Pasar a `SENT`/`ANSWERED` sin `applicationAt`. |
+| `ip.q.incoterms-required` | Avanzar a `SENT`/`ANSWERED`/`COMPLETE` sin `incoterms`. |
 | `ip.q.complete-requires-po` | `COMPLETE` sin ninguna PO asociada. |
 | `ip.q.cannot-reject-with-po` | Rechazo con PO asociada (mensaje legacy; ahora se usa `ip.q.po-not-all-rejected`). |
 | `ip.q.cannot-revert-with-po` | Rollback (`ANSWERED→SENT/CREATED`) con PO asociada. |

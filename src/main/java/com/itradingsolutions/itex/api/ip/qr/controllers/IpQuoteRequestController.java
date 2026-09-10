@@ -252,11 +252,10 @@ public class IpQuoteRequestController extends CommonController {
     public ResponseEntity<List<ListIpQuoteRequestResponse>> getAvailableForQuotation(
             @PathVariable(name = "id_client") UUID idClient,
             @RequestParam(name = "view-completed-qr", defaultValue = "false") boolean viewCompletedQR,
-            @RequestParam(name = "currency", defaultValue = "USD") Currency currency
+            @RequestParam(name = "currency", defaultValue = "USD") Currency currency,
+            @RequestParam(name = "sales-rep-id", required = false) UUID salesRepId
     ) {
-        var listQR = qrService.getListQuoteRequestByClientAvailableToQuotation(idClient, viewCompletedQR, currency);
-        return ResponseEntity.status(HttpStatus.OK).body(
-                listQR.stream().map(qrMapper::dtoToListResponse).toList()
-        );
+        var listQR = qrService.getListQuoteRequestByClientAvailableToQuotation(idClient, viewCompletedQR, currency, salesRepId);
+        return ResponseEntity.status(HttpStatus.OK).body(listQR);
     }
 }

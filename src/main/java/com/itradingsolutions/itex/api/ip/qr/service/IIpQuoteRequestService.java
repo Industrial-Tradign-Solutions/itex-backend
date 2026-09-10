@@ -58,9 +58,11 @@ public interface IIpQuoteRequestService {
     void validateEditableStatus(IpQuoteRequestEntity entity);
 
     /*
-    Funcion para listar todos los QR validos para crear una cotizacion teniendo en cuenta que carga solo status Answered y si quieren los Completed
+    Funcion para listar todos los QR validos para crear una cotizacion teniendo en cuenta que carga solo status Answered y si quieren los Completed.
+    salesRepId es un filtro opcional (null = todos los representantes): reduce filas y hace mas liviana la consulta.
+    Devuelve el response ligero de lista directamente (sin materializar el grafo completo de DTOs).
      */
-    List<IpQuoteRequestDTO> getListQuoteRequestByClientAvailableToQuotation(UUID clientId, boolean viewCompletedQR, Currency currency);
+    List<ListIpQuoteRequestResponse> getListQuoteRequestByClientAvailableToQuotation(UUID clientId, boolean viewCompletedQR, Currency currency, UUID salesRepId);
 
     /*
     Funcion para buscar y validar que la quote request sea del mismo cliente

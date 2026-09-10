@@ -152,6 +152,7 @@ Cron literal de los jobs en `IpQuoteRequestScheduler`: unlock `30 50 23 * * *`; 
 ## 8. Relación QR ↔ Q
 
 - Una QR `ANSWERED` (o `COMPLETE` si se pasa `viewCompletedQR=true`) es candidata a enlazarse a una **Q del mismo cliente y misma moneda** (endpoint `GET /ip/qr/available-for-quotation/{id_client}`).
+  - Filtro opcional `sales-rep-id` (UUID): si se envía, solo devuelve las QR de ese representante (`null` = todos); reduce filas y hace más liviana la consulta. El endpoint responde el item ligero de lista (`ListIpQuoteRequestResponse`) sin materializar productos/cargos/clones/cotizaciones de cada QR.
 - Al enlazarse: se exige **mismo client** (`findByIdAndClient`) y **misma currency**.
 - Mientras esté enlazada a una Q (cualquier estado de la Q que no sea `REJECTED`):
   - **No** puede hacer rollback (`ANSWERED → SENT/CREATED`) → `ip.qr.assigned-to-q`.

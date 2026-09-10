@@ -115,6 +115,8 @@ QR (pedir precio al proveedor) → Q (Quotation: consolidar precios + margen) �
 
 - Se agregan a partir de los productos de las **QR enlazadas** (cada línea de la Q referencia el producto de la QR de origen; `unitPrice`/`leadTime` provienen de la línea original de la QR).
 - El margen (`profitMargin`) y la condición (`condition`) se agregan a nivel de la Q.
+- **Condición (`condition`):** enum `IpQuotationProductCondition` con valores `NEW`, `USED` y `REFURBISH` (obligatoria en add/edit; el listado se publica al frontend vía `GET /util/enums` → `ip_quotation_product_condition`). Columna `varchar(20)` sin CHECK en DB: agregar valores solo requiere el enum.
+- **Lead time por producto:** `totalLeadTime = leadTime + itsLeadTime`, donde `leadTime` viene del producto de QR (base) y `itsLeadTime` es el tiempo adicional asignado por ITS, persistido en `t_ip_quotation_products.its_lead_time` (`integer NOT NULL DEFAULT 0`, V2.0.5). `itsLeadTime` **nunca es null** (null → `0` al agregar y al editar, con semántica PUT: omite = borra). `totalLeadTime` **no se persiste**: se deriva en el DTO para no desincronizar si el QR cambia. Ambos comparten la **unidad** del producto QR (`leadTimeType`: `WEEKS`/`MONTHS`/`DAYS`, sin conversión). **Sin duplicidad de datos:** el response del ítem solo agrega `itsLeadTime` y `totalLeadTime`; la base (`quoteRequestProduct.leadTime`) y la unidad (`quoteRequestProduct.leadTimeType`) se leen del producto QR anidado. En el PDF la columna lead time del ítem muestra el **total** con la unidad del QR.
 - **No** se permite el mismo `quoteRequestProductId` duplicado dentro de un request (`ip.q.product.duplicate-qrproduct-in-request`).
 - **No** se permite el mismo `productId` duplicado dentro de un request ni de la Q (`ip.q.product.product-already-in-quotation`).
 - **Solo** se permiten productos maestros en estado `ACTIVE` (`ip.q.product.draft-not-allowed`).
@@ -208,6 +210,7 @@ Cron literal en `IpQuotationScheduler`: unlock `0 53 23 * * *`; auto-rechazo `0 
 
 - Servicio principal: `api/ip/q/service/impl/IpQuotationServiceImpl.java` (mapa `TRANSITIONS`, §835)
 - Productos: `api/ip/q/service/impl/IpQuotationProductServiceImpl.java`
+- Entidad de producto / condición: `api/ip/q/models/entities/IpQuotationProductEntity.java`, `api/ip/q/models/enums/IpQuotationProductCondition.java` (`NEW`/`USED`/`REFURBISH`)
 - Other charges: `api/ip/q/service/impl/IpQuotationOtherChargeServiceImpl.java`
 - Import de cargos desde QR: `api/ip/q/service/impl/IpQuotationOtherChargesQuoteRequestServiceImpl.java`
 - Controlador: `api/ip/q/controller/IpQuotationController.java`

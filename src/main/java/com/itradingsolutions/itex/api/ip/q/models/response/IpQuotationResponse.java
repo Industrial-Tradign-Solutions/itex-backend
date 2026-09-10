@@ -47,6 +47,8 @@ public class IpQuotationResponse extends BaseResponse {
     private LeadTime validityType;
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
+    private BigDecimal profitMarginFreightCharges;
+    private BigDecimal freightChargeMiamiITS;
     private LocalDate applicationAt;
     private BasicUserResponse openBy;
     private ZonedDateTime openAt;

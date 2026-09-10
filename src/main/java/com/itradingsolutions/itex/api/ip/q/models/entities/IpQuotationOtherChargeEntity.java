@@ -50,11 +50,11 @@ public class IpQuotationOtherChargeEntity extends BaseEntity {
     /**
      * The monetary value of this charge.
      * <p>
-     * Precision: 15 digits total, 2 decimal places.
+     * Precision: 15 digits total, 5 decimal places.
      * Must be a non-negative value.
      * </p>
      */
-    @Column(name = "value", nullable = false, precision = 15, scale = 2)
+    @Column(name = "value", nullable = false, precision = 15, scale = 5)
     private BigDecimal value = BigDecimal.ZERO;
 
     /**

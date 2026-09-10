@@ -19,6 +19,7 @@ import java.util.Optional;
 public class IpQuotationReportDTO {
 
     private String number;
+    private String clientQNumber;
     private String paymentTerms;
     private String notes;
     private String date;
@@ -55,6 +56,7 @@ public class IpQuotationReportDTO {
         this.date = now.format(formatter);
 
         this.number = quotation.getNumber();
+        this.clientQNumber = Optional.ofNullable(quotation.getClientQNumber()).orElse("").toUpperCase();
         this.paymentTerms = quotation.getPaymentTerms() != null ? quotation.getPaymentTerms().getName() : "";
         this.notes = quotation.getRemarks() != null ? quotation.getRemarks() : "";
 
@@ -143,7 +145,7 @@ public class IpQuotationReportDTO {
     private void configTotals(IpQuotationDTO quotation) {
         this.subTotal = ReportFormatUtil.money(quotation.getSubTotal());
         this.totalOtherCharges = ReportFormatUtil.money(quotation.getTotalOtherCharges());
-        this.freightCharges = ReportFormatUtil.money(quotation.getTotalFreightCharges());
+        this.freightCharges = ReportFormatUtil.money(quotation.getFreightCharges().add(quotation.getProfitMarginFreightCharges()));
         this.freightChargeMiamiITS = ReportFormatUtil.money(quotation.getFreightChargeMiamiITS());
         this.total = ReportFormatUtil.money(quotation.getTotal());
     }

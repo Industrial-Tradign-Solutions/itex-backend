@@ -120,7 +120,7 @@ public class IpQuotationDTO extends BaseDTO {
 
     public BigDecimal getTotalFreightCharges() {
         var profitMargin = Optional.ofNullable(profitMarginFreightCharges).orElse(BigDecimal.ZERO);
-        return getFreightCharges().add(profitMargin);
+        return getFreightCharges().add(profitMargin).add(getFreightChargeMiamiITS());
     }
 
     public BigDecimal getTotal() {

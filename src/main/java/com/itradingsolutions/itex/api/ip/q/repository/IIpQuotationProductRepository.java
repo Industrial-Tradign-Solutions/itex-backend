@@ -3,6 +3,7 @@ package com.itradingsolutions.itex.api.ip.q.repository;
 import com.itradingsolutions.itex.api.ip.products.models.enums.IpProductStatus;
 import com.itradingsolutions.itex.api.ip.q.models.dto.QuotationProductStatusProjection;
 import com.itradingsolutions.itex.api.ip.q.models.entities.IpQuotationProductEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,13 @@ import java.util.UUID;
 @Repository
 public interface IIpQuotationProductRepository extends JpaRepository<IpQuotationProductEntity, UUID> {
 
+    @EntityGraph(attributePaths = {
+            "quoteRequestProduct",
+            "quoteRequestProduct.ipProduct",
+            "quotationsQuoteRequest",
+            "quotationsQuoteRequest.quoteRequest",
+            "quotationsQuoteRequest.quoteRequest.supplier"
+    })
     Optional<IpQuotationProductEntity> findByIdAndQuotationsQuoteRequest_Quotation_Id(UUID id, UUID quotationId);
 
     void deleteByIdAndQuotationsQuoteRequest_Quotation_Id(UUID id, UUID quotationId);

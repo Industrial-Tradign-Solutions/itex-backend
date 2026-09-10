@@ -277,6 +277,8 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
                 if (brand.isEmpty()) {
                     newItem.getImportErrors().add("This brand not exists");
                     newItem.setSaveBrand(false);
+                } else {
+                    newItem.setBrand(brand.get());
                 }
             }
 
@@ -285,6 +287,8 @@ public class IpProductServiceImpl extends UtilServiceAbs implements IIpProductSe
                 if (coo.isEmpty()) {
                     newItem.getImportErrors().add("This COO not exists");
                     newItem.setSaveCoo(false);
+                } else {
+                    newItem.setCoo(coo.get());
                 }
             }
 

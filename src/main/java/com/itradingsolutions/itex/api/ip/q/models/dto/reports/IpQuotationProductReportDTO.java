@@ -44,8 +44,8 @@ public class IpQuotationProductReportDTO {
             this.clientRef = ipProduct.getClientReference() != null ? ipProduct.getClientReference() : "";
         }
 
-        if (qrProduct.getLeadTime() != null && qrProduct.getLeadTimeType() != null) {
-            this.leadTime = qrProduct.getLeadTime() + " " + qrProduct.getLeadTimeType().getName();
+        if (qrProduct.getLeadTimeType() != null) {
+            this.leadTime = product.getTotalLeadTime() + " " + qrProduct.getLeadTimeType().getName();
         } else {
             this.leadTime = "";
         }

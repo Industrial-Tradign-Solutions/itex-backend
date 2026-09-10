@@ -19,6 +19,7 @@ import com.itradingsolutions.itex.api.ip.qr.models.dto.QuoteRequestProductIdProj
 import com.itradingsolutions.itex.api.ip.qr.models.entities.IpQuoteRequestProductEntity;
 import com.itradingsolutions.itex.api.ip.qr.repositories.IIpQuoteRequestProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIpQuotationProductService {
@@ -159,6 +161,17 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
             entity.setProfitMargin(dto.getProfitMargin());
             entity.setCondition(dto.getCondition());
             entity.setQuoteRequestProduct(qrProductEntity);
+            if (dto.getItsLeadTime() == null) {
+                log.warn("Add Q product: itsLeadTime null -> 0 | qqrId={} qrProductId={}",
+                        qqrId, qrProductId);
+            }
+            entity.setItsLeadTime(dto.getItsLeadTime());
+            log.info("Add Q product | qqrId={} qrProductId={} leadTime={} + itsLeadTime={} -> totalLeadTime={} condition={}",
+                    qqrId, qrProductId,
+                    Optional.ofNullable(qrProductEntity.getLeadTime()).orElse(0),
+                    entity.getItsLeadTime(),
+                    Optional.ofNullable(qrProductEntity.getLeadTime()).orElse(0) + entity.getItsLeadTime(),
+                    dto.getCondition());
 
             entities.add(entity);
         }
@@ -241,8 +254,10 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
     }
 
     private IpQuotationProductDTO saveQProduct(IpQuotationProductDTO productRequest, IpQuotationProductEntity entity) {
+        var oldItsLeadTime = entity.getItsLeadTime();
         entity.setProfitMargin(productRequest.getProfitMargin());
         entity.setCondition(productRequest.getCondition());
+        entity.setItsLeadTime(productRequest.getItsLeadTime());
 
         if (productRequest.getQuoteRequestProduct() != null && productRequest.getQuoteRequestProduct().getId() != null) {
             var qrProduct = qrProductRepository.findById(productRequest.getQuoteRequestProduct().getId())
@@ -253,6 +268,17 @@ public class IpQuotationProductServiceImpl extends UtilServiceAbs implements IIp
         } else {
             entity.setQuoteRequestProduct(null);
         }
+
+        if (productRequest.getItsLeadTime() == null && oldItsLeadTime != null && oldItsLeadTime != 0) {
+            log.warn("Edit Q product: itsLeadTime null -> 0 (previous value {}) | qProductId={}",
+                    oldItsLeadTime, entity.getId());
+        }
+        var baseLeadTime = Optional.ofNullable(entity.getQuoteRequestProduct())
+                .map(IpQuoteRequestProductEntity::getLeadTime)
+                .orElse(0);
+        log.info("Edit Q product | qProductId={} leadTime={} + itsLeadTime={} -> totalLeadTime={} condition={}",
+                entity.getId(), baseLeadTime, entity.getItsLeadTime(),
+                baseLeadTime + entity.getItsLeadTime(), entity.getCondition());
 
         return qProductMapper.entityToDto(qProductRepository.save(entity));
     }

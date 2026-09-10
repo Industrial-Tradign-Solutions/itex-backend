@@ -49,10 +49,21 @@ public class IpQuotationProductEntity extends BaseEntity {
     @Column(name = "condition", nullable = false, length = 20)
     private IpQuotationProductCondition condition;
 
+    /**
+     * Additional lead time (in weeks/months/days, matching the QR product's
+     * {@code leadTimeType}) assigned by ITS on top of the QR product's base lead time.
+     */
+    @Column(name = "its_lead_time", nullable = false)
+    private Integer itsLeadTime = 0;
+
     public void setProfitMargin(BigDecimal profitMargin) {
         if (profitMargin.compareTo(new BigDecimal("0.01")) < 0 || profitMargin.compareTo(BigDecimal.valueOf(100)) > 0) {
             throw new IllegalArgumentException("El margen debe estar entre 0.01 y 100 (porcentaje)");
         }
         this.profitMargin = profitMargin.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public void setItsLeadTime(Integer itsLeadTime) {
+        this.itsLeadTime = itsLeadTime == null ? 0 : itsLeadTime;
     }
 }

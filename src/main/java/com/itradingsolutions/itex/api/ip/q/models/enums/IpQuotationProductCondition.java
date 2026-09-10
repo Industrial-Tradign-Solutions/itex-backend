@@ -6,7 +6,8 @@ import lombok.Getter;
 @Getter
 public enum IpQuotationProductCondition implements BaseEnum {
     NEW("NEW"),
-    USED("USED");
+    USED("USED"),
+    REFURBISH("REFURBISH");
 
     private final String name;
 

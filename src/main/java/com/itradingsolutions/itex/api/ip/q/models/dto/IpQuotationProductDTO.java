@@ -1,6 +1,7 @@
 package com.itradingsolutions.itex.api.ip.q.models.dto;
 
 import com.itradingsolutions.itex.api.common.models.dto.BaseDTO;
+import com.itradingsolutions.itex.api.common.models.enums.LeadTime;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -22,6 +24,7 @@ public class IpQuotationProductDTO extends BaseDTO {
     private Integer number;
     private BigDecimal profitMargin;
     private IpQuotationProductCondition condition;
+    private Integer itsLeadTime = 0;
     private String qrNumber;
     private String supplierName;
 
@@ -70,5 +73,17 @@ public class IpQuotationProductDTO extends BaseDTO {
         if (quoteRequestProduct == null || quoteRequestProduct.getExtendedPrice() == null)
             return BigDecimal.ZERO;
         return getSellingExtendedPrice().subtract(quoteRequestProduct.getExtendedPrice());
+    }
+
+    /**
+     * Total delivery time for the quotation line: QR base lead time plus the ITS extra time.
+     */
+    public Integer getTotalLeadTime() {
+        return Optional
+                .ofNullable(quoteRequestProduct)
+                .map(IpQuoteRequestProductDTO::getLeadTime)
+                .orElse(0) + Optional
+                    .ofNullable(itsLeadTime)
+                    .orElse(0);
     }
 }

@@ -713,6 +713,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                         clonedProduct.setNumber(originalProduct.getNumber());
                         clonedProduct.setProfitMargin(originalProduct.getProfitMargin());
                         clonedProduct.setCondition(originalProduct.getCondition());
+                        clonedProduct.setItsLeadTime(originalProduct.getItsLeadTime());
                         clonedProduct.setCreatedAt(ZonedDateTime.now(zoneId));
                         clonedQqr.getQuotationProducts().add(clonedProduct);
                     });

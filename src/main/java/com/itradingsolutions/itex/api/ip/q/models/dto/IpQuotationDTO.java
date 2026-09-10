@@ -17,7 +17,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -50,6 +49,8 @@ public class IpQuotationDTO extends BaseDTO {
     private LeadTime validityType;
     private Incoterms incoterms;
     private PaymentTerms paymentTerms;
+    private BigDecimal profitMarginFreightCharges = BigDecimal.ZERO;
+    private BigDecimal freightChargeMiamiITS = BigDecimal.ZERO;
     private LocalDate applicationAt;
     private String pdfUrl;
     private UserDTO openBy;
@@ -91,14 +92,14 @@ public class IpQuotationDTO extends BaseDTO {
                 .stream()
                 .map(IpQuotationProductDTO::getSellingExtendedPrice)
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**
      * Sums the freight charges of the linked Quote Requests that actually
-     * contribute at least one product to this Quotation. If a QR does not
-     * supply any product to the Q, its freight charges are not billed.
+     * contribute at least one product to this Quotation, plus the freight
+     * profit margin manually applied by the user. If a QR does not supply
+     * any product to the Q, its freight charges are not billed.
      */
     public BigDecimal getFreightCharges() {
         Set<UUID> qqrIdsWithProducts = Optional.ofNullable(products)
@@ -114,14 +115,18 @@ public class IpQuotationDTO extends BaseDTO {
                 .filter(qr -> qr.getQqrId() != null && qqrIdsWithProducts.contains(qr.getQqrId()))
                 .map(IpQuotationsQuoteRequestSummaryDTO::getFreightCharges)
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal getTotalFreightCharges() {
+        var profitMargin = Optional.ofNullable(profitMarginFreightCharges).orElse(BigDecimal.ZERO);
+        return getFreightCharges().add(profitMargin).add(getFreightChargeMiamiITS());
     }
 
     public BigDecimal getTotal() {
-        return Stream.of(getSubTotal(), getFreightCharges(), getTotalOtherCharges())
+        return Stream.of(getSubTotal(), getTotalFreightCharges(), getTotalOtherCharges(), getFreightChargeMiamiITS())
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal getGrossWeightLbs() {

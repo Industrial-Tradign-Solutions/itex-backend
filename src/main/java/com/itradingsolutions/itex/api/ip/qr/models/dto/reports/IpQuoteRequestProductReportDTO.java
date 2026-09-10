@@ -1,8 +1,7 @@
 package com.itradingsolutions.itex.api.ip.qr.models.dto.reports;
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import lombok.Getter;
-
-import java.text.DecimalFormat;
 
 @Getter
 public class IpQuoteRequestProductReportDTO {
@@ -16,8 +15,7 @@ public class IpQuoteRequestProductReportDTO {
 
     public IpQuoteRequestProductReportDTO(Integer number, IpQuoteRequestProductDTO product) {
         this.number = number.toString();
-        DecimalFormat format = new DecimalFormat("#,##0.00000");
-        this.quantity = format.format(product.getQuantity());
+        this.quantity = ReportFormatUtil.quantity(product.getQuantity());
         this.unitType = product.getUnitType().getName();
         this.description = product.getIpProduct().getDescription();
         this.reference = product.getIpProduct().getMfrReference()  != null ? product.getIpProduct().getMfrReference() : "";

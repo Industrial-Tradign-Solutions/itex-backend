@@ -64,11 +64,14 @@ public class IpQuotationResponse extends BaseResponse {
 
     private List<BasicIpPurchaseOrderResponse> listPurchaseOrders;
 
-
     private BigDecimal grossWeightLbs;
 
     private BigDecimal totalOtherCharges;
     private BigDecimal subTotal;
     private BigDecimal total;
+
+    private BigDecimal profitMarginFreightCharges;
+    private BigDecimal freightChargeMiamiITS;
     private BigDecimal freightCharges;
+    private BigDecimal totalFreightCharges;
 }

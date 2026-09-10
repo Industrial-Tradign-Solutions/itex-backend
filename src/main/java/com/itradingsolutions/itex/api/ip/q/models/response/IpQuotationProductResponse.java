@@ -13,6 +13,8 @@ public record IpQuotationProductResponse(
         Integer number,
         BigDecimal profitMargin,
         IpQuotationProductCondition condition,
+        Integer itsLeadTime,
+        Integer totalLeadTime,
         BigDecimal sellingUnitPrice,
         BigDecimal sellingExtendedPrice,
         BigDecimal unitProfit,

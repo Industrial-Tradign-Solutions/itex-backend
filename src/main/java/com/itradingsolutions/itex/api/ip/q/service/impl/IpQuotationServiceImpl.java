@@ -68,6 +68,7 @@ import com.itradingsolutions.itex.api.partners.clients.repository.IClientContact
 import com.itradingsolutions.itex.api.partners.clients.services.IClientContactService;
 import com.itradingsolutions.itex.api.partners.clients.services.IClientService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -78,6 +79,7 @@ import org.springframework.transaction.annotation.Transactional;
 import net.sf.jasperreports.engine.JRException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -86,12 +88,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotationService {
 
@@ -169,6 +173,16 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
             IpQuotationStatus.REJECTED, "ip.q.cannot-change-rejected-status"
     );
 
+    /**
+     * Advance transitions that require the Incoterm to be defined on the Quotation.
+     * Rollbacks targeting SENT are intentionally excluded to avoid blocking legacy data.
+     */
+    private static final Set<TransitionKey<IpQuotationStatus>> INCOTERMS_REQUIRED_TRANSITIONS = Set.of(
+            new TransitionKey<>(IpQuotationStatus.CREATED, IpQuotationStatus.SENT),
+            new TransitionKey<>(IpQuotationStatus.SENT, IpQuotationStatus.ANSWERED),
+            new TransitionKey<>(IpQuotationStatus.ANSWERED, IpQuotationStatus.COMPLETE)
+    );
+
     @Override
     @Transactional
     public void unlockIpQuotation(UUID idQuotation) {
@@ -214,6 +228,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         entity.setLeadTimeType(LeadTime.DAYS);
         entity.setValidity(0);
         entity.setValidityType(LeadTime.DAYS);
+        entity.setProfitMarginFreightCharges(BigDecimal.ZERO);
+        entity.setFreightChargeMiamiITS(BigDecimal.ZERO);
 
         var client = clientService.findClientById(request.clientId(), true);
         entity.setClient(client);
@@ -326,6 +342,11 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if (validateAction(user, ModuleAction.EDIT_PAYMENT_TERMS_IP_QUOTATIONS) && request.paymentTerms() != null)
             quotation.setPaymentTerms(request.paymentTerms());
 
+        Optional.ofNullable(request.profitMarginFreightCharges())
+                .ifPresent(quotation::setProfitMarginFreightCharges);
+        Optional.ofNullable(request.freightChargeMiamiITS())
+                .ifPresent(quotation::setFreightChargeMiamiITS);
+
         if (request.applicationAt() != null
                 && !request.applicationAt().equals(quotation.getApplicationAt())) {
             quotation.setApplicationAt(request.applicationAt());
@@ -345,9 +366,24 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         
         var newDto = toDto(saved);
 
+        if (!isSameAmount(oldDto.getProfitMarginFreightCharges(), newDto.getProfitMarginFreightCharges())
+                || !isSameAmount(oldDto.getFreightChargeMiamiITS(), newDto.getFreightChargeMiamiITS())) {
+            log.info("Quotation {} freight values updated: profitMarginFreightCharges [{} -> {}], freightChargeMiamiITS [{} -> {}]",
+                    saved.getNumber(),
+                    oldDto.getProfitMarginFreightCharges(), newDto.getProfitMarginFreightCharges(),
+                    oldDto.getFreightChargeMiamiITS(), newDto.getFreightChargeMiamiITS());
+        }
+
         historyService.addHistory(IpQuotationHistoryAction.UPDATE, oldDto, newDto);
         
         return newDto;
+    }
+
+    private static boolean isSameAmount(BigDecimal first, BigDecimal second) {
+        if (first == null || second == null) {
+            return first == second;
+        }
+        return first.compareTo(second) == 0;
     }
 
     @Override
@@ -370,6 +406,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         validateNotSameStatus(quotation, newStatus);
         validateTerminalStatus(currentStatus);
         validateApplicationAtForStatus(quotation, newStatus);
+        validateIncotermsForStatus(quotation, currentStatus, newStatus);
         validatePurchaseOrderDependency(quotation, currentStatus, newStatus);
         validatePurchaseOrderForReject(quotation, newStatus);
         validatePurchaseOrderForComplete(quotation, newStatus);
@@ -384,6 +421,8 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         clearOpenLockOnFinalStatus(quotation);
 
         var savedQuotation = quotationRepository.save(quotation);
+        log.info("Quotation {} ({}) status changed from {} to {}",
+                savedQuotation.getNumber(), savedQuotation.getId(), currentStatus, newStatus);
         if (newStatus == IpQuotationStatus.ANSWERED) {
             processQuoteRequestsOnAnswered(savedQuotation);
         }
@@ -450,6 +489,25 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         if ((newStatus == IpQuotationStatus.SENT || newStatus == IpQuotationStatus.ANSWERED)
                 && quotation.getApplicationAt() == null) {
             throw new NotChangeStatusException(simpleMessage("ip.q.application-at-required"));
+        }
+    }
+
+    /**
+     * The Incoterm is mandatory to advance the Quotation to SENT, ANSWERED or COMPLETE.
+     * Rollbacks targeting SENT (e.g. ANSWERED → SENT) are not validated, so legacy
+     * Quotations without an Incoterm can still be reverted.
+     */
+    private void validateIncotermsForStatus(IpQuotationEntity quotation, IpQuotationStatus currentStatus,
+                                            IpQuotationStatus newStatus) {
+        var transition = new TransitionKey<>(currentStatus, newStatus);
+        if (!INCOTERMS_REQUIRED_TRANSITIONS.contains(transition)) {
+            return;
+        }
+
+        if (quotation.getIncoterms() == null) {
+            log.warn("Quotation {} ({}) cannot transition from {} to {}: incoterms are required",
+                    quotation.getNumber(), quotation.getId(), currentStatus, newStatus);
+            throw new NotChangeStatusException(simpleMessage("ip.q.incoterms-required"));
         }
     }
 
@@ -631,6 +689,10 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
         cloned.setStatus(IpQuotationStatus.CREATED);
         cloned.setCreatedAt(ZonedDateTime.now(zoneId));
         cloned.setApplicationAt(null);
+        cloned.setProfitMarginFreightCharges(
+                Optional.ofNullable(cloned.getProfitMarginFreightCharges()).orElse(BigDecimal.ZERO));
+        cloned.setFreightChargeMiamiITS(
+                Optional.ofNullable(cloned.getFreightChargeMiamiITS()).orElse(BigDecimal.ZERO));
         cloned.setNumber(consecutiveService.generateConsecutive(CONSECUTIVE_TYPE, CONSECUTIVE_DEPARTMENT, original.getClient().getCode()));
         
         // Clone QRs and products
@@ -651,6 +713,7 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
                         clonedProduct.setNumber(originalProduct.getNumber());
                         clonedProduct.setProfitMargin(originalProduct.getProfitMargin());
                         clonedProduct.setCondition(originalProduct.getCondition());
+                        clonedProduct.setItsLeadTime(originalProduct.getItsLeadTime());
                         clonedProduct.setCreatedAt(ZonedDateTime.now(zoneId));
                         clonedQqr.getQuotationProducts().add(clonedProduct);
                     });
@@ -973,11 +1036,16 @@ public class IpQuotationServiceImpl extends UtilServiceAbs implements IpQuotatio
             if (isFinalStatus(status) && pdfPath != null)
                 return jasperService.getPdfBytes(pdfPath);
 
+            var quotationDto = quotationMapper.entityToDTO(quotation);
+            log.info("Generating PDF for Quotation {}: qrFreightCharges={}, profitMarginFreightCharges={}, totalFreightCharges={}, freightChargeMiamiITS={}, total={}",
+                    quotation.getNumber(), quotationDto.getFreightCharges(), quotationDto.getProfitMarginFreightCharges(),
+                    quotationDto.getTotalFreightCharges(), quotationDto.getFreightChargeMiamiITS(), quotationDto.getTotal());
+
             JasperReport reportTemplate = getReportTemplateFor(quotation);
-            int totalPages = jasperService.getTotalPages(reportTemplate, new IpQuotationReportDTO(quotationMapper.entityToDTO(quotation)));
+            int totalPages = jasperService.getTotalPages(reportTemplate, new IpQuotationReportDTO(quotationDto));
             pdfPath = jasperService.generatePDF(
                     reportTemplate,
-                    new IpQuotationReportDTO(quotationMapper.entityToDTO(quotation)),
+                    new IpQuotationReportDTO(quotationDto),
                     quotation.getNumber(),
                     quotation.getCreatedAt(),
                     CONSECUTIVE_DEPARTMENT,

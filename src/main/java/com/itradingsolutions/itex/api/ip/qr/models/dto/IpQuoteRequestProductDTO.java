@@ -30,12 +30,17 @@ public class IpQuoteRequestProductDTO extends BaseDTO {
             this.unitPrice = unitPrice.setScale(5, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Purchase extended price ({@code unitPrice * quantity}) returned at full
+     * precision so that consumers (including the Quotation) always see the raw
+     * stored calculation; rounding to display scale happens in the report layer.
+     */
     public BigDecimal getExtendedPrice() {
         if (unitPrice == null || quantity == null)
             return BigDecimal.ZERO;
         if (BigDecimal.ZERO.compareTo(unitPrice) == 0 || BigDecimal.ZERO.compareTo(quantity) == 0)
             return BigDecimal.ZERO;
-        return unitPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+        return unitPrice.multiply(quantity);
     }
 
     public BigDecimal getGrossWeightLbs() {

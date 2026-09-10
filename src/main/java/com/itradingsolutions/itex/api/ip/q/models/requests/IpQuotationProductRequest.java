@@ -3,6 +3,7 @@ package com.itradingsolutions.itex.api.ip.q.models.requests;
 import com.itradingsolutions.itex.api.ip.q.models.enums.IpQuotationProductCondition;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.util.UUID;
 
 /**
  * {@code profitMargin} is a direct percentage (10.00 = 10%), not a fraction.
+ * {@code itsLeadTime} is optional: null is stored as 0 (both on add and edit).
  */
 public record IpQuotationProductRequest(
 
@@ -25,6 +27,9 @@ public record IpQuotationProductRequest(
         BigDecimal profitMargin,
 
         @NotNull(message = "Condition is required")
-        IpQuotationProductCondition condition
+        IpQuotationProductCondition condition,
+
+        @Min(value = 0, message = "ITS lead time cannot be negative")
+        Integer itsLeadTime
 ) {
 }

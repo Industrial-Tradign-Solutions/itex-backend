@@ -109,7 +109,7 @@ public class IpQuoteRequestEntity extends BaseEntity {
     @Column(name = "payment_terms", length = 40)
     private PaymentTerms paymentTerms;
 
-    @Column(name = "freight_charges", scale = 2, precision = 15)
+    @Column(name = "freight_charges", precision = 15, scale = 5)
     private BigDecimal freightCharges;
 
     @Column(name = "open_at")

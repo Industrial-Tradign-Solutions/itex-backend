@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.po.models.dto.reports;
 
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderProductDTO;
 import com.itradingsolutions.itex.api.ip.products.models.dto.IpProductDTO;
 import com.itradingsolutions.itex.api.ip.q.models.dto.IpQuotationProductDTO;
@@ -7,7 +8,6 @@ import com.itradingsolutions.itex.api.ip.qr.models.dto.IpQuoteRequestProductDTO;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 
 @Getter
 public class IpPurchaseOrderProductReportDTO {
@@ -24,10 +24,6 @@ public class IpPurchaseOrderProductReportDTO {
     private IpPurchaseOrderProductReportDTO() {}
 
     public IpPurchaseOrderProductReportDTO(Integer number, IpPurchaseOrderProductDTO product) {
-        DecimalFormat qtyFormat = new DecimalFormat("#,##0.00000");
-        DecimalFormat priceFormat = new DecimalFormat("#,##0.00000");
-        DecimalFormat extPriceFormat = new DecimalFormat("#,##0.00");
-
         this.number = number.toString();
 
         IpQuotationProductDTO quotationProduct = product.getQuotationProduct();
@@ -36,25 +32,21 @@ public class IpPurchaseOrderProductReportDTO {
                 : null;
 
         if (qrProduct == null) {
-            this.quantity = qtyFormat.format(BigDecimal.ZERO);
+            this.quantity = ReportFormatUtil.quantity(BigDecimal.ZERO);
             this.unitType = "";
-            this.unitPrice = priceFormat.format(BigDecimal.ZERO);
-            this.extendedPrice = extPriceFormat.format(BigDecimal.ZERO);
+            this.unitPrice = ReportFormatUtil.price(BigDecimal.ZERO);
+            this.extendedPrice = ReportFormatUtil.money(BigDecimal.ZERO);
             return;
         }
 
-        this.quantity = qrProduct.getQuantity() != null
-                ? qtyFormat.format(qrProduct.getQuantity())
-                : qtyFormat.format(BigDecimal.ZERO);
+        this.quantity = ReportFormatUtil.quantity(qrProduct.getQuantity());
         this.unitType = qrProduct.getUnitType() != null ? qrProduct.getUnitType().getName() : "";
 
         configProductInfo(qrProduct.getIpProduct());
         configDeliveryTime(qrProduct);
 
-        this.unitPrice = qrProduct.getUnitPrice() != null
-                ? priceFormat.format(qrProduct.getUnitPrice())
-                : priceFormat.format(BigDecimal.ZERO);
-        this.extendedPrice = extPriceFormat.format(qrProduct.getExtendedPrice());
+        this.unitPrice = ReportFormatUtil.price(qrProduct.getUnitPrice());
+        this.extendedPrice = ReportFormatUtil.money(qrProduct.getExtendedPrice());
     }
 
     private void configProductInfo(IpProductDTO ipProduct) {

@@ -8,13 +8,14 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 @Getter
 @Setter
 @ToString
 public class IpQuotationProductDTO extends BaseDTO {
+
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private UUID quotationsQuoteRequestId;
     private IpQuoteRequestProductDTO quoteRequestProduct;
@@ -29,9 +30,7 @@ public class IpQuotationProductDTO extends BaseDTO {
             return BigDecimal.ZERO;
         if (profitMargin == null || BigDecimal.ZERO.compareTo(profitMargin) == 0)
             return quoteRequestProduct.getUnitPrice();
-        return quoteRequestProduct.getUnitPrice()
-                .multiply(marginFactor())
-                .setScale(5, RoundingMode.HALF_UP);
+        return quoteRequestProduct.getUnitPrice().multiply(marginFactor());
     }
 
     public BigDecimal getSellingExtendedPrice() {
@@ -39,9 +38,7 @@ public class IpQuotationProductDTO extends BaseDTO {
             return BigDecimal.ZERO;
         if (profitMargin == null || BigDecimal.ZERO.compareTo(profitMargin) == 0)
             return quoteRequestProduct.getExtendedPrice();
-        return quoteRequestProduct.getExtendedPrice()
-                .multiply(marginFactor())
-                .setScale(5, RoundingMode.HALF_UP);
+        return quoteRequestProduct.getExtendedPrice().multiply(marginFactor());
     }
 
     /**
@@ -49,7 +46,7 @@ public class IpQuotationProductDTO extends BaseDTO {
      * must be divided by 100 before being applied as a multiplier.
      */
     private BigDecimal marginFactor() {
-        return BigDecimal.ONE.add(profitMargin.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
+        return BigDecimal.ONE.add(profitMargin.divide(HUNDRED));
     }
 
     public BigDecimal getGrossWeightLbs() {
@@ -63,9 +60,7 @@ public class IpQuotationProductDTO extends BaseDTO {
     public BigDecimal getUnitProfit() {
         if (quoteRequestProduct == null || quoteRequestProduct.getUnitPrice() == null)
             return BigDecimal.ZERO;
-        return getSellingUnitPrice()
-                .subtract(quoteRequestProduct.getUnitPrice())
-                .setScale(5, RoundingMode.HALF_UP);
+        return getSellingUnitPrice().subtract(quoteRequestProduct.getUnitPrice());
     }
 
     /**
@@ -74,8 +69,6 @@ public class IpQuotationProductDTO extends BaseDTO {
     public BigDecimal getTotalProfit() {
         if (quoteRequestProduct == null || quoteRequestProduct.getExtendedPrice() == null)
             return BigDecimal.ZERO;
-        return getSellingExtendedPrice()
-                .subtract(quoteRequestProduct.getExtendedPrice())
-                .setScale(2, RoundingMode.HALF_UP);
+        return getSellingExtendedPrice().subtract(quoteRequestProduct.getExtendedPrice());
     }
 }

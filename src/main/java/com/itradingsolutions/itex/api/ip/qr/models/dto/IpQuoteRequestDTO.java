@@ -144,20 +144,28 @@ public class IpQuoteRequestDTO extends BaseDTO {
         this.freightCharges = Objects.requireNonNullElse(freightCharges, BigDecimal.ZERO).setScale(5, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Sum of product extended prices at full precision. Values are intentionally
+     * not rounded for API consumers; scaling happens only in the report layer
+     * (see {@code ReportFormatUtil}).
+     */
     public BigDecimal getSubTotal() {
         return Optional.ofNullable(this.products)
                 .orElseGet(Collections::emptyList)
                 .stream()
                 .map(IpQuoteRequestProductDTO::getExtendedPrice)
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    /**
+     * {@code subTotal + freightCharges + totalOtherCharges} at full precision
+     * (no rounding; report layer applies display scaling).
+     */
     public BigDecimal getTotal() {
         return Stream.of(getSubTotal(), this.freightCharges, this.getTotalOtherCharges())
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal getGrossWeightLbs() {
@@ -175,8 +183,7 @@ public class IpQuoteRequestDTO extends BaseDTO {
                 .stream()
                 .map(IpQuoteRequestOtherChargesDTO::getValue)
                 .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
     }
 

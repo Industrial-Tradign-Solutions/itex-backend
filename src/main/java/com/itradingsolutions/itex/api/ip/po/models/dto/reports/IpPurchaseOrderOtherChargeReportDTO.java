@@ -1,9 +1,9 @@
 package com.itradingsolutions.itex.api.ip.po.models.dto.reports;
 
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 
 @Getter
 public class IpPurchaseOrderOtherChargeReportDTO {
@@ -15,7 +15,6 @@ public class IpPurchaseOrderOtherChargeReportDTO {
 
     public IpPurchaseOrderOtherChargeReportDTO(String description, BigDecimal value) {
         this.description = description != null ? description : "";
-        DecimalFormat format = new DecimalFormat("#,##0.00");
-        this.value = value != null ? format.format(value) : format.format(BigDecimal.ZERO);
+        this.value = ReportFormatUtil.money(value);
     }
 }

@@ -1,5 +1,6 @@
 package com.itradingsolutions.itex.api.ip.po.models.dto.reports;
 
+import com.itradingsolutions.itex.api.common.util.ReportFormatUtil;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderDTO;
 import com.itradingsolutions.itex.api.ip.po.models.dto.IpPurchaseOrderProductDTO;
 import com.itradingsolutions.itex.api.partners.suppliers.models.dto.SupplierContactDTO;
@@ -7,8 +8,6 @@ import com.itradingsolutions.itex.api.partners.suppliers.models.dto.SupplierDTO;
 import lombok.Getter;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -138,10 +137,9 @@ public class IpPurchaseOrderReportDTO {
     }
 
     private void configTotals(IpPurchaseOrderDTO po) {
-        DecimalFormat format = new DecimalFormat("#,##0.00");
-        this.subTotal = format.format(po.getSubTotal());
-        this.salesTax = po.getSalesTax() != null ? format.format(po.getSalesTax()) : format.format(BigDecimal.ZERO);
-        this.totalOtherCharges = format.format(po.getTotalOtherCharges());
-        this.total = format.format(po.getTotal());
+        this.subTotal = ReportFormatUtil.money(po.getSubTotal());
+        this.salesTax = ReportFormatUtil.money(po.getSalesTax());
+        this.totalOtherCharges = ReportFormatUtil.money(po.getTotalOtherCharges());
+        this.total = ReportFormatUtil.money(po.getTotal());
     }
 }
